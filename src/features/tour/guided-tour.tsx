@@ -40,6 +40,10 @@ export const TOUR_STEPS: TourStep[] = [
   { route: "/week", target: "week-header", screenKey: "nav.week", titleKey: "tour.weekHeader.title", bodyKey: "tour.weekHeader.body" },
   { route: "/week", target: "week-grid", screenKey: "nav.week", titleKey: "tour.weekGrid.title", bodyKey: "tour.weekGrid.body" },
   { route: "/week", target: "week-targets", screenKey: "nav.week", titleKey: "tour.weekTargets.title", bodyKey: "tour.weekTargets.body" },
+  // The recap is not a sixth nav tab, so the chip on this step reads "Rekap"
+  // rather than a rail label — which is exactly how it announces the screen
+  // change the tour makes on its own.
+  { route: "/recap", target: "recap-summary", screenKey: "recap.title", titleKey: "tour.recap.title", bodyKey: "tour.recap.body" },
   { route: "/journal", target: "journal-entry", screenKey: "nav.journal", titleKey: "tour.journalEntry.title", bodyKey: "tour.journalEntry.body" },
   { route: "/journal", target: "journal-history", screenKey: "nav.journal", titleKey: "tour.journalHistory.title", bodyKey: "tour.journalHistory.body" },
   { route: "/settings", target: "settings-appearance", screenKey: "nav.settings", titleKey: "tour.settingsAppearance.title", bodyKey: "tour.settingsAppearance.body" },
@@ -194,6 +198,12 @@ export function GuidedTour() {
   const step = TOUR_STEPS[index];
   const total = TOUR_STEPS.length;
   const isLast = index === total - 1;
+  /**
+   * Fourteen dots, the active one wider, plus the "step x of y" text do not fit
+   * across a 330px card at the default dot width. Thin the inactive dots rather
+   * than let the row push the count out of the card.
+   */
+  const manySteps = total > 12;
   const stepKey = step ? `${step.route}|${step.target}` : "";
 
   // A rect measured for a different step says nothing about this one, so the
@@ -394,12 +404,16 @@ export function GuidedTour() {
                 key={`${item.route}-${item.target}`}
                 className={cn(
                   "h-1 rounded-full transition-colors",
-                  itemIndex === index ? "w-5 bg-ink" : "w-2.5 bg-line-strong",
+                  itemIndex === index
+                    ? "w-5 bg-ink"
+                    : manySteps
+                      ? "w-1.5 bg-line-strong"
+                      : "w-2.5 bg-line-strong",
                 )}
               />
             ))}
           </ol>
-          <p className="text-caption text-mute" role="status">
+          <p className="shrink-0 text-caption text-mute" role="status">
             {t("tour.stepOf", { current: index + 1, total })}
           </p>
         </div>

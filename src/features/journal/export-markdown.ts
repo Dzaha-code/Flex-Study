@@ -3,6 +3,7 @@ import type { Reflection } from "@/domain/types";
 export interface MarkdownLabels {
   title: string;
   learnings: string;
+  favorite: string;
 }
 
 /**
@@ -17,7 +18,13 @@ export function reflectionsToMarkdown(
   const lines: string[] = [`# ${labels.title}`, ""];
 
   for (const reflection of sorted) {
-    lines.push(`## ${reflection.date}`, "");
+    const title = reflection.title.trim();
+    // The date stays the anchor so the file still sorts by day; a title, when
+    // there is one, rides along with it.
+    lines.push(title === "" ? `## ${reflection.date}` : `## ${reflection.date} — ${title}`, "");
+    if (reflection.favorite) {
+      lines.push(`★ ${labels.favorite}`, "");
+    }
     if (reflection.body.trim() !== "") {
       lines.push(reflection.body.trim(), "");
     }

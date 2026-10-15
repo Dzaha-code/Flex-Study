@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     // codegen assets under src-tauri/target/release/build were being linted as
     // if they were our source.
     "src-tauri/**",
+    // Node's module compile cache (gitignored, but ESLint 9 does not read
+    // .gitignore). ~2.9k generated files; linting them took the run from
+    // seconds to six minutes.
+    "node-compile-cache/**",
   ]),
 ]);
 

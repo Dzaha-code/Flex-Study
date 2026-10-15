@@ -291,3 +291,69 @@
     font-size: 0.75rem;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Two pieces of motion, both answering a tap and both one-shot (DESIGN.md §6:
+ * motion answers an action, it does not decorate).
+ *
+ * The global prefers-reduced-motion rule above sets every animation duration to
+ * 0.001ms, so both of these simply resolve instantly when motion is reduced —
+ * no separate branch to keep in sync.
+ * ------------------------------------------------------------------------- */
+
+/* The recap body when the period changes: one fade on the whole panel set,
+   never one animation per card. */
+@keyframes recap-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.recap-enter {
+  animation: recap-enter 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The spread on "Mulai fokus": a ripple that leaves the button once. */
+@keyframes focus-ripple {
+  from {
+    opacity: 0.45;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+.focus-ripple {
+  position: absolute;
+  inset: 0;
+  background: var(--hl);
+  pointer-events: none;
+  animation: focus-ripple 350ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The full-screen "time is up" moment. `--ink` as paper and `--bg` as text is
+   the whole trick: the two tokens swap with the theme, so the same rule gives
+   light-on-dark in a light theme and the exact inverse in a dark one. */
+@keyframes focus-complete-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.focus-complete {
+  background: var(--ink);
+  color: var(--bg);
+  animation: focus-complete-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}

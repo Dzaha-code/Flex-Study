@@ -36,6 +36,7 @@ import {
   persistTemplates,
   removeCategory as removeCategoryRow,
   removeInstances,
+  removeReflection as removeReflectionRow,
   removeTemplate as removeTemplateRow,
   replaceAll,
   type WriteOutcome,
@@ -88,9 +89,12 @@ export type InstanceEditPatch = Omit<InstanceDraft, "date">;
 
 export interface ReflectionDraftInput {
   date: string;
+  title: string;
   body: string;
   learnings: string[];
   promptId: string | null;
+  /** Omitted by the editor, which must not touch the star. */
+  favorite?: boolean;
 }
 
 export interface AppState {
@@ -136,6 +140,8 @@ export interface AppState {
   dismissShift: () => void;
 
   saveReflection: (draft: ReflectionDraftInput) => Promise<void>;
+  deleteReflection: (id: string) => Promise<void>;
+  setReflectionFavorite: (id: string, favorite: boolean) => Promise<void>;
 
   exportWorkspace: () => string;
   importWorkspace: (json: string) => Promise<ImportResult>;
@@ -646,9 +652,11 @@ export const useAppStore = create<AppState>()((set, get) => {
         state.reflections.find((reflection) => reflection.date === draft.date) ?? null;
       const reflection = makeReflection({
         date: draft.date,
+        title: draft.title,
         body: draft.body,
         learnings: draft.learnings,
         promptId: draft.promptId,
+        favorite: draft.favorite,
         existing,
         now: Date.now(),
         newId: createId,
@@ -656,6 +664,21 @@ export const useAppStore = create<AppState>()((set, get) => {
 
       set({ reflections: upsertById(state.reflections, [reflection]) });
       guardWrite(await persistReflection(reflection));
+    },
+
+    deleteReflection: async (id) => {
+      const state = get();
+      set({ reflections: state.reflections.filter((reflection) => reflection.id !== id) });
+      guardWrite(await removeReflectionRow(id));
+    },
+
+    setReflectionFavorite: async (id, favorite) => {
+      const state = get();
+      const existing = state.reflections.find((reflection) => reflection.id === id);
+      if (!existing || existing.favorite === favorite) return;
+      const next: Reflection = { ...existing, favorite, updatedAt: new Date().toISOString() };
+      set({ reflections: upsertById(state.reflections, [next]) });
+      guardWrite(await persistReflection(next));
     },
 
     exportWorkspace: () => serializeWorkspace(currentWorkspace(get()), Date.now()),
@@ -688,6 +711,9 @@ export const useAppStore = create<AppState>()((set, get) => {
         settings: { ...DEFAULT_SETTINGS },
         status: "ready",
       });
+      // The boot mirror has to be reset too, or the erased preference would keep
+      // deciding the theme, the language and the intro on the next launch.
+      mirrorPreferences(DEFAULT_SETTINGS);
     },
   };
 });

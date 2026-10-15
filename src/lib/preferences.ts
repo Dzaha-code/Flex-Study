@@ -1,4 +1,4 @@
-import type { Locale, Settings, ThemePreference } from "@/domain/types";
+import type { IntroPreference, Locale, Settings, ThemePreference } from "@/domain/types";
 
 /**
  * Preferences are mirrored into `localStorage` for one reason: the theme has to
@@ -7,11 +7,20 @@ import type { Locale, Settings, ThemePreference } from "@/domain/types";
  */
 export const THEME_STORAGE_KEY = "flexstudy.theme";
 export const LOCALE_STORAGE_KEY = "flexstudy.locale";
+/**
+ * The intro preference is mirrored for the harder version of the same reason:
+ * whether to hold the app behind the animation must be decided *before* the
+ * database answers, or the intro plays over a screen the user can already read.
+ */
+export const INTRO_STORAGE_KEY = "flexstudy.intro";
 
-export function mirrorPreferences(settings: Pick<Settings, "theme" | "locale">): void {
+export function mirrorPreferences(
+  settings: Pick<Settings, "theme" | "locale" | "intro">,
+): void {
   if (typeof localStorage === "undefined") return;
   localStorage.setItem(THEME_STORAGE_KEY, settings.theme);
   localStorage.setItem(LOCALE_STORAGE_KEY, settings.locale);
+  localStorage.setItem(INTRO_STORAGE_KEY, settings.intro);
 }
 
 export function readMirroredTheme(): ThemePreference {
@@ -24,6 +33,13 @@ export function readMirroredLocale(): Locale | null {
   if (typeof localStorage === "undefined") return null;
   const value = localStorage.getItem(LOCALE_STORAGE_KEY);
   return value === "id" || value === "en" ? value : null;
+}
+
+/** `null` means "never configured", which is not the same as a stored `once`. */
+export function readMirroredIntro(): IntroPreference | null {
+  if (typeof localStorage === "undefined") return null;
+  const value = localStorage.getItem(INTRO_STORAGE_KEY);
+  return value === "once" || value === "always" || value === "off" ? value : null;
 }
 
 export function systemPrefersDark(): boolean {

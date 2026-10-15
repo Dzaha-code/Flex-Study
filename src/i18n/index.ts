@@ -22,6 +22,10 @@ export interface I18n {
   formatWeekdayShort: (iso: string) => string;
   /** Short weekday name for a day index, 0 = Sunday. */
   formatWeekdayIndex: (index: number) => string;
+  /** `"2026-10"` → "Oktober 2026". */
+  formatMonthLabel: (month: string) => string;
+  /** `"2026-10"` → "Okt". */
+  formatMonthShort: (month: string) => string;
   formatMinutes: (minutes: number) => string;
   formatCountdownValue: (seconds: number) => string;
   formatClockValue: (minutes: number) => string;
@@ -50,6 +54,8 @@ export function createI18n(locale: Locale): I18n {
   });
   const shortDate = new Intl.DateTimeFormat(tag, { day: "numeric", month: "short" });
   const shortWeekday = new Intl.DateTimeFormat(tag, { weekday: "short" });
+  const longMonth = new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" });
+  const shortMonth = new Intl.DateTimeFormat(tag, { month: "short" });
 
   return {
     locale,
@@ -59,6 +65,10 @@ export function createI18n(locale: Locale): I18n {
     formatWeekdayShort: (iso) => shortWeekday.format(fromISODate(iso)),
     formatWeekdayIndex: (index) =>
       shortWeekday.format(fromISODate(addDays(WEEKDAY_REFERENCE, ((index % 7) + 7) % 7))),
+    // A month key is only ever a label here, so the first of the month is a safe
+    // thing to format — the day is never shown.
+    formatMonthLabel: (month) => longMonth.format(fromISODate(`${month}-01`)),
+    formatMonthShort: (month) => shortMonth.format(fromISODate(`${month}-01`)),
     formatMinutes: (minutes) => {
       const { hours, minutes: rest } = durationParts(minutes);
       if (hours > 0 && rest > 0) return t("common.duration.hm", { hours, minutes: rest });

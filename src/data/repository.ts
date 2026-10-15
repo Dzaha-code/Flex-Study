@@ -88,6 +88,10 @@ export async function persistReflection(reflection: Reflection): Promise<WriteOu
   return guard(() => getDatabase().reflections.put(reflection));
 }
 
+export async function removeReflection(id: string): Promise<WriteOutcome> {
+  return guard(() => getDatabase().reflections.delete(id));
+}
+
 export async function persistShiftEvent(event: ShiftEvent): Promise<WriteOutcome> {
   return guard(() => getDatabase().shiftEvents.put(event));
 }

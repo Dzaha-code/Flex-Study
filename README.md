@@ -10,14 +10,16 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.2.1_x64-setup.exe](installers/FlexStudy_0.2.1_x64-setup.exe) — sekitar 1,6 MB
+### [FlexStudy_0.4.0_x64-setup.exe](installers/FlexStudy_0.4.0_x64-setup.exe) — sekitar 1,6 MB
 
-Versi **0.2.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+Versi **0.4.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+
+Yang baru di 0.4.0: riwayat jurnal dikelompokkan **per bulan** dengan pencarian dan penanda favorit, halaman **Rekap** bulan/tahun layaknya raport, gerak pada timer (riak saat *Mulai fokus* dan satu layar penuh saat waktu habis), serta **animasi pembuka yang bisa diatur** — sekali saja, setiap aplikasi dibuka, atau dimatikan.
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.2.1_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.2.1_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.4.0_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.4.0_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -114,7 +116,7 @@ src/
   app/          rute + token global + layout akar
   domain/       logika murni: waktu, jadwal, status, target, geser jadwal, refleksi
   data/         skema Zod, Dexie (IndexedDB), repositori, ekspor/impor, store
-  features/     today, week, journal, guide, tour, settings, onboarding
+  features/     intro, today, week, recap, journal, guide, tour, settings, onboarding
   components/   shell aplikasi + primitif UI bertoken
   i18n/         kamus id + en (kunci bertipe)
   lib/          util lintas fitur; desktop.ts adalah satu-satunya modul yang mengenal Tauri
@@ -130,7 +132,7 @@ installers/     installer siap pakai untuk Windows
 
 ## Aplikasi desktop
 
-Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya hanya **1,59 MB**.
+Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya hanya **1,62 MB**.
 
 Yang perlu diketahui:
 
@@ -143,12 +145,30 @@ Yang perlu diketahui:
 
 ---
 
+## Animasi pembuka
+
+Peluncuran **pertama** setelah pemasangan dibuka oleh animasi ± 5 detik: cincin lima busur menggambar dirinya sendiri, lalu pecah, meninggalkan satu titik yang menulis "FlexStudy." dan berhenti sebagai titik akhir kalimatnya. Cincin yang pecah itu kembali utuh dan menyingkap layar template.
+
+- **Bisa diatur, dan bawaan tetap sama.** Tiga pilihan di *Atur* → panel **Tampilan**: **Sekali saja** (bawaan — hanya peluncuran pertama setelah pemasangan, tidak berubah dari versi sebelumnya), **Setiap buka**, dan **Mati**. Pilihan disimpan bersama setelan lain di IndexedDB, tapi **dicerminkan ke `localStorage`** (`flexstudy.intro`) karena keputusan "putar atau tidak" harus diambil **sebelum** basis data menjawab — kalau tidak, animasinya akan berkedip di atas aplikasi yang sudah terbaca. Pilihan berlaku pada pembukaan berikutnya.
+- **Tombol *Putar sekarang*** memutarnya sekali tanpa mengubah pilihan — termasuk saat pilihannya *Mati*. Ia menulis satu penanda sekali-pakai (`fs.intro.force`) lalu memuat ulang aplikasi, dan penanda itu baru dihabiskan ketika animasinya selesai atau dilewati. Jadi memutarnya tidak perlu mengubah setelan apa pun.
+- **Kapan penanda "sudah dilihat" ditulis.** Kuncinya `fs.intro.v1`, ditulis saat animasi **selesai atau dilewati** — bukan saat mulai, jadi menutup aplikasi di tengah animasi berarti kamu melihatnya lagi. Penanda itu hanya menentukan hasil untuk pilihan *Sekali saja*.
+- **Bisa dilewati kapan saja:** klik atau ketuk di mana saja, tombol *Lewati*, atau `Esc`/`Spasi`/`Enter`. Lewati melompat ke transisi penutup, tidak pernah berhenti di keadaan setengah jadi.
+- **GSAP dimuat dinamis.** Peluncuran berikutnya tidak mengunduhnya sama sekali. Itu satu-satunya dependensi baru; tidak ada plugin, tidak ada Lottie, tidak ada gambar atau video sama sekali.
+- **`prefers-reduced-motion`** mendapat versi statis: tanpa gerakan besar, hanya fade ± 1,2 detik.
+- **Kalau GSAP gagal dimuat, animasinya dilewati** dan aplikasi langsung terbuka. Animasi tidak boleh menahan pengguna.
+
+Satu hal yang sengaja berbeda dari sisa aplikasi: kanvasnya **selalu gelap** dan tidak mengikuti tema, karena ini momen merek, bukan layar kerja. Warnanya karena itu nilai literal dari token tema gelap (`--ink`, `--bg`, `--mute`, `--hl`) — lihat [`intro.css`](src/features/intro/intro.css).
+
+**Belum pernah dilihat mata manusia.** Urutan, waktu antar-fase, dan pendaratan titik di akhir "FlexStudy." disusun dari perhitungan, bukan dari tontonan. Kalau ada yang terasa janggal, semua penyetelannya ada di satu tempat: konstanta waktu di [`Intro.tsx`](src/features/intro/Intro.tsx).
+
+---
+
 ## Panduan dan tur
 
 Aplikasi ini menjelaskan dirinya sendiri, lewat dua jalur supaya orang bisa memilih cara belajar yang cocok.
 
-- **Tur interaktif.** Tiga belas langkah yang menyorot elemen aslinya di lima layar — Hari ini, Minggu, Jurnal, Atur, dan Panduan — bukan gambar mockup. Tur berpindah halaman sendiri, dan tiap langkah menampilkan chip nama layarnya supaya jelas kapan berpindah. Muncul otomatis sekali setelah onboarding selesai, bisa diputar ulang dari halaman Panduan maupun dari Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
-- **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, enam tips, dan arti setiap lambang status.
+- **Tur interaktif.** Empat belas langkah yang menyorot elemen aslinya di enam layar — Hari ini, Minggu, **Rekap**, Jurnal, Atur, dan Panduan — bukan gambar mockup. Tur berpindah halaman sendiri, dan tiap langkah menampilkan chip nama layarnya supaya jelas kapan berpindah (langkah Rekap memakai chip *Rekap*, bukan nama tab, karena layar itu memang bukan tab keenam). Muncul otomatis sekali setelah onboarding selesai, bisa diputar ulang dari halaman Panduan maupun dari Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
+- **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, delapan tips, dan arti setiap lambang status.
 
 Tiga hal kecil yang sengaja diputuskan:
 
@@ -168,6 +188,39 @@ Kedua preferensi disimpan di setelan. Berkas ekspor dari versi lama tetap bisa d
 
 ---
 
+## Jurnal: riwayat, pencarian, favorit
+
+Riwayat tidak lagi satu daftar datar. Isinya dikelompokkan **per bulan**, tiap bulan bisa dibuka-tutup dan menyebutkan jumlah entrinya, jadi bulan yang jauh tidak ikut memakan layar.
+
+- **Judul per entri.** Tiap jurnal punya kolom judul sendiri dan boleh dikosongkan — kalau kosong, tanggalnya yang jadi kepala entri. Autosave ikut menyimpan judul, dan judul saja sudah cukup untuk membuat sebuah entri.
+- **Pencarian** menyisir judul, isi, tiga pembelajaran, dan tanggal sekaligus, tanpa peduli huruf besar-kecil. Saat mencari, semua bulan yang cocok terbuka otomatis — kalau tidak, yang tersembunyi justru hasil pencariannya.
+- **Favorit** adalah bintang di tiap baris: satu ketukan untuk menandai hari yang layak dikenang, dan penyaring *Favorit* untuk mencarinya kembali.
+- **Detail, ubah, hapus.** Menyentuh baris membuka lembar detail berisi isi yang sudah dirender. Ubah dan Hapus ada di dalam lembar itu, bukan berjejer di setiap baris — daftarnya tetap daftar. Hapus selalu lewat konfirmasi, dan menghapus entri yang sedang terbuka membangun ulang editornya, supaya teks lama tidak tersimpan kembali diam-diam.
+
+---
+
+## Rekap bulan dan tahun
+
+Hari ini sengaja tetap pandangan tujuh hari. Pertanyaan yang lebih lambat — "bulan ini sebenarnya bagaimana?" — dijawab di rute terpisah `/recap`, yang punya tombol kembali dan dijangkau dari Hari ini, bukan dengan menambah tab keenam di navigasi.
+
+- Bisa dipilih **per bulan atau per tahun**, dengan tombol periode sebelumnya dan berikutnya. Di mode tahun, tiap baris bulan bisa diketuk untuk melompat ke bulan itu.
+- Isinya seperti raport: menit selesai vs target, blok selesai, hari aktif, rentetan terpanjang, entri jurnal, kata ditulis, dan favorit — ditambah rincian per kategori serta sebaran status blok.
+- **Targetnya diprorata** menurut panjang periode, jadi Februari yang 28 hari tidak dituntut sama dengan Oktober yang 31 hari.
+- Semua angkanya dihitung logika murni di [`src/domain/recap.ts`](src/domain/recap.ts) dan diuji: batas bulan termasuk Februari kabisat, pergeseran bulan, pro-rata target, hari aktif, dan rentetan.
+
+---
+
+## Gerak pada timer
+
+Dua momen di sekitar fokus sengaja diberi sedikit lebih banyak tenaga daripada sisa aplikasi — dan keduanya tetap sekali lalu berhenti, bukan berulang:
+
+- **Menekan *Mulai fokus*** memunculkan riak stabilo yang menyebar keluar dari tombol (~350 ms). Hanya di tombol utama, supaya aksen tetap satu per layar.
+- **Saat waktunya habis**, satu layar penuh mengambil alih: teks utama *Selesai*, judul blok beserta menitnya, lalu tombol tutup. Warnanya kebalikan dari tema — `--ink` sebagai kertas dan `--bg` sebagai teks — jadi terang di tema gelap dan sebaliknya, tanpa satu pun nilai warna tambahan. Bisa ditutup dengan `Esc`, klik di mana saja, atau tombolnya; bloknya sendiri tetap berjalan.
+
+Keduanya memakai `@keyframes` biasa, jadi aturan `prefers-reduced-motion` global yang sudah ada membuatnya selesai seketika tanpa cabang kode terpisah.
+
+---
+
 ## Model data
 
 Inti sistem tidak tahu apa itu UTBK atau PKL. Itu hanya isi template.
@@ -177,9 +230,9 @@ Inti sistem tidak tahu apa itu UTBK atau PKL. Itu hanya isi template.
 | `Category` | nama, ikon, pola garis, target mingguan (menit) |
 | `BlockTemplate` | judul, kategori, durasi, hari aktif, urutan, **jam mulai opsional** |
 | `BlockInstance` | satu blok pada satu tanggal: status, jam mulai, detik terukur, catatan, dari/ke hari mana ia berpindah |
-| `Reflection` | tanggal, pemicu, isi, 3 pembelajaran, jumlah kata |
+| `Reflection` | tanggal, **judul opsional**, pemicu, isi, 3 pembelajaran, jumlah kata, **favorit** |
 | `ShiftEvent` | strategi, alasan, daftar perpindahan, **versi sebelum perubahan** (untuk Urungkan) |
-| `Settings` | bahasa, tema, awal minggu, jam aktif, pengingat, status onboarding |
+| `Settings` | bahasa, tema, **kapan animasi pembuka diputar**, awal minggu, jam aktif, pengingat, status onboarding |
 
 Status blok: `planned | running | done | deferred | skipped`.
 
@@ -233,7 +286,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-107 uji unit, 8 berkas, semuanya pada lapisan murni:
+134 uji unit, 10 berkas, semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -241,8 +294,10 @@ npm test
 | `tests/schedule.test.ts` | aliran blok tanpa jam, blok berjam tetap, tabrakan yang ditandai (bukan disembunyikan) |
 | `tests/shift.test.ts` | keempat strategi geser, tumpahan ke hari berikutnya, penerapan, Urungkan, target mingguan tidak berubah |
 | `tests/progress.test.ts` | sisa waktu harian, aturan status, timer tahan tab tidur, target per kategori, rekap minggu |
-| `tests/reflection.test.ts` | jumlah kata id/en, tiga slot pembelajaran, pemicu per tanggal |
+| `tests/reflection.test.ts` | jumlah kata id/en, tiga slot pembelajaran, pemicu per tanggal, judul, favorit yang bertahan saat disunting, pencocokan pencarian |
+| `tests/recap.test.ts` | batas bulan (termasuk Februari kabisat), pergeseran bulan, pro-rata target, hari aktif, rentetan, penjumlahan bulan jadi tahun |
 | `tests/schema.test.ts` | ekspor/impor bolak-balik tanpa kehilangan informasi, penolakan berkas rusak |
+| `tests/intro-mode.test.ts` | kapan animasi pembuka diputar: *sekali saja*, *setiap buka*, *mati*, dan permintaan putar sekali yang mengalahkan ketiganya |
 | `tests/cn.test.ts` | penggabungan kelas Tailwind — ukuran huruf tidak boleh menelan warna teks |
 | `tests/propagate.test.ts` | penyebaran suntingan template ke blok hari ini + hari berikutnya, dan pembersihan blok yatim |
 
@@ -267,7 +322,7 @@ Khusus aplikasi desktop:
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 107 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — jendela terbuka menampilkan Hari ini, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 134 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, riwayat jurnal yang dikelompokkan per bulan beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
 
 ---
 

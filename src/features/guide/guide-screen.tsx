@@ -20,6 +20,7 @@ const SCREENS: { href: string; titleKey: MessageKey; bodyKey: MessageKey }[] = [
   { href: "/week", titleKey: "guide.screens.week.title", bodyKey: "guide.screens.week.body" },
   { href: "/journal", titleKey: "guide.screens.journal.title", bodyKey: "guide.screens.journal.body" },
   { href: "/settings", titleKey: "guide.screens.settings.title", bodyKey: "guide.screens.settings.body" },
+  { href: "/recap", titleKey: "guide.screens.recap.title", bodyKey: "guide.screens.recap.body" },
 ];
 
 const TIPS: MessageKey[] = [
@@ -29,6 +30,8 @@ const TIPS: MessageKey[] = [
   "guide.tips.4",
   "guide.tips.5",
   "guide.tips.6",
+  "guide.tips.7",
+  "guide.tips.8",
 ];
 
 /** Every status is shown with the real badge, so the guide cannot drift. */

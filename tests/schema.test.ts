@@ -8,10 +8,12 @@ function makeWorkspace(): Workspace {
   const reflection: Reflection = {
     id: "refl_1",
     date: "2026-10-14",
+    title: "Bab tiga",
     promptId: "reflection.prompt.win",
     body: "Dua bab selesai.",
     learnings: ["mulai lebih pagi", "", ""],
     wordCount: 3,
+    favorite: true,
     createdAt: STAMP,
     updatedAt: STAMP,
     schemaVersion: SCHEMA_VERSION,
@@ -93,6 +95,8 @@ describe("workspace backup", () => {
     expect(result.workspace.instances[0].title).toBe("Sesi belajar 1");
     expect(result.workspace.instances[0].plannedStart).toBe("08:00");
     expect(result.workspace.reflections[0].learnings).toHaveLength(3);
+    expect(result.workspace.reflections[0].title).toBe("Bab tiga");
+    expect(result.workspace.reflections[0].favorite).toBe(true);
     expect(result.workspace.shiftEvents[0].reason).toBe("hari berantakan");
   });
 
@@ -114,8 +118,8 @@ describe("workspace backup", () => {
     const workspace = makeWorkspace();
 
     // Exactly what an export from the previous release carries: no
-    // `contentWidth` and no `tourCompleted`, because those preferences did not
-    // exist yet. The schema defaults have to absorb them.
+    // `contentWidth`, no `tourCompleted` and no `intro`, because those
+    // preferences did not exist yet. The schema defaults have to absorb them.
     const legacySettings = {
       locale: "id",
       theme: "system",
@@ -127,8 +131,26 @@ describe("workspace backup", () => {
       activeTemplateId: null,
     };
 
+    // Same story for the journal: a journal entry written before titles and
+    // favourites existed has neither field.
+    const legacyReflection = {
+      id: "refl_1",
+      date: "2026-10-14",
+      promptId: "reflection.prompt.win",
+      body: "Dua bab selesai.",
+      learnings: ["mulai lebih pagi", "", ""],
+      wordCount: 3,
+      createdAt: STAMP,
+      updatedAt: STAMP,
+      schemaVersion: SCHEMA_VERSION,
+    };
+
     const result = parseWorkspaceImport(
-      wrap({ ...workspace, settings: legacySettings } as unknown as Workspace),
+      wrap({
+        ...workspace,
+        reflections: [legacyReflection],
+        settings: legacySettings,
+      } as unknown as Workspace),
     );
 
     expect(result.ok).toBe(true);
@@ -136,7 +158,12 @@ describe("workspace backup", () => {
 
     expect(result.workspace.settings.contentWidth).toBe("wide");
     expect(result.workspace.settings.tourCompleted).toBe(false);
+    // The opening animation keeps its old behaviour rather than silently
+    // becoming "off" for anyone restoring a backup.
+    expect(result.workspace.settings.intro).toBe("once");
     expect(result.workspace.settings.onboardingCompleted).toBe(true);
+    expect(result.workspace.reflections[0].title).toBe("");
+    expect(result.workspace.reflections[0].favorite).toBe(false);
   });
 
   it("rejects text that is not JSON", () => {

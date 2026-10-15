@@ -9,6 +9,7 @@ import {
   ArrowsOutSimple,
   BookOpen,
   CalendarBlank,
+  CaretDown,
   Check,
   Compass,
   DownloadSimple,
@@ -21,6 +22,7 @@ import {
   Plus,
   Shuffle,
   SkipForward,
+  Star,
   Sun,
   Trash,
   UploadSimple,
@@ -95,6 +97,10 @@ export const IconLightbulb = icon(Lightbulb);
 export const IconExpand = icon(ArrowsOutSimple);
 export const IconCollapse = icon(ArrowsInSimple);
 export const IconWidth = icon(ArrowsHorizontal);
+export const IconCaretDown = icon(CaretDown);
+/** Outline and filled, so a favourite reads as a state and not just a colour. */
+export const IconStar = icon(Star);
+export const IconStarFilled = icon(Star, "fill");
 
 /* ---------------------------------------------------------------------------
  * Category markers — geometric characters, never colour (DESIGN.md §3.3).

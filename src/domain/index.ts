@@ -4,6 +4,7 @@ export * from "./ids";
 export * from "./schedule";
 export * from "./status";
 export * from "./targets";
+export * from "./recap";
 export * from "./week";
 export * from "./reflection";
 export * from "./shift";

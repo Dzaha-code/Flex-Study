@@ -21,6 +21,16 @@ export type Locale = "id" | "en";
 
 export type ThemePreference = "system" | "light" | "dark";
 
+/**
+ * How often the opening animation plays.
+ *
+ * `once` is the default and the behaviour the app shipped with: the first launch
+ * after install. `always` plays it on every launch, `off` never plays it. The
+ * three states exist rather than a plain on/off switch so that turning the
+ * animation off stays a deliberate choice instead of the unconfigured default.
+ */
+export type IntroPreference = "once" | "always" | "off";
+
 /** 0 = Sunday, 1 = Monday. */
 export type WeekStart = 0 | 1;
 
@@ -125,11 +135,15 @@ export interface BlockInstance extends Entity {
 
 export interface Reflection extends Entity {
   date: ISODate;
+  /** Optional headline. When empty, the date is the heading. */
+  title: string;
   promptId: string | null;
   body: string;
   /** Exactly three take-aways. Empty strings are allowed. */
   learnings: string[];
   wordCount: number;
+  /** Marked by hand as a day worth remembering. */
+  favorite: boolean;
 }
 
 export type ShiftStrategy =
@@ -176,6 +190,8 @@ export type ContentWidth = "comfortable" | "wide" | "full";
 export interface Settings {
   locale: Locale;
   theme: ThemePreference;
+  /** When the opening animation plays. Mirrored to `localStorage` for boot. */
+  intro: IntroPreference;
   weekStart: WeekStart;
   remindersEnabled: boolean;
   /** Clock time at which a day's timeline begins for blocks without a start. */
@@ -201,6 +217,7 @@ export interface Workspace {
 export const DEFAULT_SETTINGS: Settings = {
   locale: "id",
   theme: "system",
+  intro: "once",
   weekStart: 1,
   remindersEnabled: false,
   dayStart: "08:00",

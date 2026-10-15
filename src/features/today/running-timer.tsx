@@ -1,12 +1,13 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import { ProgressBar } from "@/components/ui/surface";
 import { formatCountdown, progressRatio, remainingSeconds } from "@/domain";
 import type { LaidOutBlock } from "@/domain/schedule";
 import type { BlockInstance } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { useNow } from "@/lib/use-now";
+import { FocusComplete } from "./focus-complete";
 import { useTimerCompletion } from "./use-reminders";
 
 /**
@@ -83,8 +84,17 @@ export const FocusTimer = memo(function FocusTimer({ instance }: { instance: Blo
   const overrunning = running && remaining === 0;
   const ratio = running ? progressRatio(instance, nowEpoch) : 0;
 
+  // Remembered per block, so the full-screen moment appears exactly once and a
+  // dismissal is never undone by the next tick.
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
+  const dismiss = useCallback(() => setDismissedId(instance.id), [instance.id]);
+
   return (
     <>
+      {overrunning && dismissedId !== instance.id ? (
+        <FocusComplete instance={instance} onDismiss={dismiss} />
+      ) : null}
+
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="text-display font-semibold tabular-nums">
           {running ? formatCountdown(remaining) : formatMinutes(instance.durationMin)}

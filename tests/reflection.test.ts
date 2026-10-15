@@ -7,6 +7,7 @@ import {
   makeReflection,
   normalizeLearnings,
   promptIdForDate,
+  reflectionMatches,
   reflectionPreview,
 } from "@/domain/reflection";
 import { makeInstance } from "./helpers";
@@ -50,6 +51,7 @@ describe("makeReflection", () => {
   it("creates a row with a word count and an id", () => {
     const reflection = makeReflection({
       date: DAY,
+      title: "  Hari yang berantakan  ",
       body: "Dua bab selesai, satu bab tertunda.",
       learnings: ["bangun lebih pagi"],
       promptId: "reflection.prompt.win",
@@ -62,11 +64,13 @@ describe("makeReflection", () => {
     expect(reflection.wordCount).toBe(6);
     expect(reflection.learnings).toHaveLength(LEARNING_SLOTS);
     expect(reflection.schemaVersion).toBe(1);
+    expect(reflection.title).toBe("Hari yang berantakan");
   });
 
   it("keeps the original creation time when the entry is edited", () => {
     const created = makeReflection({
       date: DAY,
+      title: "",
       body: "awal",
       learnings: [],
       promptId: null,
@@ -76,6 +80,7 @@ describe("makeReflection", () => {
 
     const edited = makeReflection({
       date: DAY,
+      title: "",
       body: "awal yang sudah diedit",
       learnings: [],
       promptId: null,
@@ -87,6 +92,78 @@ describe("makeReflection", () => {
     expect(edited.id).toBe(created.id);
     expect(edited.createdAt).toBe(created.createdAt);
     expect(edited.wordCount).toBe(4);
+  });
+});
+
+describe("favourites", () => {
+  it("survives an edit that never mentions the star", () => {
+    const starred = makeReflection({
+      date: DAY,
+      title: "Hari yang bagus",
+      body: "awal",
+      learnings: [],
+      promptId: null,
+      favorite: true,
+      now: NOW,
+      newId: createSequentialIdFactory(),
+    });
+
+    // The editor does not send `favorite`, so saving text must not clear it.
+    const edited = makeReflection({
+      date: DAY,
+      title: "Hari yang bagus",
+      body: "awal yang sudah diedit",
+      learnings: [],
+      promptId: null,
+      existing: starred,
+      now: NOW + 60_000,
+      newId: createSequentialIdFactory(),
+    });
+
+    expect(starred.favorite).toBe(true);
+    expect(edited.favorite).toBe(true);
+  });
+
+  it("starts unstarred", () => {
+    const reflection = makeReflection({
+      date: DAY,
+      title: "",
+      body: "awal",
+      learnings: [],
+      promptId: null,
+      now: NOW,
+      newId: createSequentialIdFactory(),
+    });
+
+    expect(reflection.favorite).toBe(false);
+  });
+});
+
+describe("reflectionMatches", () => {
+  const reflection = makeReflection({
+    date: DAY,
+    title: "Minggu yang tenang",
+    body: "Dua bab selesai.",
+    learnings: ["bangun lebih pagi"],
+    promptId: null,
+    now: NOW,
+    newId: createSequentialIdFactory(),
+  });
+
+  it("matches everything when the query is empty", () => {
+    expect(reflectionMatches(reflection, "   ")).toBe(true);
+  });
+
+  it("finds the title, the body, a take-away and the date", () => {
+    expect(reflectionMatches(reflection, "tenang")).toBe(true);
+    expect(reflectionMatches(reflection, "dua bab")).toBe(true);
+    expect(reflectionMatches(reflection, "bangun")).toBe(true);
+    expect(reflectionMatches(reflection, DAY)).toBe(true);
+  });
+
+  it("ignores case, and rejects what is not written", () => {
+    expect(reflectionMatches(reflection, "TENANG")).toBe(true);
+    expect(reflectionMatches(reflection, "kimia organik")).toBe(false);
   });
 });
 

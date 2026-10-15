@@ -37,9 +37,13 @@ export function normalizeLearnings(input: readonly string[]): string[] {
 
 export interface ReflectionDraft {
   date: string;
+  /** Optional headline; the date stands in for it when empty. */
+  title: string;
   body: string;
   learnings: readonly string[];
   promptId: string | null;
+  /** Left out by callers that do not touch the star, so it survives edits. */
+  favorite?: boolean;
   existing?: Reflection | null;
   now: number;
   newId: (prefix: string) => string;
@@ -50,14 +54,32 @@ export function makeReflection(draft: ReflectionDraft): Reflection {
   return {
     id: draft.existing?.id ?? draft.newId("refl"),
     date: draft.date,
+    title: draft.title.trim(),
     promptId: draft.promptId,
     body: draft.body,
     learnings: normalizeLearnings(draft.learnings),
     wordCount: countWords(draft.body),
+    // Editing the text must not clear a star, and starring must not clear text.
+    favorite: draft.favorite ?? draft.existing?.favorite ?? false,
     createdAt: draft.existing?.createdAt ?? stamp,
     updatedAt: stamp,
     schemaVersion: SCHEMA_VERSION,
   };
+}
+
+/**
+ * Search across everything a person might remember about an entry: the headline
+ * they gave it, what they wrote, the take-aways, and the date itself. Pure and
+ * dependency-free, so the matching rule is unit-testable rather than buried in a
+ * component. An empty query matches everything.
+ */
+export function reflectionMatches(reflection: Reflection, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return true;
+  const haystack = [reflection.title, reflection.body, reflection.date, ...reflection.learnings]
+    .join("\n")
+    .toLowerCase();
+  return haystack.includes(needle);
 }
 
 export function hasContent(reflection: Pick<Reflection, "body" | "learnings">): boolean {

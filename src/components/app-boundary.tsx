@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
+import { IntroGate } from "@/features/intro/IntroGate";
 import { OnboardingScreen } from "@/features/onboarding/onboarding-screen";
 import { useI18n } from "@/i18n";
 import { useMounted } from "@/lib/use-mounted";
@@ -73,9 +74,14 @@ export function AppBoundary({ children }: { children: ReactNode }) {
     if (mounted) void hydrate();
   }, [mounted, hydrate]);
 
-  if (!mounted || status === "loading") return <BootScreen />;
-  if (status === "error") return <ErrorScreen />;
-  if (!onboardingCompleted) return <OnboardingScreen />;
+  let content: ReactNode;
+  if (!mounted || status === "loading") content = <BootScreen />;
+  else if (status === "error") content = <ErrorScreen />;
+  else if (!onboardingCompleted) content = <OnboardingScreen />;
+  else content = <AppShell>{children}</AppShell>;
 
-  return <AppShell>{children}</AppShell>;
+  // The first-run intro sits above whatever is underneath — including the boot
+  // skeleton — so it masks the load instead of adding to it (INTRO-ANIMATION.md
+  // §8.1). On every later launch `IntroGate` renders the app straight through.
+  return <IntroGate>{content}</IntroGate>;
 }

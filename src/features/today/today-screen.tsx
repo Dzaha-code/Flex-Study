@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { IconPlus, IconShuffle } from "@/components/ui/icons";
+import { IconCalendar, IconPlus, IconShuffle } from "@/components/ui/icons";
 import { EmptyState, Panel, PanelHeader, ProgressBar, StatusBadge } from "@/components/ui/surface";
 import { MATERIALISE_DAYS, useAppStore } from "@/data/store";
 import {
@@ -231,6 +231,16 @@ function TodayContent({ date }: { date: string }) {
       <div data-tour="streak">
         <StreakStrip anchor={date} instances={instances} />
       </div>
+
+      {/* Today stays a seven-day view on purpose; the wider picture lives one
+          step away instead of being crowded in here. */}
+      <Link
+        href="/recap"
+        className="inline-flex h-11 w-fit items-center gap-2 rounded-control border border-line-strong bg-surface-raised px-4 text-meta hover:bg-accent-surface"
+      >
+        <IconCalendar size={16} />
+        {t("today.openRecap")}
+      </Link>
 
       <ShiftSheet open={shiftOpen} onOpenChange={setShiftOpen} date={date} />
       {addOpen ? <AddBlockSheet date={date} onClose={() => setAddOpen(false)} /> : null}

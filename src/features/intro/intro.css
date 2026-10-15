@@ -1,0 +1,219 @@
+/*
+ * FlexStudy first-run intro (INTRO-ANIMATION.md §8.5).
+ *
+ * Deliberately not Tailwind: this is a fixed, self-contained stage whose
+ * geometry is measured in pixels by GSAP, and it must not follow the app theme.
+ *
+ * The colours are literal on purpose. The intro is always dark — it is a brand
+ * moment, not a screen — so it cannot use the theme tokens, which follow the
+ * user's light/dark choice. These four values are the dark-theme values of
+ * --ink / --bg / --mute / --hl in src/app/globals.css:
+ *   #14171a = --ink    #f6f5f0 = --bg    #9aa097 = --mute    #e4f55a = --hl
+ * Contrast: #f6f5f0 on #14171a ≈ 16:1, #9aa097 on #14171a ≈ 6.9:1 (verified in
+ * globals.css for the same pair), #14171a on #e4f55a = 15:1.
+ */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: #14171a;
+  color: #f6f5f0;
+  --wm: clamp(48px, 10vw, 104px);
+  --d: calc(var(--wm) * 0.17);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+/* Hidden until GSAP has set the initial state, so nothing is visible at its
+   final position for the one frame between paint and timeline start. */
+.intro:not(.is-ready) .ring,
+.intro:not(.is-ready) .brand,
+.intro:not(.is-ready) .dot,
+.intro:not(.is-ready) .ft,
+.intro:not(.is-ready) .skip {
+  visibility: hidden;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(78vmin, 520px);
+  height: min(78vmin, 520px);
+  overflow: visible;
+}
+
+.arc {
+  fill: none;
+  stroke: rgb(246 245 240 / 0.88);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.arc--lead {
+  stroke: #e4f55a;
+}
+
+.dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  border-radius: 50%;
+  background: #e4f55a;
+}
+
+.brand {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.wm {
+  margin: 0;
+  font: 500 var(--wm) / 1 var(--font-display, "Bricolage Grotesque", system-ui, sans-serif);
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+  font-optical-sizing: auto;
+}
+
+/* Each letter gets its own mask so the wordmark can rise out of the baseline.
+   The padding keeps descenders off the mask edge; the matching negative margin
+   cancels it so the letters still sit on the real baseline. */
+.cm {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0 0.02em 0.18em;
+  margin: 0 -0.02em -0.18em;
+  line-height: 1.15;
+  vertical-align: bottom;
+}
+
+.ch {
+  display: inline-block;
+  will-change: transform;
+}
+
+.ch.b {
+  font-weight: 700;
+}
+
+/* The resting place of the animated dot: the full stop of "FlexStudy." */
+.dotslot {
+  display: inline-block;
+  width: var(--d);
+  height: var(--d);
+  margin-left: 0.06em;
+}
+
+.hd {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + var(--wm) * 0.85);
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+  font: 600 clamp(22px, 3vw, 34px) / 1.2 var(--font-display, system-ui, sans-serif);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.ln {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.16em;
+}
+
+.ln > span {
+  display: block;
+}
+
+.ln:nth-child(2) {
+  color: #9aa097;
+}
+
+.hlw {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  font-style: normal;
+}
+
+.hlbar {
+  position: absolute;
+  inset: 0.1em -0.1em 0.02em;
+  z-index: -1;
+  background: #e4f55a;
+  border-radius: 0.14em;
+}
+
+.ft {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  text-align: center;
+  font: 500 14px / 1.4 var(--font-sans, system-ui, sans-serif);
+  color: #9aa097;
+}
+
+.skip {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  right: 16px;
+  min-height: 44px;
+  padding: 8px 14px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #9aa097;
+  font: 500 14px var(--font-sans, system-ui, sans-serif);
+  cursor: pointer;
+}
+
+.skip:hover {
+  color: #f6f5f0;
+  text-decoration: underline;
+}
+
+.skip:focus-visible {
+  outline: 2px solid #f6f5f0;
+  outline-offset: 2px;
+}
+
+/* The circle that broke at the start comes back whole and becomes the door. */
+.lime {
+  position: absolute;
+  inset: 0;
+  background: #e4f55a;
+  clip-path: circle(0px at 50% 50%);
+  pointer-events: none;
+}
+
+/* The app underneath. It is held as a fixed box so the reveal circle's
+   coordinates line up with the viewport, and `clip-path` keeps it invisible.
+   `display: contents` afterwards means the wrapper never affects layout. */
+.app-hold {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  overflow: auto;
+  clip-path: circle(0px at 50% 50%);
+}
+
+.app-root {
+  display: contents;
+}
+
+@media (max-width: 760px) {
+  .ring {
+    width: min(86vw, 420px);
+    height: min(86vw, 420px);
+  }
+}

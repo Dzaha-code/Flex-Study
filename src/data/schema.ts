@@ -104,10 +104,14 @@ export const BlockInstanceSchema = z.object({
 export const ReflectionSchema = z.object({
   ...entityShape,
   date: isoDateSchema,
+  // Defaulted rather than required, so a journal exported before titles and
+  // favourites existed still imports instead of failing validation.
+  title: z.string().max(120).default(""),
   promptId: z.string().nullable(),
   body: z.string().max(50_000),
   learnings: z.array(z.string().max(500)).length(3),
   wordCount: z.number().int().min(0),
+  favorite: z.boolean().default(false),
 });
 
 export const ShiftMoveSchema = z.object({
@@ -134,6 +138,7 @@ export const ShiftEventSchema = z.object({
 export const SettingsSchema = z.object({
   locale: z.enum(["id", "en"]),
   theme: z.enum(["system", "light", "dark"]),
+  intro: z.enum(["once", "always", "off"]).default("once"),
   weekStart: z.union([z.literal(0), z.literal(1)]),
   remindersEnabled: z.boolean(),
   dayStart: clockTimeSchema,

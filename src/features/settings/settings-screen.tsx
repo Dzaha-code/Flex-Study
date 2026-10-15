@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { TimeInput } from "@/components/ui/field";
-import { IconBook, IconCompass, IconDownload, IconInfo, IconUpload } from "@/components/ui/icons";
+import {
+  IconBook,
+  IconCompass,
+  IconDownload,
+  IconInfo,
+  IconPlay,
+  IconUpload,
+} from "@/components/ui/icons";
 import { Chip, Panel, PanelHeader, SegmentedControl, SwitchRow } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
@@ -16,7 +23,14 @@ import {
   type ImportResult,
 } from "@/data/workspace-io";
 import Link from "next/link";
-import type { ContentWidth, Locale, ThemePreference, WeekStart } from "@/domain/types";
+import type {
+  ContentWidth,
+  IntroPreference,
+  Locale,
+  ThemePreference,
+  WeekStart,
+} from "@/domain/types";
+import { INTRO_FORCE_KEY } from "@/features/intro/intro-mode";
 import { startTour } from "@/features/tour/tour-store";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
@@ -56,6 +70,23 @@ export function SettingsScreen() {
   useEffect(() => {
     void estimateUsage().then(setStorage);
   }, []);
+
+  /**
+   * INTRO-ANIMATION.md §9: ask for one play, then reload so the gate re-reads
+   * it. A reload is the honest way to do this — the decision is taken once,
+   * before the database answers, so the animation cannot be replayed in place.
+   *
+   * A request flag rather than clearing the seen flag, so the button still works
+   * when the preference is `off`; the gate spends it when the animation ends.
+   */
+  function replayIntro() {
+    try {
+      localStorage.setItem(INTRO_FORCE_KEY, "1");
+    } catch {
+      /* Storage blocked: the reload is still harmless. */
+    }
+    window.location.reload();
+  }
 
   /** Validate first, then show what the file holds before replacing anything. */
   async function handleImportFile(file: File) {
@@ -98,6 +129,30 @@ export function SettingsScreen() {
               { value: "dark", label: t("settings.theme.dark") },
             ]}
           />
+
+          {/* Directly under the theme, because it is the same kind of choice:
+              it decides what the app shows the moment it opens. */}
+          <div className="flex flex-col gap-1.5">
+            <SegmentedControl
+              legend={t("settings.introMode")}
+              name="intro-mode"
+              value={settings.intro}
+              onChange={(next) => void updateSettings({ intro: next as IntroPreference })}
+              options={[
+                { value: "once", label: t("settings.intro.once") },
+                { value: "always", label: t("settings.intro.always") },
+                { value: "off", label: t("settings.intro.off") },
+              ]}
+            />
+            <p className="measure text-caption text-mute">{t("settings.introHint")}</p>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button size="sm" variant="secondary" onClick={replayIntro}>
+                <IconPlay size={16} />
+                {t("settings.replayIntro")}
+              </Button>
+              <span className="text-label text-mute">{t("settings.replayIntroHint")}</span>
+            </div>
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <SegmentedControl

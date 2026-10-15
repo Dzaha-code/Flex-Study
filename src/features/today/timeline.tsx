@@ -40,16 +40,25 @@ function Markers({ status, overlap }: { status: BlockInstance["status"]; overlap
 /** The line the whole screen is built around: the clock on the left, the plan on the right. */
 function NowMarker({ nowMinute }: { nowMinute: number }) {
   const { t, formatClockValue } = useI18n();
+  const label = t("today.nowMarker", { time: formatClockValue(nowMinute) });
+
   return (
     // The one signature element of the whole design: a stabilo label plus a 2px
     // rule. On light paper --hl is only 1.10:1, so the rule uses --hl-rule,
     // which clears 3:1 while keeping the hue (DESIGN.md §5).
-    <div className="grid grid-cols-[3.25rem_1fr] items-center gap-3 py-1.5 sm:grid-cols-[4rem_1fr]">
-      <span aria-hidden="true" className="stabilo justify-self-end whitespace-nowrap">
-        {t("today.nowMarker", { time: formatClockValue(nowMinute) })}
+    //
+    // The label sits in the content column, not the clock column. Clock labels
+    // are ~38px and fit the 3.25–4rem axis; "sekarang 21:31" is ~111px in either
+    // language, so right-aligning it inside that column pushed its left end out
+    // of the timeline — off the edge of a phone, and under the sticky sidebar on
+    // a desktop, which is what sliced the first letters off. Started at the axis
+    // instead, with the rule taking whatever width is left, nothing overflows.
+    <div className="flex items-center gap-3 py-1.5 pl-[3.25rem] sm:pl-16">
+      <span aria-hidden="true" className="stabilo whitespace-nowrap">
+        {label}
       </span>
-      <span aria-hidden="true" className="h-0.5 w-full rounded-full bg-hl-rule" />
-      <span className="sr-only">{t("today.nowMarker", { time: formatClockValue(nowMinute) })}</span>
+      <span aria-hidden="true" className="h-0.5 min-w-0 flex-1 rounded-full bg-hl-rule" />
+      <span className="sr-only">{label}</span>
     </div>
   );
 }
@@ -60,21 +69,36 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
   const resetBlock = useAppStore((state) => state.resetBlock);
   const skipBlock = useAppStore((state) => state.skipBlock);
   const { t } = useI18n();
+  // Counts the taps instead of a boolean, so a fresh ripple element is mounted
+  // per press and the animation replays without any cleanup state.
+  const [ripple, setRipple] = useState(0);
 
   return (
     <>
       {instance.status === "planned" ? (
-        <Button
-          size={prominent ? "md" : "sm"}
-          // Only the active block carries the one primary button on the screen
-          // (DESIGN.md §2 "satu sorotan per layar", §5). Rows use the text
-          // variant, matching the reference prototype.
-          variant={prominent ? "primary" : "ghost"}
-          onClick={() => void startBlock(instance.id)}
-        >
-          <IconPlay />
-          {prominent ? t("common.start") : t("common.startShort")}
-        </Button>
+        // The wrapper is only here to anchor the ripple; it is sized by the
+        // button inside it, so it changes nothing about the row's layout.
+        <span className="relative inline-flex">
+          <Button
+            size={prominent ? "md" : "sm"}
+            // Only the active block carries the one primary button on the screen
+            // (DESIGN.md §2 "satu sorotan per layar", §5). Rows use the text
+            // variant, matching the reference prototype.
+            variant={prominent ? "primary" : "ghost"}
+            onClick={() => {
+              setRipple((count) => count + 1);
+              void startBlock(instance.id);
+            }}
+          >
+            <IconPlay />
+            {prominent ? t("common.start") : t("common.startShort")}
+          </Button>
+          {/* The lime stays on the one primary button per screen, so the spread
+              is deliberately not repeated on the compact rows. */}
+          {prominent && ripple > 0 ? (
+            <span key={ripple} className="focus-ripple rounded-control" aria-hidden="true" />
+          ) : null}
+        </span>
       ) : null}
       {instance.status === "running" ? (
         <Button
