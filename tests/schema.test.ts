@@ -110,6 +110,35 @@ describe("workspace backup", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("imports a backup made before the view preferences existed", () => {
+    const workspace = makeWorkspace();
+
+    // Exactly what an export from the previous release carries: no
+    // `contentWidth` and no `tourCompleted`, because those preferences did not
+    // exist yet. The schema defaults have to absorb them.
+    const legacySettings = {
+      locale: "id",
+      theme: "system",
+      weekStart: 1,
+      remindersEnabled: false,
+      dayStart: "08:00",
+      dayEnd: "21:30",
+      onboardingCompleted: true,
+      activeTemplateId: null,
+    };
+
+    const result = parseWorkspaceImport(
+      wrap({ ...workspace, settings: legacySettings } as unknown as Workspace),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.workspace.settings.contentWidth).toBe("wide");
+    expect(result.workspace.settings.tourCompleted).toBe(false);
+    expect(result.workspace.settings.onboardingCompleted).toBe(true);
+  });
+
   it("rejects text that is not JSON", () => {
     const result = parseWorkspaceImport("{ not json");
     expect(result.ok).toBe(false);

@@ -50,3 +50,32 @@ export async function notify(title: string, body?: string): Promise<void> {
     // Swallowed on purpose; see the doc comment above.
   }
 }
+
+/**
+ * Fullscreen, on whichever shell is running.
+ *
+ * The Fullscreen API is used for both branches. WebView2 implements it, so the
+ * desktop app behaves like the browser without pulling in the Tauri window API
+ * and an extra dependency (ToApk.md §3 lists what is allowed).
+ */
+export function isFullscreen(): boolean {
+  return typeof document !== "undefined" && document.fullscreenElement !== null;
+}
+
+export function subscribeFullscreen(listener: () => void): () => void {
+  document.addEventListener("fullscreenchange", listener);
+  return () => document.removeEventListener("fullscreenchange", listener);
+}
+
+export async function setFullscreen(next: boolean): Promise<void> {
+  try {
+    if (next) {
+      await document.documentElement.requestFullscreen();
+    } else if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+  } catch {
+    // Browsers refuse without a user gesture, and policies can block it
+    // outright. Nothing here is essential, so a refusal is not an error.
+  }
+}

@@ -163,6 +163,16 @@ export interface ShiftEvent extends Entity {
   undone: boolean;
 }
 
+/**
+ * How much of a wide window the content column is allowed to use.
+ *
+ * `comfortable` keeps a book-like measure, `wide` fills a maximised laptop
+ * screen, and `full` runs edge to edge for people who want the timeline to use
+ * every pixel. The choice is the user's, because the right answer depends on
+ * the screen and on how they read.
+ */
+export type ContentWidth = "comfortable" | "wide" | "full";
+
 export interface Settings {
   locale: Locale;
   theme: ThemePreference;
@@ -172,7 +182,10 @@ export interface Settings {
   dayStart: ClockTime;
   /** Latest clock time a block may be scheduled to start. */
   dayEnd: ClockTime;
+  contentWidth: ContentWidth;
   onboardingCompleted: boolean;
+  /** Whether the guided tour has been seen through to the end. */
+  tourCompleted: boolean;
   activeTemplateId: string | null;
 }
 
@@ -192,6 +205,8 @@ export const DEFAULT_SETTINGS: Settings = {
   remindersEnabled: false,
   dayStart: "08:00",
   dayEnd: "21:30",
+  contentWidth: "wide",
   onboardingCompleted: false,
+  tourCompleted: false,
   activeTemplateId: null,
 };

@@ -10,27 +10,39 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.1.0_x64-setup.exe](installers/FlexStudy_0.1.0_x64-setup.exe) — 1,59 MB
+### [FlexStudy_0.2.0_x64-setup.exe](installers/FlexStudy_0.2.0_x64-setup.exe) — 1,59 MB
+
+Versi **0.2.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
 
 | | |
 |---|---|
+| Disarankan | `FlexStudy_0.2.0_x64-setup.exe` — 1.664.731 byte (1,59 MiB). Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.2.0_x64_en-US.msi` — 2.187.264 byte (2,09 MiB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
-| Ukuran berkas | 1.671.898 byte (1,59 MiB) |
-| Hak administrator | **Tidak perlu** — terpasang per pengguna, bukan ke `Program Files` |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
 
 Cara memasang:
 
 1. Unduh berkas di atas.
-2. Dobel klik. Bila Windows SmartScreen memunculkan peringatan, itu karena berkas ini belum ditandatangani secara digital — pilih **More info → Run anyway**.
+2. Dobel klik. Bila Windows SmartScreen memunculkan peringatan, itu karena berkas ini belum ditandatangani secara digital — pilih **More info → Run anyway**. Kalau memakai `.msi`, Windows juga akan meminta izin administrator (UAC).
 3. Selesai. Aplikasi terpasang dengan nama **FlexStudy** dan bisa dibuka dari menu Start.
 
 Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi juga hanya boleh terbuka satu jendela pada satu waktu.
 
-**Datamu tinggal di laptopmu.** Aplikasi desktop memakai IndexedDB yang sama seperti versi web, tersimpan di profil aplikasi — bukan di server siapa pun. Tidak ada akun, tidak ada telemetri. Gunakan **Ekspor/Impor JSON** di layar *Atur* untuk mencadangkan atau memindahkan data.
+### Memperbarui
 
-> Butuh versi `.msi`, atau ingin membangun sendiri dari kode? Lihat bagian **Menjalankan** di bawah.
+Belum ada pembaruan otomatis di dalam aplikasi, jadi memperbarui berarti memasang installer yang lebih baru di atas yang lama. **Tidak perlu menghapus pemasangan lama lebih dulu.**
+
+Satu hal yang wajib: **naikkan `version` di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) sebelum build.** Windows Installer mengenali sebuah produk dari versinya, jadi memasang versi yang sama akan menawarkan Repair/Remove alih-alih menggantikan aplikasi.
+
+**Datamu tidak ikut hilang.** Aplikasi menyimpan datanya di `%LOCALAPPDATA%\com.creepix.flexstudy` — profil WebView2, tempat IndexedDB hidup. Lokasi itu ditentukan oleh `identifier`, jadi selama `identifier` tidak diubah, memperbarui aplikasi tidak menyentuh datamu sama sekali.
+
+Kalau nanti mau pembaruan otomatis sungguhan, Tauri menyediakan plugin `updater`. Perlu diketahui sejak awal: plugin itu **mewajibkan penandatanganan** dan tidak bisa dimatikan, jadi kamu butuh pasangan kunci — dan kalau kunci privatnya hilang, kamu tidak akan pernah bisa lagi mengirim pembaruan ke pemasangan yang sudah ada. Kunci itu tidak boleh masuk repo.
+
+Satu hal yang tetap perlu kamu lakukan sendiri: gunakan **Ekspor/Impor JSON** di layar *Atur* untuk mencadangkan data atau memindahkannya antara versi web dan desktop. Tidak ada akun dan tidak ada telemetri yang melakukannya untukmu.
+
+> Ingin membangun sendiri dari kode? Lihat bagian **Menjalankan** di bawah.
 
 ---
 
@@ -102,7 +114,7 @@ src/
   app/          rute + token global + layout akar
   domain/       logika murni: waktu, jadwal, status, target, geser jadwal, refleksi
   data/         skema Zod, Dexie (IndexedDB), repositori, ekspor/impor, store
-  features/     today, week, journal, settings, onboarding
+  features/     today, week, journal, guide, tour, settings, onboarding
   components/   shell aplikasi + primitif UI bertoken
   i18n/         kamus id + en (kunci bertipe)
   lib/          util lintas fitur; desktop.ts adalah satu-satunya modul yang mengenal Tauri
@@ -125,8 +137,33 @@ Yang perlu diketahui:
 - **Satu lapisan abstraksi.** Hanya [`src/lib/desktop.ts`](src/lib/desktop.ts) yang boleh mengimpor `@tauri-apps/*`, dan impornya dinamis — paket Tauri tidak pernah masuk ke bundel web, dan build Vercel tetap berjalan apa adanya.
 - **Dua jalur build, satu basis kode.** `npm run build` menghasilkan web statis; `npm run build:desktop` menyalakan `output: 'export'` lewat `TAURI_BUILD=1`. Build web tidak berubah perilakunya.
 - **Font ikut dibundel.** Keduanya `.woff2` lokal di `src/assets/fonts/`, jadi tidak ada permintaan jaringan untuk huruf — di build web maupun desktop.
+- **Ikon dari satu berkas sumber.** [`flexstudy-logo-1024.png`](flexstudy-logo-1024.png) di root repo (1024×1024, latar transparan). Jalankan `npx tauri icon flexstudy-logo-1024.png` untuk meregenerasi seluruh ukuran ikon Windows sekaligus.
 - **Hemat saat diam.** Clock satu detik hanya hidup di komponen timer itu sendiri dan berhenti total saat jendela tersembunyi. Tidak ada `backdrop-filter`, tidak ada animasi tak berujung, dan `prefers-reduced-motion` dipatuhi.
 - **Web dan desktop tidak berbagi data.** Keduanya berjalan di *origin* berbeda, jadi IndexedDB-nya terpisah. Pindahkan data sekali lewat Ekspor JSON di satu sisi dan Impor di sisi lain.
+
+---
+
+## Panduan dan tur
+
+Aplikasi ini menjelaskan dirinya sendiri, lewat dua jalur supaya orang bisa memilih cara belajar yang cocok.
+
+- **Tur interaktif.** Enam langkah yang menyorot elemen aslinya langsung di layar Hari ini, bukan gambar mockup. Muncul otomatis sekali setelah onboarding selesai, dan bisa diputar ulang dari halaman Panduan maupun dari Atur. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
+- **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, enam tips, dan arti setiap lambang status.
+
+Dua hal kecil yang sengaja diputuskan:
+
+- Badge di glosarium Panduan adalah **badge asli** yang dipakai aplikasi, bukan gambar terpisah. Karena itu panduannya tidak bisa melenceng dari perilaku sebenarnya.
+- Kalau elemen target tur tidak ada di layar, kartunya tampil di tengah tanpa sorotan — tur tidak pernah menunjuk ke tempat kosong.
+
+---
+
+## Tampilan yang menyesuaikan
+
+Lebar kolom konten bisa dipilih dan diingat: **Nyaman**, **Lebar** (bawaan), atau **Penuh**. Tombol di bilah kiri memutar ketiganya berurutan, dan kontrol lengkapnya ada di Atur.
+
+Ada juga tombol **layar penuh**. Keduanya memakai Fullscreen API yang sama di web maupun desktop: WebView2 mengimplementasikannya, jadi tidak perlu API jendela Tauri dan tidak ada dependensi tambahan.
+
+Kedua preferensi disimpan di setelan. Berkas ekspor dari versi lama tetap bisa diimpor, karena kedua medan baru punya nilai bawaan di skema.
 
 ---
 
@@ -226,11 +263,10 @@ Yang sudah dilakukan untuk mendukung target performa: tanpa `backdrop-filter` di
 
 Khusus aplikasi desktop:
 
-- **Ikon aplikasi masih ikon bawaan Tauri.** Berkas sumber PNG 1024×1024 belum tersedia. Ganti dengan `npx tauri icon <berkas.png>` lalu build ulang.
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 107 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — jendela terbuka menampilkan Hari ini, timer berjalan, data bertahan setelah restart, notifikasi muncul — belum dicentang.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 107 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — jendela terbuka menampilkan Hari ini, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
 
 ---
 

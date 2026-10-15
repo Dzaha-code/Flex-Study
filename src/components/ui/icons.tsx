@@ -4,11 +4,17 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  ArrowsHorizontal,
+  ArrowsInSimple,
+  ArrowsOutSimple,
+  BookOpen,
   CalendarBlank,
   Check,
+  Compass,
   DownloadSimple,
   Gear,
   Info,
+  Lightbulb,
   Note,
   PencilSimple,
   Play,
@@ -83,6 +89,12 @@ export const IconUpload = icon(UploadSimple);
 export const IconSettings = icon(Gear);
 export const IconSun = icon(Sun);
 export const IconCalendar = icon(CalendarBlank);
+export const IconBook = icon(BookOpen);
+export const IconCompass = icon(Compass);
+export const IconLightbulb = icon(Lightbulb);
+export const IconExpand = icon(ArrowsOutSimple);
+export const IconCollapse = icon(ArrowsInSimple);
+export const IconWidth = icon(ArrowsHorizontal);
 
 /* ---------------------------------------------------------------------------
  * Category markers — geometric characters, never colour (DESIGN.md §3.3).

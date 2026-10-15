@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Rust build output. `build/**` above only covers the root, so the Tauri
+    // codegen assets under src-tauri/target/release/build were being linted as
+    // if they were our source.
+    "src-tauri/**",
   ]),
 ]);
 

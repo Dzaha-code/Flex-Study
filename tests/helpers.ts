@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "@/domain/types";
 import type {
   BlockInstance,
   BlockStatus,
@@ -8,15 +9,15 @@ import type {
 
 export const STAMP = "2026-10-14T00:00:00.000Z";
 
+/**
+ * Spread from the shipped defaults rather than restating every field, so adding
+ * a preference cannot break every test that builds a workspace.
+ */
 export const baseSettings: Settings = {
-  locale: "id",
-  theme: "system",
-  weekStart: 1,
-  remindersEnabled: false,
+  ...DEFAULT_SETTINGS,
   dayStart: "08:00",
   dayEnd: "21:30",
   onboardingCompleted: true,
-  activeTemplateId: null,
 };
 
 export const bounds = {

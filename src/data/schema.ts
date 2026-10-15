@@ -138,7 +138,11 @@ export const SettingsSchema = z.object({
   remindersEnabled: z.boolean(),
   dayStart: clockTimeSchema,
   dayEnd: clockTimeSchema,
+  // Defaulted rather than required, so a workspace exported before these
+  // preferences existed still imports instead of failing validation.
+  contentWidth: z.enum(["comfortable", "wide", "full"]).default("wide"),
   onboardingCompleted: z.boolean(),
+  tourCompleted: z.boolean().default(false),
   activeTemplateId: z.string().nullable(),
 });
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { TimeInput } from "@/components/ui/field";
-import { IconDownload, IconInfo, IconUpload } from "@/components/ui/icons";
+import { IconBook, IconCompass, IconDownload, IconInfo, IconUpload } from "@/components/ui/icons";
 import { Chip, Panel, PanelHeader, SegmentedControl, SwitchRow } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
@@ -15,7 +15,9 @@ import {
   suggestExportFileName,
   type ImportResult,
 } from "@/data/workspace-io";
-import type { Locale, ThemePreference, WeekStart } from "@/domain/types";
+import Link from "next/link";
+import type { ContentWidth, Locale, ThemePreference, WeekStart } from "@/domain/types";
+import { startTour } from "@/features/tour/tour-store";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
 import { ensureNotificationPermission } from "@/lib/desktop";
@@ -97,6 +99,21 @@ export function SettingsScreen() {
             ]}
           />
 
+          <div className="flex flex-col gap-1.5">
+            <SegmentedControl
+              legend={t("layout.width")}
+              name="content-width"
+              value={settings.contentWidth}
+              onChange={(next) => void updateSettings({ contentWidth: next as ContentWidth })}
+              options={[
+                { value: "comfortable", label: t("layout.width.comfortable") },
+                { value: "wide", label: t("layout.width.wide") },
+                { value: "full", label: t("layout.width.full") },
+              ]}
+            />
+            <p className="measure text-caption text-mute">{t("layout.widthHint")}</p>
+          </div>
+
           <SegmentedControl
             legend={t("settings.weekStart")}
             name="week-start"
@@ -143,6 +160,23 @@ export function SettingsScreen() {
               void updateSettings({ remindersEnabled: next });
             }}
           />
+        </div>
+      </Panel>
+
+      <Panel>
+        <PanelHeader title={t("settings.help")} description={t("settings.helpHint")} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={startTour}>
+            <IconCompass />
+            {t("guide.startTour")}
+          </Button>
+          <Link
+            href="/guide"
+            className="inline-flex h-11 items-center gap-2 rounded-control border border-line-strong bg-surface-raised px-4 text-meta hover:bg-accent-surface"
+          >
+            <IconBook />
+            {t("nav.guide")}
+          </Link>
         </div>
       </Panel>
 

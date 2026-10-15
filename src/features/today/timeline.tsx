@@ -122,7 +122,7 @@ function FocusCard({
   return (
     // The active block is the strongest line on the page: 1.5px of ink, the
     // one highlight per screen (DESIGN.md §5).
-    <div className="surface-active flex flex-col gap-3 p-5">
+    <div className="surface-active flex flex-col gap-3 p-5" data-tour="focus">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <p>

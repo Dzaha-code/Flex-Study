@@ -143,7 +143,7 @@ function TodayContent({ date }: { date: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
+      <header className="flex flex-col gap-3" data-tour="progress">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h1 className="text-display">{formatDateLong(date)}</h1>
@@ -197,7 +197,7 @@ function TodayContent({ date }: { date: string }) {
         />
       )}
 
-      <div>
+      <div data-tour="add">
         <Button variant="secondary" onClick={() => setAddOpen(true)}>
           <IconPlus />
           {t("today.addBlock")}
@@ -228,7 +228,9 @@ function TodayContent({ date }: { date: string }) {
         </Panel>
       ) : null}
 
-      <StreakStrip anchor={date} instances={instances} />
+      <div data-tour="streak">
+        <StreakStrip anchor={date} instances={instances} />
+      </div>
 
       <ShiftSheet open={shiftOpen} onOpenChange={setShiftOpen} date={date} />
       {addOpen ? <AddBlockSheet date={date} onClose={() => setAddOpen(false)} /> : null}
