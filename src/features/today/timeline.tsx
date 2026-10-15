@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/dialog";
 import { NumberInput, SelectField, TextInput, TimeInput } from "@/components/ui/field";
@@ -13,14 +13,14 @@ import {
   IconUndo,
   IconWarning,
 } from "@/components/ui/icons";
-import { CategoryTag, ProgressBar, StatusBadge } from "@/components/ui/surface";
+import { CategoryTag, StatusBadge } from "@/components/ui/surface";
 import { useAppStore } from "@/data/store";
-import { formatCountdown, progressRatio, remainingSeconds } from "@/domain";
 import type { LaidOutBlock } from "@/domain/schedule";
 import type { BlockInstance, Category } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { hasMarkup, renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { Countdown, FocusTimer } from "./running-timer";
 
 export type CategoryLookup = Map<string, Category>;
 
@@ -106,52 +106,18 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
   );
 }
 
-/**
- * Screen readers get the countdown on a slow cadence — every five minutes and
- * whenever the block starts or is completed — never once per second.
- */
-function TimerAnnouncement({
-  title,
-  remainingSeconds: remaining,
-}: {
-  title: string;
-  remainingSeconds: number;
-}) {
-  const { t } = useI18n();
-  const [message, setMessage] = useState("");
-  const lastBucket = useRef(-1);
-
-  useEffect(() => {
-    const bucket = Math.floor(remaining / 300);
-    if (bucket === lastBucket.current) return;
-    lastBucket.current = bucket;
-    setMessage(t("timer.announce", { title, time: formatCountdown(remaining) }));
-  }, [remaining, title, t]);
-
-  return (
-    <p aria-live="polite" className="sr-only">
-      {message}
-    </p>
-  );
-}
-
 function FocusCard({
   instance,
   category,
-  nowEpoch,
   onOpenNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
-  nowEpoch: number;
   onOpenNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
-  const { t, formatMinutes } = useI18n();
-  const remaining = remainingSeconds(instance, nowEpoch);
-  const ratio = progressRatio(instance, nowEpoch);
-  const overrunning = instance.status === "running" && remaining === 0;
+  const { t } = useI18n();
 
   return (
     // The active block is the strongest line on the page: 1.5px of ink, the
@@ -171,29 +137,9 @@ function FocusCard({
         <CategoryTag name={category.name} icon={category.icon} />
       ) : null}
 
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-display font-semibold tabular-nums">
-          {instance.status === "running"
-            ? formatCountdown(remaining)
-            : formatMinutes(instance.durationMin)}
-        </span>
-        <span className="text-meta text-ink-muted">
-          {instance.status === "running"
-            ? overrunning
-              ? t("today.overtime")
-              : t("today.remaining", { time: formatCountdown(remaining) })
-            : t("common.minutesValue", { count: instance.durationMin })}
-        </span>
-      </div>
-
-      {instance.status === "running" ? (
-        <TimerAnnouncement title={instance.title} remainingSeconds={remaining} />
-      ) : null}
-
-      <ProgressBar
-        value={instance.status === "running" ? ratio : 0}
-        label={t("a11y.progress", { done: Math.round(ratio * 100), total: 100 })}
-      />
+      {/* Countdown, remaining label and rule tick together inside FocusTimer,
+          which owns the only one-second clock on this screen (ToApk.md §7). */}
+      <FocusTimer instance={instance} />
 
       <div className="flex flex-wrap items-center gap-2">
         <BlockActions instance={instance} prominent />
@@ -213,18 +159,15 @@ function FocusCard({
 function CompactRow({
   instance,
   category,
-  nowEpoch,
   onOpenNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
-  nowEpoch: number;
   onOpenNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
-  const { t, formatMinutes } = useI18n();
-  const running = instance.status === "running";
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2">
@@ -241,11 +184,7 @@ function CompactRow({
           {category ? (
             <CategoryTag name={category.name} icon={category.icon} />
           ) : null}
-          <span className="text-label text-ink-muted">
-            {running
-              ? formatCountdown(remainingSeconds(instance, nowEpoch))
-              : formatMinutes(instance.durationMin)}
-          </span>
+          <Countdown instance={instance} />
           {instance.note.trim() ? (
             <span className="text-label text-ink-muted">· {t("today.note")}</span>
           ) : null}
@@ -271,7 +210,6 @@ function CompactRow({
 export function Timeline({
   blocks,
   nowMinute,
-  nowEpoch,
   focusId,
   categoryById,
   onOpenNote,
@@ -279,7 +217,6 @@ export function Timeline({
 }: {
   blocks: LaidOutBlock[];
   nowMinute: number;
-  nowEpoch: number;
   focusId: string | null;
   categoryById: CategoryLookup;
   onOpenNote: (instance: BlockInstance) => void;
@@ -327,7 +264,6 @@ export function Timeline({
                     <FocusCard
                       instance={block.instance}
                       category={categoryById.get(block.instance.categoryId)}
-                      nowEpoch={nowEpoch}
                       onOpenNote={onOpenNote}
                       onEditBlock={onEditBlock}
                     />
@@ -335,7 +271,6 @@ export function Timeline({
                     <CompactRow
                       instance={block.instance}
                       category={categoryById.get(block.instance.categoryId)}
-                      nowEpoch={nowEpoch}
                       onOpenNote={onOpenNote}
                       onEditBlock={onEditBlock}
                     />

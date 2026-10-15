@@ -6,16 +6,51 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 ---
 
+## Unduh dan pasang (Windows)
+
+Tidak ingin menyentuh kode? Unduh installer-nya langsung:
+
+### [FlexStudy_0.1.0_x64-setup.exe](installers/FlexStudy_0.1.0_x64-setup.exe) — 1,59 MB
+
+| | |
+|---|---|
+| Sistem | Windows 64-bit |
+| Ukuran berkas | 1.671.898 byte (1,59 MiB) |
+| Hak administrator | **Tidak perlu** — terpasang per pengguna, bukan ke `Program Files` |
+| Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
+| WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
+
+Cara memasang:
+
+1. Unduh berkas di atas.
+2. Dobel klik. Bila Windows SmartScreen memunculkan peringatan, itu karena berkas ini belum ditandatangani secara digital — pilih **More info → Run anyway**.
+3. Selesai. Aplikasi terpasang dengan nama **FlexStudy** dan bisa dibuka dari menu Start.
+
+Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi juga hanya boleh terbuka satu jendela pada satu waktu.
+
+**Datamu tinggal di laptopmu.** Aplikasi desktop memakai IndexedDB yang sama seperti versi web, tersimpan di profil aplikasi — bukan di server siapa pun. Tidak ada akun, tidak ada telemetri. Gunakan **Ekspor/Impor JSON** di layar *Atur* untuk mencadangkan atau memindahkan data.
+
+> Butuh versi `.msi`, atau ingin membangun sendiri dari kode? Lihat bagian **Menjalankan** di bawah.
+
+---
+
 ## Menjalankan
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm test         # uji unit (Vitest, node environment)
-npm run build    # build produksi
+npm run dev              # http://localhost:3000
+npm test                 # uji unit (Vitest, node environment)
+npm run build            # build produksi versi web
+npm run build:desktop    # ekspor statis ke out/ — inilah yang dibaca Tauri
+npm run tauri dev        # jalankan aplikasi desktop (jendela + hot reload)
+npm run tauri build      # bikin installer .msi dan -setup.exe
 ```
 
 Butuh Node.js 22+.
+
+Untuk **membangun aplikasi desktop** kamu juga perlu Rust (https://rustup.rs) dan Microsoft C++ Build Tools dengan workload **"Desktop development with C++"**. Keduanya wajib: Rust yang dipasang lewat rustup memakai toolchain `x86_64-pc-windows-msvc`, yang menyerahkan proses linking ke linker milik Microsoft. Tanpa `link.exe` dan Windows SDK, kompilasi akan berhasil lalu gagal tepat di langkah terakhir.
+
+Installer hasil build ada di `src-tauri/target/release/bundle/`.
 
 ---
 
@@ -70,11 +105,28 @@ src/
   features/     today, week, journal, settings, onboarding
   components/   shell aplikasi + primitif UI bertoken
   i18n/         kamus id + en (kunci bertipe)
+  lib/          util lintas fitur; desktop.ts adalah satu-satunya modul yang mengenal Tauri
   templates/    template awal sebagai data
 tests/          uji unit domain + skema
+src-tauri/      shell desktop (Tauri 2): konfigurasi, izin plugin, profil rilis
+installers/     installer siap pakai untuk Windows
 ```
 
 **Aturan inti:** `src/domain` tidak mengimpor React, tidak menyentuh penyimpanan, dan tidak membaca jam secara langsung. Semua fungsi menerima waktu dan pembuat id sebagai argumen. Karena itu lapisan ini cepat diuji dan nanti bisa dipanggil dari UI **maupun** dari agent dengan jalur data yang sama (brief §11.1).
+
+---
+
+## Aplikasi desktop
+
+Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya hanya **1,59 MB**.
+
+Yang perlu diketahui:
+
+- **Satu lapisan abstraksi.** Hanya [`src/lib/desktop.ts`](src/lib/desktop.ts) yang boleh mengimpor `@tauri-apps/*`, dan impornya dinamis — paket Tauri tidak pernah masuk ke bundel web, dan build Vercel tetap berjalan apa adanya.
+- **Dua jalur build, satu basis kode.** `npm run build` menghasilkan web statis; `npm run build:desktop` menyalakan `output: 'export'` lewat `TAURI_BUILD=1`. Build web tidak berubah perilakunya.
+- **Font ikut dibundel.** Keduanya `.woff2` lokal di `src/assets/fonts/`, jadi tidak ada permintaan jaringan untuk huruf — di build web maupun desktop.
+- **Hemat saat diam.** Clock satu detik hanya hidup di komponen timer itu sendiri dan berhenti total saat jendela tersembunyi. Tidak ada `backdrop-filter`, tidak ada animasi tak berujung, dan `prefers-reduced-motion` dipatuhi.
+- **Web dan desktop tidak berbagi data.** Keduanya berjalan di *origin* berbeda, jadi IndexedDB-nya terpisah. Pindahkan data sekali lewat Ekspor JSON di satu sisi dan Impor di sisi lain.
 
 ---
 
@@ -117,7 +169,7 @@ Beberapa aturan yang tidak terlihat dari skema:
 - Seluruh fungsi dapat dioperasikan keyboard; `:focus-visible` memakai warna aksen dengan offset.
 - Label, petunjuk dan galat disambungkan lewat `aria-describedby` di satu komponen (`FieldShell`) sehingga tidak bisa melenceng.
 - Status **tidak pernah** hanya dikomunikasikan dengan warna: selalu ada ikon + kata (`StatusBadge`).
-- Timer diumumkan ke pembaca layar **setiap lima menit dan saat blok mulai/selesai**, bukan setiap detik (`TimerAnnouncement`).
+- Timer diumumkan ke pembaca layar **setiap 30 detik dan saat blok mulai/selesai**, bukan setiap detik (`TimerAnnouncement`). Clock cepat dan clock lambat sengaja dipisah agar tick per detik tidak bocor ke `aria-live`.
 - Target sentuh minimal 44 × 44 px (`IconButton` selalu `size-11`).
 - `prefers-reduced-motion` dan `prefers-color-scheme` dipatuhi; `lang` dokumen mengikuti pilihan bahasa.
 - Tema diterapkan oleh skrip kecil di `<head>` sehingga tidak ada kedipan tema salah.
@@ -143,7 +195,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-78 uji unit, 6 berkas, semuanya pada lapisan murni:
+107 uji unit, 8 berkas, semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -153,6 +205,8 @@ npm test
 | `tests/progress.test.ts` | sisa waktu harian, aturan status, timer tahan tab tidur, target per kategori, rekap minggu |
 | `tests/reflection.test.ts` | jumlah kata id/en, tiga slot pembelajaran, pemicu per tanggal |
 | `tests/schema.test.ts` | ekspor/impor bolak-balik tanpa kehilangan informasi, penolakan berkas rusak |
+| `tests/cn.test.ts` | penggabungan kelas Tailwind — ukuran huruf tidak boleh menelan warna teks |
+| `tests/propagate.test.ts` | penyebaran suntingan template ke blok hari ini + hari berikutnya, dan pembersihan blok yatim |
 
 ---
 
@@ -166,9 +220,17 @@ Jujur soal batas rilis ini:
 Yang sudah dilakukan untuk mendukung target performa: tanpa `backdrop-filter` di jalur render, tanpa paket ikon di bundel klien (ikon SVG buatan sendiri), primitif UI kecil, `framer-motion`/`lucide-react`/`hugeicons` tidak diimpor sama sekali, dan konten berat data baru dirender setelah hidrasi.
 - **PWA / offline (Should)** belum ada: belum ada service worker maupun manifest.
 - **Impor/ekspor kalender (.ics)** dan **mode fokus layar penuh (Could)** belum ada.
-- **Pengingat** hanya bekerja saat aplikasi terbuka (notifikasi browser). Penjadwalan latar butuh service worker, jadi menyusul bersama PWA.
+- **Pengingat** hanya bekerja saat aplikasi terbuka. Di aplikasi desktop notifikasi lewat notifikasi sistem; di browser lewat Notification API. Keduanya melalui satu lapisan abstraksi (`src/lib/desktop.ts`), karena `Notification.permission` di dalam WebView tidak pernah bernilai `granted`. Penjadwalan latar butuh service worker, jadi menyusul bersama PWA.
 - **Sinkronisasi akun & multi-perangkat (Could)** belum ada; karena itu ekspor/impor JSON dan tombol ekspor cadangan dibuat menonjol.
 - **Lapisan tool untuk AI agent (fase 4)** belum dibangun. Fondasinya sudah disiapkan: skema Zod bertipe, fungsi domain murni dan teruji, log perubahan (`ShiftEvent`), serta ekspor/impor yang memakai skema yang sama.
+
+Khusus aplikasi desktop:
+
+- **Ikon aplikasi masih ikon bawaan Tauri.** Berkas sumber PNG 1024×1024 belum tersedia. Ganti dengan `npx tauri icon <berkas.png>` lalu build ulang.
+- **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
+- **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
+- **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 107 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — jendela terbuka menampilkan Hari ini, timer berjalan, data bertahan setelah restart, notifikasi muncul — belum dicentang.
 
 ---
 

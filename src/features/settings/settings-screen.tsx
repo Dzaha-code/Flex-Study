@@ -18,6 +18,7 @@ import {
 import type { Locale, ThemePreference, WeekStart } from "@/domain/types";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
+import { ensureNotificationPermission } from "@/lib/desktop";
 import { pickLocalized, TEMPLATES } from "@/templates";
 import { BlockListEditor, CategoriesEditor } from "./plan-editor";
 
@@ -136,14 +137,9 @@ export function SettingsScreen() {
             checked={settings.remindersEnabled}
             onChange={(next) => {
               // Ask for the permission at the moment the user opts in, never on
-              // first load.
-              if (
-                next &&
-                typeof Notification !== "undefined" &&
-                Notification.permission === "default"
-              ) {
-                void Notification.requestPermission();
-              }
+              // first load. The request goes through the desktop abstraction so
+              // the Tauri shell asks its own notification plugin.
+              if (next) void ensureNotificationPermission();
               void updateSettings({ remindersEnabled: next });
             }}
           />

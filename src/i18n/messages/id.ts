@@ -76,6 +76,7 @@ export const id = {
 
   "timer.announce": "{{title}}, sisa {{time}}.",
   "timer.label": "Waktu berjalan",
+  "timer.finished": "Blok selesai",
 
   "journal.title": "Jurnal",
   "journal.todayEntry": "Hari ini",

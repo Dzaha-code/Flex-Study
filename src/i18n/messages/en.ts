@@ -74,6 +74,7 @@ export const en: Messages = {
 
   "timer.announce": "{{title}}, {{time}} left.",
   "timer.label": "Elapsed time",
+  "timer.finished": "Block finished",
 
   "journal.title": "Journal",
   "journal.todayEntry": "Today",

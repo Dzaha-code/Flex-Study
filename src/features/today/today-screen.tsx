@@ -21,6 +21,7 @@ import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { ShiftSheet } from "./shift-sheet";
+import { TimerWatcher } from "./running-timer";
 import { AddBlockSheet, NoteSheet, Timeline, type CategoryLookup } from "./timeline";
 import { useDueReminders } from "./use-reminders";
 
@@ -105,10 +106,12 @@ function TodayContent({ date }: { date: string }) {
     [todayBlocks, dayStart],
   );
 
-  // A running timer needs a second-by-second clock; otherwise the "now" marker
-  // only has to keep up with the minute.
   const hasRunning = timeline.some((block) => block.instance.status === "running");
-  const now = useNow(true, hasRunning ? 1000 : 30_000);
+
+  // This clock only has to keep up with the minute. The second-by-second tick
+  // lives inside the timer leaves themselves (ToApk.md §7 D1.2), so a running
+  // timer no longer re-renders the whole screen sixty times a minute.
+  const now = useNow(true, 30_000);
   const nowMinute = minuteOfDayFromEpoch(now);
 
   const progress = useMemo(() => dayProgress(timeline, nowMinute), [timeline, nowMinute]);
@@ -160,6 +163,10 @@ function TodayContent({ date }: { date: string }) {
         />
       </header>
 
+      {/* Renders nothing. It owns the one-second clock that fires the "block
+          finished" notification, so the rest of the screen stays still. */}
+      <TimerWatcher enabled={remindersEnabled} running={hasRunning} blocks={timeline} />
+
       {timeline.length === 0 ? (
         <EmptyState
           title={t("today.empty.title")}
@@ -183,7 +190,6 @@ function TodayContent({ date }: { date: string }) {
         <Timeline
           blocks={timeline}
           nowMinute={nowMinute}
-          nowEpoch={now}
           focusId={focus?.instance.id ?? null}
           categoryById={categoryById}
           onOpenNote={setNoteTarget}
