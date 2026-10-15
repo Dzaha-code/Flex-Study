@@ -46,3 +46,7 @@ next-env.d.ts
 *.log
 .vercel
 .env*
+
+# desktop build artifacts
+/out/
+/src-tauri/target/
