@@ -36,16 +36,26 @@ export function resolveTheme(preference: ThemePreference, prefersDark: boolean):
   return preference;
 }
 
-export function applyThemeClass(resolved: "light" | "dark"): void {
+/**
+ * The theme is carried by a `data-theme` attribute, not a class (DESIGN.md §3
+ * follows the reference prototype). Three states resolve to two values:
+ * `system` follows the media query in CSS, while an explicit choice pins the
+ * attribute so it also overrides `prefers-color-scheme: dark`.
+ */
+export function applyThemeAttribute(resolved: "light" | "dark"): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.toggle("dark", resolved === "dark");
+  root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
 }
 
 /**
  * Runs inline in `<head>` before paint. Kept tiny and dependency-free so no
  * flash of the wrong theme can happen.
+ *
+ * Sets the resolved value rather than `system`: that keeps the Tailwind `dark`
+ * variant and the CSS custom properties in agreement from the first frame,
+ * instead of relying on the media query alone.
  */
 export const themeBootstrapScript = `
 (function () {
@@ -54,7 +64,7 @@ export const themeBootstrapScript = `
     var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     var dark = stored === 'dark' || ((stored === 'system' || !stored) && prefersDark);
     var root = document.documentElement;
-    if (dark) root.classList.add('dark');
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
     root.style.colorScheme = dark ? 'dark' : 'light';
   } catch (error) {}
 })();

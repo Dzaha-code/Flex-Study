@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { BlockStatus, LinePattern } from "@/domain/types";
+import type { BlockStatus, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { CategoryGlyph, IconArrowRight, IconCheck, IconClock, IconPlay, IconSkip } from "./icons";
@@ -15,14 +15,7 @@ export function Panel({
   className?: string;
   as?: "section" | "div" | "article" | "aside";
 }) {
-  return (
-    <Component
-      className={cn("surface-panel p-4 sm:p-5", className)}
-      style={{ borderRadius: "var(--radius-panel)" }}
-    >
-      {children}
-    </Component>
-  );
+  return <Component className={cn("surface-panel p-4 sm:p-5", className)}>{children}</Component>;
 }
 
 export function PanelHeader({
@@ -40,25 +33,31 @@ export function PanelHeader({
   return (
     <div className="mb-3 flex items-start justify-between gap-3">
       <div className="flex flex-col gap-0.5">
-        <Heading className={headingLevel === 2 ? "text-title" : "text-body font-semibold"}>
+        <Heading className={headingLevel === 2 ? "text-title-3" : "text-body font-medium"}>
           {title}
         </Heading>
-        {description ? <p className="text-meta text-ink-muted measure">{description}</p> : null}
+        {description ? <p className="measure text-caption text-mute">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
 
+/**
+ * Progress reads as a ruled line, not a coloured bar (DESIGN.md §5): fill is
+ * `--ink`, track is `--line`. 6px on the today screen, 4px for category rows.
+ */
 export function ProgressBar({
   value,
   label,
-  tone = "accent",
+  height = 6,
+  className,
 }: {
   /** 0 … 1 */
   value: number;
   label: string;
-  tone?: "accent" | "ok";
+  height?: 4 | 6;
+  className?: string;
 }) {
   const clamped = Math.max(0, Math.min(1, value));
   return (
@@ -69,10 +68,11 @@ export function ProgressBar({
       aria-valuemax={100}
       aria-valuenow={Math.round(clamped * 100)}
       aria-valuetext={label}
-      className="h-1.5 w-full overflow-hidden rounded-full bg-line"
+      className={cn("w-full overflow-hidden rounded-full bg-line", className)}
+      style={{ height }}
     >
       <div
-        className={cn("h-full rounded-full", tone === "ok" ? "bg-ok" : "bg-accent")}
+        className="h-full rounded-full bg-ink transition-[width] duration-200 ease-out motion-reduce:transition-none"
         style={{ width: `${clamped * 100}%` }}
       />
     </div>
@@ -86,19 +86,18 @@ export function Chip({
 }: {
   children: ReactNode;
   icon?: ReactNode;
-  tone?: "neutral" | "accent" | "ok" | "warn" | "danger";
+  tone?: "neutral" | "ok" | "warn" | "danger";
 }) {
   const tones: Record<string, string> = {
-    neutral: "border-line bg-surface text-ink-muted",
-    accent: "border-accent bg-accent-surface text-ink",
-    ok: "border-ok bg-ok-surface text-ok",
-    warn: "border-warn bg-warn-surface text-warn",
-    danger: "border-danger bg-danger-surface text-danger",
+    neutral: "border-line text-mute",
+    ok: "border-ok/40 text-ok",
+    warn: "border-warn/40 text-warn",
+    danger: "border-danger/40 text-danger",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-label font-medium",
+        "inline-flex items-center gap-1.5 rounded-ctl border px-2.5 py-1 text-caption font-medium",
         tones[tone],
       )}
     >
@@ -109,69 +108,42 @@ export function Chip({
 }
 
 /**
- * Status is never colour alone: every badge pairs a colour with an icon and a
- * word, so it survives colour blindness and a black-and-white printout.
+ * Status is never colour alone (DESIGN.md §8): every badge pairs a colour with
+ * an icon and a word, so it survives colour blindness and a black-and-white
+ * printout. No pill background — status is not a surface.
  */
 export function StatusBadge({ status, className }: { status: BlockStatus; className?: string }) {
   const { t } = useI18n();
-  const config: Record<BlockStatus, { tone: "neutral" | "accent" | "ok" | "warn"; icon: ReactNode }> = {
-    planned: { tone: "neutral", icon: <IconClock width={14} height={14} /> },
-    running: { tone: "accent", icon: <IconPlay width={14} height={14} /> },
-    done: { tone: "ok", icon: <IconCheck width={14} height={14} /> },
-    deferred: { tone: "warn", icon: <IconArrowRight width={14} height={14} /> },
-    skipped: { tone: "neutral", icon: <IconSkip width={14} height={14} /> },
+  const config: Record<BlockStatus, { tone: "mute" | "ok" | "warn"; icon: ReactNode }> = {
+    planned: { tone: "mute", icon: <IconClock size={14} /> },
+    running: { tone: "mute", icon: <IconPlay size={14} /> },
+    done: { tone: "ok", icon: <IconCheck size={14} /> },
+    deferred: { tone: "warn", icon: <IconArrowRight size={14} /> },
+    skipped: { tone: "mute", icon: <IconSkip size={14} /> },
   };
   const { tone, icon } = config[status];
+  const toneClass = tone === "ok" ? "text-ok" : tone === "warn" ? "text-warn" : "text-mute";
   return (
-    <Chip tone={tone} icon={icon}>
-      <span className={cn(status === "skipped" && "line-through", className)}>
-        {t(`status.${status}`)}
-      </span>
-    </Chip>
+    <span className={cn("inline-flex items-center gap-1.5 text-caption font-medium", toneClass)}>
+      {icon}
+      <span className={cn(status === "skipped" && "line-through", className)}>{t(`status.${status}`)}</span>
+    </span>
   );
 }
 
-/** Categories are distinguished by icon, label and line pattern — never hue. */
-export function PatternMark({ pattern, className }: { pattern: LinePattern; className?: string }) {
-  const dash = pattern === "dashed" ? "5 4" : pattern === "dotted" ? "1.5 4" : undefined;
-  return (
-    <svg
-      width="22"
-      height="8"
-      viewBox="0 0 22 8"
-      aria-hidden="true"
-      focusable="false"
-      className={cn("shrink-0", className)}
-    >
-      <line
-        x1="1"
-        y1="4"
-        x2="21"
-        y2="4"
-        stroke="currentColor"
-        strokeWidth={pattern === "solid" ? 3 : 2.5}
-        strokeDasharray={dash}
-        strokeLinecap={pattern === "dotted" ? "round" : "butt"}
-      />
-    </svg>
-  );
-}
-
+/** A category is its symbol plus its name. There is no colour to fall back on. */
 export function CategoryTag({
   name,
   icon,
-  pattern,
   className,
 }: {
   name: string;
-  icon: Parameters<typeof CategoryGlyph>[0]["icon"];
-  pattern: LinePattern;
+  icon: CategorySymbol;
   className?: string;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 text-meta text-ink-muted", className)}>
-      <CategoryGlyph icon={icon} width={16} height={16} />
-      <PatternMark pattern={pattern} className="text-ink-muted" />
+    <span className={cn("inline-flex items-center gap-2 text-caption text-mute", className)}>
+      <CategoryGlyph icon={icon} />
       <span className="truncate">{name}</span>
     </span>
   );
@@ -198,8 +170,8 @@ export function SegmentedControl<T extends string>({
 }) {
   return (
     <fieldset className="flex flex-col gap-1.5 border-0 p-0">
-      <legend className="mb-1 text-label font-medium text-ink-muted">{legend}</legend>
-      <div className="inline-flex w-full flex-wrap gap-1 rounded-control border border-line-strong bg-surface p-1 sm:w-auto">
+      <legend className="mb-1 text-caption font-medium text-mute">{legend}</legend>
+      <div className="inline-flex w-full flex-wrap gap-1 rounded-ctl border border-line-strong bg-raised p-1 sm:w-auto">
         {options.map((option) => {
           const id = `${name}-${option.value}`;
           const active = option.value === value;
@@ -208,10 +180,8 @@ export function SegmentedControl<T extends string>({
               key={option.value}
               htmlFor={id}
               className={cn(
-                "flex min-h-9 flex-1 cursor-pointer items-center justify-center rounded-[6px] px-3 text-meta transition-colors sm:flex-none",
-                active
-                  ? "bg-accent text-accent-ink font-medium"
-                  : "text-ink-muted hover:bg-accent-surface hover:text-ink",
+                "flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-[6px] px-3 text-ui transition-colors sm:flex-none",
+                active ? "bg-ink font-medium text-bg" : "text-mute hover:text-ink",
               )}
             >
               <input
@@ -249,7 +219,7 @@ export function SwitchRow({
     <div className="flex items-start justify-between gap-4 py-2">
       <span className="flex flex-col gap-0.5">
         <span className="text-body">{label}</span>
-        {hint ? <span className="text-label text-ink-muted measure">{hint}</span> : null}
+        {hint ? <span className="measure text-caption text-mute">{hint}</span> : null}
       </span>
       <label className="relative inline-flex h-11 shrink-0 cursor-pointer items-center">
         <input
@@ -265,16 +235,16 @@ export function SwitchRow({
           aria-hidden="true"
           className={cn(
             "h-6 w-11 rounded-full border transition-colors",
-            checked ? "border-accent bg-accent" : "border-line-strong bg-surface",
-            "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent",
-            "peer-disabled:opacity-55",
+            checked ? "border-ink bg-ink" : "border-line-strong bg-raised",
+            "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink",
+            "peer-disabled:opacity-45",
           )}
         />
         <span
           aria-hidden="true"
           className={cn(
             "absolute left-1 top-1/2 size-4 -translate-y-1/2 rounded-full transition-transform",
-            checked ? "translate-x-5 bg-accent-ink" : "bg-ink-muted",
+            checked ? "translate-x-5 bg-bg" : "bg-mute",
           )}
         />
       </label>
@@ -295,10 +265,10 @@ export function EmptyState({
   secondaryAction?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-panel border border-dashed border-line-strong bg-surface p-5">
+    <div className="flex flex-col items-start gap-3 rounded-panel border border-dashed border-line-strong bg-raised p-5">
       <div className="flex flex-col gap-1">
-        <p className="text-body font-semibold">{title}</p>
-        <p className="text-meta text-ink-muted measure">{body}</p>
+        <p className="text-body font-medium">{title}</p>
+        <p className="measure text-caption text-mute">{body}</p>
       </div>
       {action || secondaryAction ? (
         <div className="flex flex-wrap items-center gap-2">

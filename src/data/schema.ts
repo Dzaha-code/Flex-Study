@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coerceCategorySymbol } from "@/domain/types";
 import type {
   BlockInstance,
   BlockTemplate,
@@ -28,18 +29,26 @@ const entityShape = {
   schemaVersion: z.number().int().positive(),
 };
 
-export const categoryIconSchema = z.enum([
-  "book",
-  "briefcase",
-  "notebook",
-  "language",
-  "heart",
-  "run",
-  "sparkle",
-  "clock",
+/**
+ * Categories are marked by a geometric symbol, never a colour (DESIGN.md
+ * §3.3). `preprocess` keeps data written before v2 readable: an old icon name
+ * such as `"book"` is mapped onto its symbol instead of failing the parse, so
+ * existing IndexedDB rows and exported JSON still import.
+ */
+export const categorySymbolSchema = z.enum([
+  "disc",
+  "square",
+  "diamond",
+  "triangle",
+  "ring",
+  "square-open",
+  "diamond-open",
+  "triangle-open",
+  "star",
+  "plus",
 ]);
 
-export const linePatternSchema = z.enum(["solid", "dashed", "dotted"]);
+const categoryIconSchema = z.preprocess(coerceCategorySymbol, categorySymbolSchema);
 
 export const blockStatusSchema = z.enum([
   "planned",
@@ -60,7 +69,6 @@ export const CategorySchema = z.object({
   ...entityShape,
   name: z.string().min(1).max(80),
   icon: categoryIconSchema,
-  linePattern: linePatternSchema,
   weeklyTargetMinutes: z.number().int().min(0).max(10_080),
   order: z.number().int().min(0).max(9_999),
 });

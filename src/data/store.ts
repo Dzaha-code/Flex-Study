@@ -15,8 +15,7 @@ import type {
   BlockInstance,
   BlockTemplate,
   Category,
-  CategoryIcon,
-  LinePattern,
+  CategorySymbol,
   Reflection,
   Settings,
   ShiftEvent,
@@ -24,6 +23,7 @@ import type {
 } from "@/domain";
 import { buildFromTemplate, findTemplate } from "@/templates";
 import { DEFAULT_SETTINGS } from "@/domain/types";
+import { orphanedInstanceIds, propagateTemplateEdit } from "@/domain/propagate";
 import {
   clearWorkspace,
   deleteUntouchedInstancesAfter,
@@ -59,8 +59,7 @@ export type AppStatus = "loading" | "ready" | "error";
 export interface CategoryDraft {
   id?: string;
   name: string;
-  icon: CategoryIcon;
-  linePattern: LinePattern;
+  icon: CategorySymbol;
   weeklyTargetMinutes: number;
 }
 
@@ -80,6 +79,12 @@ export interface InstanceDraft {
   durationMin: number;
   plannedStart: string | null;
 }
+
+/**
+ * A manual block carries its own definition, so these are the fields it
+ * exposes for editing. Its date never changes — moving it is a reschedule.
+ */
+export type InstanceEditPatch = Omit<InstanceDraft, "date">;
 
 export interface ReflectionDraftInput {
   date: string;
@@ -108,6 +113,8 @@ export interface AppState {
   deleteCategory: (id: string) => Promise<void>;
   saveBlockTemplate: (draft: BlockTemplateDraft) => Promise<void>;
   deleteBlockTemplate: (id: string) => Promise<void>;
+  /** Edits a block that has no template behind it. */
+  updateInstance: (id: string, patch: InstanceEditPatch) => Promise<void>;
   /** Order decides the sequence of blocks that have no fixed start time. */
   reorderBlockTemplate: (id: string, direction: -1 | 1) => Promise<void>;
   applyTemplate: (
@@ -225,7 +232,6 @@ export const useAppStore = create<AppState>()((set, get) => {
         id: existing?.id ?? createId("cat"),
         name: draft.name.trim() || "—",
         icon: draft.icon,
-        linePattern: draft.linePattern,
         weeklyTargetMinutes: Math.max(0, Math.round(draft.weeklyTargetMinutes)),
         order: existing?.order ?? state.categories.length,
         createdAt: existing?.createdAt ?? stamp,
@@ -268,6 +274,14 @@ export const useAppStore = create<AppState>()((set, get) => {
       guardWrite(await persistTemplates([template]));
 
       const today = todayISO(Date.now());
+      // Every block keeps its own copy of the title, duration, category and
+      // start, so editing the template alone would leave the old text on every
+      // day up to today — a corrected typo would still read wrong on today's
+      // timeline. Rewrite the untouched days; the future is dropped and
+      // regenerated below, which also picks up newly added weekdays.
+      const rewritten = propagateTemplateEdit(state.instances, template, stamp, today);
+      if (rewritten.length > 0) guardWrite(await persistInstances(rewritten));
+
       guardWrite(await deleteUntouchedInstancesAfter(today));
       const fresh = await loadWorkspace();
       set({ instances: fresh.instances });
@@ -276,13 +290,23 @@ export const useAppStore = create<AppState>()((set, get) => {
 
     deleteBlockTemplate: async (id) => {
       const state = get();
+      const today = todayISO(Date.now());
+
       set({ templates: state.templates.filter((template) => template.id !== id) });
       guardWrite(await removeTemplateRow(id));
 
-      const today = todayISO(Date.now());
+      // Take the pending occurrences with it. Without this the deleted block
+      // keeps appearing on today's timeline, pointing at a template that no
+      // longer exists. Occurrences the user already worked on stay as history.
+      const orphans = orphanedInstanceIds(state.instances, [id], today);
+      if (orphans.length > 0) guardWrite(await removeInstances(orphans));
+
       guardWrite(await deleteUntouchedInstancesAfter(today));
       const fresh = await loadWorkspace();
       set({ instances: fresh.instances });
+      // Rematerialise the remaining templates, so the future is not left empty
+      // until the next navigation happens to call ensureRange.
+      await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
     },
 
     reorderBlockTemplate: async (id, direction) => {
@@ -436,6 +460,27 @@ export const useAppStore = create<AppState>()((set, get) => {
       const state = get();
       set({ instances: state.instances.filter((instance) => instance.id !== id) });
       guardWrite(await removeInstances([id]));
+    },
+
+    updateInstance: async (id, patch) => {
+      const state = get();
+      const existing = state.instances.find((instance) => instance.id === id);
+      if (!existing) return;
+
+      // A manual block owns its definition, so this is the only place the
+      // change has to go. Template-backed blocks are edited at the template
+      // instead — see resolveEditTarget.
+      const instance: BlockInstance = {
+        ...existing,
+        title: patch.title.trim() || "—",
+        categoryId: patch.categoryId,
+        durationMin: Math.min(1_440, Math.max(1, Math.round(patch.durationMin))),
+        plannedStart: patch.plannedStart,
+        updatedAt: new Date().toISOString(),
+      };
+
+      set({ instances: upsertById(state.instances, [instance]) });
+      guardWrite(await persistInstances([instance]));
     },
 
     startBlock: async (id) => {

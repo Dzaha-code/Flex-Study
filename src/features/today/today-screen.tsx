@@ -17,6 +17,7 @@ import {
 } from "@/domain";
 import type { BlockInstance } from "@/domain/types";
 import { useI18n } from "@/i18n";
+import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { ShiftSheet } from "./shift-sheet";
@@ -92,6 +93,7 @@ function TodayContent({ date }: { date: string }) {
   const [shiftOpen, setShiftOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [noteTarget, setNoteTarget] = useState<BlockInstance | null>(null);
+  const [editTarget, setEditTarget] = useState<BlockInstance | null>(null);
 
   const todayBlocks = useMemo(
     () => instances.filter((instance) => instance.date === date),
@@ -151,7 +153,6 @@ function TodayContent({ date }: { date: string }) {
         </div>
         <ProgressBar
           value={progress.ratio}
-          tone={progress.totalCount > 0 && progress.ratio === 1 ? "ok" : "accent"}
           label={t("a11y.progress", {
             done: progress.doneCount,
             total: progress.totalCount,
@@ -186,6 +187,7 @@ function TodayContent({ date }: { date: string }) {
           focusId={focus?.instance.id ?? null}
           categoryById={categoryById}
           onOpenNote={setNoteTarget}
+          onEditBlock={setEditTarget}
         />
       )}
 
@@ -225,6 +227,9 @@ function TodayContent({ date }: { date: string }) {
       <ShiftSheet open={shiftOpen} onOpenChange={setShiftOpen} date={date} />
       {addOpen ? <AddBlockSheet date={date} onClose={() => setAddOpen(false)} /> : null}
       {noteTarget ? <NoteSheet instance={noteTarget} onClose={() => setNoteTarget(null)} /> : null}
+      {editTarget ? (
+        <EditBlockSheet instance={editTarget} onClose={() => setEditTarget(null)} />
+      ) : null}
     </div>
   );
 }

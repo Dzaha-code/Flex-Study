@@ -4,8 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/dialog";
 import { NumberInput, SelectField, TextInput, TimeInput } from "@/components/ui/field";
-import { IconCheck, IconNote, IconPlay, IconSkip, IconUndo, IconWarning } from "@/components/ui/icons";
-import { CategoryTag, Panel, ProgressBar, StatusBadge } from "@/components/ui/surface";
+import {
+  IconCheck,
+  IconNote,
+  IconPencil,
+  IconPlay,
+  IconSkip,
+  IconUndo,
+  IconWarning,
+} from "@/components/ui/icons";
+import { CategoryTag, ProgressBar, StatusBadge } from "@/components/ui/surface";
 import { useAppStore } from "@/data/store";
 import { formatCountdown, progressRatio, remainingSeconds } from "@/domain";
 import type { LaidOutBlock } from "@/domain/schedule";
@@ -33,14 +41,14 @@ function Markers({ status, overlap }: { status: BlockInstance["status"]; overlap
 function NowMarker({ nowMinute }: { nowMinute: number }) {
   const { t, formatClockValue } = useI18n();
   return (
+    // The one signature element of the whole design: a stabilo label plus a 2px
+    // rule. On light paper --hl is only 1.10:1, so the rule uses --hl-rule,
+    // which clears 3:1 while keeping the hue (DESIGN.md §5).
     <div className="grid grid-cols-[3.25rem_1fr] items-center gap-3 py-1.5 sm:grid-cols-[4rem_1fr]">
-      <span aria-hidden="true" className="text-right text-label font-medium text-accent">
-        {formatClockValue(nowMinute)}
+      <span aria-hidden="true" className="stabilo justify-self-end whitespace-nowrap">
+        {t("today.nowMarker", { time: formatClockValue(nowMinute) })}
       </span>
-      <span aria-hidden="true" className="flex items-center gap-2">
-        <span className="size-2 shrink-0 rounded-full bg-accent" />
-        <span className="h-px flex-1 bg-accent" />
-      </span>
+      <span aria-hidden="true" className="h-0.5 w-full rounded-full bg-hl-rule" />
       <span className="sr-only">{t("today.nowMarker", { time: formatClockValue(nowMinute) })}</span>
     </div>
   );
@@ -56,13 +64,24 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
   return (
     <>
       {instance.status === "planned" ? (
-        <Button size={prominent ? "md" : "sm"} onClick={() => void startBlock(instance.id)}>
+        <Button
+          size={prominent ? "md" : "sm"}
+          // Only the active block carries the one primary button on the screen
+          // (DESIGN.md §2 "satu sorotan per layar", §5). Rows use the text
+          // variant, matching the reference prototype.
+          variant={prominent ? "primary" : "ghost"}
+          onClick={() => void startBlock(instance.id)}
+        >
           <IconPlay />
-          {t("common.start")}
+          {prominent ? t("common.start") : t("common.startShort")}
         </Button>
       ) : null}
       {instance.status === "running" ? (
-        <Button size={prominent ? "md" : "sm"} onClick={() => void completeBlock(instance.id)}>
+        <Button
+          size={prominent ? "md" : "sm"}
+          variant={prominent ? "primary" : "ghost"}
+          onClick={() => void completeBlock(instance.id)}
+        >
           <IconCheck />
           {t("common.finish")}
         </Button>
@@ -121,11 +140,13 @@ function FocusCard({
   category,
   nowEpoch,
   onOpenNote,
+  onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
   nowEpoch: number;
   onOpenNote: (instance: BlockInstance) => void;
+  onEditBlock: (instance: BlockInstance) => void;
 }) {
   const { t, formatMinutes } = useI18n();
   const remaining = remainingSeconds(instance, nowEpoch);
@@ -133,17 +154,21 @@ function FocusCard({
   const overrunning = instance.status === "running" && remaining === 0;
 
   return (
-    <Panel className="flex flex-col gap-3 border-accent/60">
+    // The active block is the strongest line on the page: 1.5px of ink, the
+    // one highlight per screen (DESIGN.md §5).
+    <div className="surface-active flex flex-col gap-3 p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-label font-medium text-accent">{t("today.focusTitle")}</p>
-          <h3 className="text-title">{instance.title}</h3>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p>
+            <span className="stabilo">{t("today.focusTitle")}</span>
+          </p>
+          <h3 className="text-title-2">{instance.title}</h3>
         </div>
         <StatusBadge status={instance.status} />
       </div>
 
       {category ? (
-        <CategoryTag name={category.name} icon={category.icon} pattern={category.linePattern} />
+        <CategoryTag name={category.name} icon={category.icon} />
       ) : null}
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -176,8 +201,12 @@ function FocusCard({
           <IconNote />
           {t("today.note")}
         </Button>
+        <Button size="md" variant="ghost" onClick={() => onEditBlock(instance)}>
+          <IconPencil />
+          {t("today.editBlock")}
+        </Button>
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -186,11 +215,13 @@ function CompactRow({
   category,
   nowEpoch,
   onOpenNote,
+  onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
   nowEpoch: number;
   onOpenNote: (instance: BlockInstance) => void;
+  onEditBlock: (instance: BlockInstance) => void;
 }) {
   const { t, formatMinutes } = useI18n();
   const running = instance.status === "running";
@@ -208,7 +239,7 @@ function CompactRow({
         </span>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {category ? (
-            <CategoryTag name={category.name} icon={category.icon} pattern={category.linePattern} />
+            <CategoryTag name={category.name} icon={category.icon} />
           ) : null}
           <span className="text-label text-ink-muted">
             {running
@@ -226,6 +257,12 @@ function CompactRow({
         <IconButton label={`${t("today.note")}: ${instance.title}`} onClick={() => onOpenNote(instance)}>
           <IconNote />
         </IconButton>
+        <IconButton
+          label={`${t("today.editBlock")}: ${instance.title}`}
+          onClick={() => onEditBlock(instance)}
+        >
+          <IconPencil />
+        </IconButton>
       </div>
     </div>
   );
@@ -238,6 +275,7 @@ export function Timeline({
   focusId,
   categoryById,
   onOpenNote,
+  onEditBlock,
 }: {
   blocks: LaidOutBlock[];
   nowMinute: number;
@@ -245,8 +283,9 @@ export function Timeline({
   focusId: string | null;
   categoryById: CategoryLookup;
   onOpenNote: (instance: BlockInstance) => void;
+  onEditBlock: (instance: BlockInstance) => void;
 }) {
-  const { t, formatClockValue } = useI18n();
+  const { formatClockValue } = useI18n();
   const markerIndex = blocks.findIndex((block) => block.startMinute > nowMinute);
 
   return (
@@ -278,11 +317,10 @@ export function Timeline({
                   )}
                 />
                 <div className="flex flex-col gap-1">
+                  {/* The "in focus" label lives inside FocusCard, which owns
+                      the one highlight for this part of the screen. */}
                   <div className="flex items-center gap-2">
                     <Markers status={block.instance.status} overlap={block.overlap} />
-                    {prominent ? (
-                      <span className="text-label font-medium text-accent">{t("today.focusTitle")}</span>
-                    ) : null}
                   </div>
 
                   {prominent ? (
@@ -291,6 +329,7 @@ export function Timeline({
                       category={categoryById.get(block.instance.categoryId)}
                       nowEpoch={nowEpoch}
                       onOpenNote={onOpenNote}
+                      onEditBlock={onEditBlock}
                     />
                   ) : (
                     <CompactRow
@@ -298,6 +337,7 @@ export function Timeline({
                       category={categoryById.get(block.instance.categoryId)}
                       nowEpoch={nowEpoch}
                       onOpenNote={onOpenNote}
+                      onEditBlock={onEditBlock}
                     />
                   )}
                 </div>

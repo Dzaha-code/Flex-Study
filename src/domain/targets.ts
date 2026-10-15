@@ -1,5 +1,5 @@
 import { addDays, startOfWeek } from "./time";
-import type { BlockInstance, Category, CategoryIcon, LinePattern, WeekStart } from "./types";
+import type { BlockInstance, Category, CategorySymbol, WeekStart } from "./types";
 
 /**
  * Weekly targets are derived from finished `BlockInstance` rows, never from a
@@ -15,8 +15,7 @@ export function creditedMinutes(instance: BlockInstance): number {
 export interface CategoryProgress {
   categoryId: string;
   name: string;
-  icon: CategoryIcon;
-  linePattern: LinePattern;
+  icon: CategorySymbol;
   targetMinutes: number;
   doneMinutes: number;
   doneBlocks: number;
@@ -60,7 +59,6 @@ export function categoryProgressForWeek({
         categoryId: category.id,
         name: category.name,
         icon: category.icon,
-        linePattern: category.linePattern,
         targetMinutes: target,
         doneMinutes,
         doneBlocks,

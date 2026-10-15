@@ -168,7 +168,7 @@ export function WeekScreen() {
                 </div>
                 <ProgressBar
                   value={entry.percent}
-                  tone={entry.percent >= 1 ? "ok" : "accent"}
+                  height={4}
                   label={`${entry.name}: ${formatMinutes(entry.doneMinutes)}`}
                 />
               </li>

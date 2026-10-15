@@ -36,7 +36,6 @@ export function buildFromTemplate({
       id,
       name: pickLocalized(category.name, locale),
       icon: category.icon,
-      linePattern: category.linePattern,
       weeklyTargetMinutes: category.weeklyTargetMinutes,
       order: index,
       createdAt: stamp,

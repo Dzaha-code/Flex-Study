@@ -44,3 +44,5 @@ next-env.d.ts
 /node-compile-cache/
 /.buyer-execution-hooks/
 *.log
+.vercel
+.env*

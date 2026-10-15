@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS } from "@/domain/types";
+import { isUntouchedInstance } from "@/domain/propagate";
 import type {
   BlockInstance,
   BlockTemplate,
@@ -101,13 +102,7 @@ export async function deleteUntouchedInstancesAfter(date: string): Promise<Write
     const keys = await db.instances
       .where("date")
       .above(date)
-      .filter(
-        (instance) =>
-          instance.status === "planned" &&
-          instance.actualSeconds === 0 &&
-          instance.note.trim() === "" &&
-          instance.movedFrom === null,
-      )
+      .filter((instance) => isUntouchedInstance(instance))
       .primaryKeys();
     if (keys.length > 0) await db.instances.bulkDelete(keys);
   });

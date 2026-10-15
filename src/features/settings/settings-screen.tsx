@@ -180,7 +180,7 @@ export function SettingsScreen() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {applied ? <Chip tone="accent">{t("settings.applyTemplate")} ✓</Chip> : null}
+                    {applied ? <Chip>{t("settings.applyTemplate")} ✓</Chip> : null}
                     <Button
                       size="sm"
                       variant="secondary"

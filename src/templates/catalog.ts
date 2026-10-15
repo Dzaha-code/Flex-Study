@@ -15,10 +15,10 @@ const utbkPkl: StudyTemplate = {
   },
   audienceKey: "template.utbkPkl.audience",
   categories: [
-    { id: "study", name: { id: "Belajar ujian", en: "Exam study" }, icon: "book", linePattern: "solid", weeklyTargetMinutes: 900 },
-    { id: "project", name: { id: "Proyek", en: "Project" }, icon: "briefcase", linePattern: "dashed", weeklyTargetMinutes: 450 },
-    { id: "log", name: { id: "Jurnal", en: "Journal" }, icon: "notebook", linePattern: "dotted", weeklyTargetMinutes: 225 },
-    { id: "language", name: { id: "Bahasa", en: "Language" }, icon: "language", linePattern: "solid", weeklyTargetMinutes: 300 },
+    { id: "study", name: { id: "Belajar ujian", en: "Exam study" }, icon: "disc", weeklyTargetMinutes: 900 },
+    { id: "project", name: { id: "Proyek", en: "Project" }, icon: "square", weeklyTargetMinutes: 450 },
+    { id: "log", name: { id: "Jurnal", en: "Journal" }, icon: "diamond", weeklyTargetMinutes: 225 },
+    { id: "language", name: { id: "Bahasa", en: "Language" }, icon: "triangle", weeklyTargetMinutes: 300 },
   ],
   blocks: [
     { title: { id: "Sesi belajar 1: TPS dan Literasi", en: "Study session 1: reasoning and literacy" }, categoryId: "study", durationMin: 90, days: WEEKDAYS, plannedStart: null },
@@ -39,9 +39,9 @@ const selfStudy: StudyTemplate = {
   },
   audienceKey: "template.selfStudy.audience",
   categories: [
-    { id: "focus", name: { id: "Sesi fokus", en: "Focus session" }, icon: "sparkle", linePattern: "solid", weeklyTargetMinutes: 300 },
-    { id: "language", name: { id: "Bahasa", en: "Language" }, icon: "language", linePattern: "dashed", weeklyTargetMinutes: 150 },
-    { id: "reflection", name: { id: "Refleksi & jurnal", en: "Reflection & journal" }, icon: "notebook", linePattern: "dotted", weeklyTargetMinutes: 105 },
+    { id: "focus", name: { id: "Sesi fokus", en: "Focus session" }, icon: "star", weeklyTargetMinutes: 300 },
+    { id: "language", name: { id: "Bahasa", en: "Language" }, icon: "triangle", weeklyTargetMinutes: 150 },
+    { id: "reflection", name: { id: "Refleksi & jurnal", en: "Reflection & journal" }, icon: "diamond", weeklyTargetMinutes: 105 },
   ],
   blocks: [
     { title: { id: "Fokus pagi", en: "Morning focus" }, categoryId: "focus", durationMin: 30, days: WEEKDAYS, plannedStart: null },
@@ -65,7 +65,7 @@ const empty: StudyTemplate = {
   },
   audienceKey: "template.empty.audience",
   categories: [
-    { id: "focus", name: { id: "Sesi fokus", en: "Focus session" }, icon: "sparkle", linePattern: "solid", weeklyTargetMinutes: 300 },
+    { id: "focus", name: { id: "Sesi fokus", en: "Focus session" }, icon: "star", weeklyTargetMinutes: 300 },
   ],
   blocks: [],
 };

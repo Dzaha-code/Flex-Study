@@ -24,15 +24,57 @@ export type ThemePreference = "system" | "light" | "dark";
 /** 0 = Sunday, 1 = Monday. */
 export type WeekStart = 0 | 1;
 
-export type CategoryIcon =
-  | "book"
-  | "briefcase"
-  | "notebook"
-  | "language"
-  | "heart"
-  | "run"
-  | "sparkle"
-  | "clock";
+/**
+ * Categories are told apart by a geometric symbol plus their name — never by
+ * hue (DESIGN.md §3.3). Four symbols are used by the built-in categories; the
+ * remaining six are reserved for categories the user creates.
+ */
+export type CategorySymbol =
+  | "disc" // ●  study
+  | "square" // ■  project
+  | "diamond" // ◆  journal
+  | "triangle" // ▲  language
+  | "ring" // ○
+  | "square-open" // □
+  | "diamond-open" // ◇
+  | "triangle-open" // △
+  | "star" // ★
+  | "plus"; // ✚
+
+/** The built-ins in template order; user categories draw from here as well. */
+export const CATEGORY_SYMBOLS: CategorySymbol[] = [
+  "disc",
+  "square",
+  "diamond",
+  "triangle",
+  "ring",
+  "square-open",
+  "diamond-open",
+  "triangle-open",
+  "star",
+  "plus",
+];
+
+/**
+ * Symbols used before v2's geometric set, when categories borrowed from an
+ * icon library. Kept so existing IndexedDB rows and exported JSON still load.
+ */
+export const LEGACY_ICON_TO_SYMBOL: Record<string, CategorySymbol> = {
+  book: "disc",
+  briefcase: "square",
+  notebook: "diamond",
+  language: "triangle",
+  clock: "ring",
+  heart: "star",
+  run: "plus",
+  sparkle: "star",
+};
+
+export function coerceCategorySymbol(value: unknown): CategorySymbol {
+  if (typeof value !== "string") return "disc";
+  if ((CATEGORY_SYMBOLS as string[]).includes(value)) return value as CategorySymbol;
+  return LEGACY_ICON_TO_SYMBOL[value] ?? "disc";
+}
 
 export interface Entity {
   id: string;
@@ -43,9 +85,8 @@ export interface Entity {
 
 export interface Category extends Entity {
   name: string;
-  icon: CategoryIcon;
-  /** Categories are told apart by icon, label and line pattern — never by hue. */
-  linePattern: LinePattern;
+  /** Geometric marker. Never a colour — categories survive colour blindness. */
+  icon: CategorySymbol;
   weeklyTargetMinutes: number;
   order: number;
 }

@@ -1,6 +1,7 @@
 import type {
   BlockInstance,
   BlockStatus,
+  BlockTemplate,
   Category,
   Settings,
 } from "@/domain/types";
@@ -59,10 +60,27 @@ export function makeInstance(
 export function makeCategory(partial: Partial<Category> & Pick<Category, "id">): Category {
   return {
     name: partial.id,
-    icon: "book",
-    linePattern: "solid",
+    icon: "disc",
     weeklyTargetMinutes: 300,
     order: 0,
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    schemaVersion: 1,
+    ...partial,
+  };
+}
+
+export function makeTemplate(
+  partial: Partial<BlockTemplate> & Pick<BlockTemplate, "id">,
+): BlockTemplate {
+  return {
+    categoryId: "study",
+    title: partial.id,
+    durationMin: 60,
+    days: [1, 2, 3, 4, 5],
+    order: 0,
+    plannedStart: null,
+    archived: false,
     createdAt: STAMP,
     updatedAt: STAMP,
     schemaVersion: 1,

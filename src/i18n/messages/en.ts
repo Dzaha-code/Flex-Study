@@ -13,6 +13,7 @@ export const en: Messages = {
   "nav.settings": "Settings",
 
   "common.start": "Start focus",
+  "common.startShort": "Start",
   "common.finish": "Finish",
   "common.reset": "Reset",
   "common.skip": "Skip",
@@ -44,10 +45,14 @@ export const en: Messages = {
   "today.progressDone": "{{done}} of {{total}} blocks done",
   "today.messy": "Today fell apart",
   "today.nowMarker": "now {{time}}",
-  "today.focusTitle": "Now",
+  "today.focusTitle": "In focus",
   "today.upNext": "Up next",
   "today.remaining": "{{time}} left",
   "today.overtime": "past the planned duration",
+  "today.editBlock": "Edit block",
+  "today.editHintTemplate":
+    "This block is part of your plan, so the change applies to every day it appears on. Blocks you have already worked on stay as they are.",
+  "today.editHintInstance": "A one-off block. The change applies to this block only.",
   "today.note": "Note",
   "today.notePlaceholder": "One line is plenty.",
   "today.noteHint": "Basic Markdown works: **bold**, *italic*, `code` and lists.",

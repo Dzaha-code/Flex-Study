@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
-import { applyThemeClass, resolveTheme, systemPrefersDark } from "@/lib/preferences";
+import { applyThemeAttribute, resolveTheme, systemPrefersDark } from "@/lib/preferences";
 import { ToastProvider } from "./ui/toast";
 
 /**
@@ -14,7 +14,7 @@ function ThemeSync() {
   const theme = useAppStore((state) => state.settings.theme);
 
   useEffect(() => {
-    const apply = () => applyThemeClass(resolveTheme(theme, systemPrefersDark()));
+    const apply = () => applyThemeAttribute(resolveTheme(theme, systemPrefersDark()));
     apply();
 
     if (theme !== "system" || typeof window.matchMedia !== "function") return;

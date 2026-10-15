@@ -1,4 +1,4 @@
-import type { CategoryIcon, LinePattern, Locale } from "@/domain/types";
+import type { CategorySymbol, Locale } from "@/domain/types";
 
 /**
  * Templates are data. The core system knows nothing about UTBK or PKL — it only
@@ -13,8 +13,7 @@ export interface LocalizedText {
 export interface TemplateCategory {
   id: string;
   name: LocalizedText;
-  icon: CategoryIcon;
-  linePattern: LinePattern;
+  icon: CategorySymbol;
   weeklyTargetMinutes: number;
 }
 

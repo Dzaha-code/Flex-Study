@@ -7,3 +7,4 @@ export * from "./targets";
 export * from "./week";
 export * from "./reflection";
 export * from "./shift";
+export * from "./propagate";

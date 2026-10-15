@@ -15,6 +15,7 @@ export const id = {
   "nav.settings": "Atur",
 
   "common.start": "Mulai fokus",
+  "common.startShort": "Mulai",
   "common.finish": "Selesai",
   "common.reset": "Ulangi",
   "common.skip": "Lewati",
@@ -46,10 +47,14 @@ export const id = {
   "today.progressDone": "{{done}} dari {{total}} blok selesai",
   "today.messy": "Hari ini berantakan",
   "today.nowMarker": "sekarang {{time}}",
-  "today.focusTitle": "Sekarang",
+  "today.focusTitle": "Sedang fokus",
   "today.upNext": "Berikutnya",
   "today.remaining": "sisa {{time}}",
   "today.overtime": "melewati durasi",
+  "today.editBlock": "Edit blok",
+  "today.editHintTemplate":
+    "Blok ini bagian dari jadwal, jadi perubahannya berlaku untuk semua harinya. Blok yang sudah kamu kerjakan tetap seperti adanya.",
+  "today.editHintInstance": "Blok sekali jalan. Perubahan hanya berlaku untuk blok ini.",
   "today.note": "Catatan",
   "today.notePlaceholder": "Satu baris sudah cukup.",
   "today.noteHint": "Markdown dasar didukung: **tebal**, *miring*, `kode`, dan daftar.",

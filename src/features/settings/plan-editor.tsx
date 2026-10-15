@@ -4,34 +4,28 @@ import { useState } from "react";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { Sheet } from "@/components/ui/dialog";
 import { Button, IconButton } from "@/components/ui/button";
-import { NumberInput, SelectField, TextInput, TimeInput } from "@/components/ui/field";
+import { NumberInput, SelectField, TextInput } from "@/components/ui/field";
 import {
-  CATEGORY_ICON_IDS,
+  CATEGORY_GLYPH_IDS,
   CategoryGlyph,
+  SYMBOL_GLYPHS,
   IconArrowDown,
   IconArrowUp,
   IconPlus,
   IconTrash,
 } from "@/components/ui/icons";
-import {
-  CategoryTag,
-  EmptyState,
-  PatternMark,
-  SegmentedControl,
-} from "@/components/ui/surface";
+import { CategoryTag, EmptyState } from "@/components/ui/surface";
+import { BlockTemplateForm } from "@/features/plan/block-template-form";
 import { useAppStore, type BlockTemplateDraft, type CategoryDraft } from "@/data/store";
-import type { BlockTemplate, Category, CategoryIcon, LinePattern } from "@/domain/types";
+import type { BlockTemplate, Category, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
-import { cn } from "@/lib/utils";
 
-const PATTERNS: LinePattern[] = ["solid", "dashed", "dotted"];
-
-const CATEGORY_ICON_LABEL_KEYS = CATEGORY_ICON_IDS.map((icon) => ({
-  value: icon,
-  labelKey: `settings.icon.${icon}` as const,
+/** The picker shows the marker itself — a symbol needs no translated name. */
+const CATEGORY_SYMBOL_OPTIONS = CATEGORY_GLYPH_IDS.map((symbol) => ({
+  value: symbol,
+  label: SYMBOL_GLYPHS[symbol],
 }));
 
-const DAY_INDEXES = [1, 2, 3, 4, 5, 6, 0];
 
 /* ------------------------------------------------------------------ *
  * Categories
@@ -42,8 +36,7 @@ function CategoryForm({ initial, onClose }: { initial: CategoryDraft; onClose: (
   const { t } = useI18n();
 
   const [name, setName] = useState(initial.name);
-  const [icon, setIcon] = useState<CategoryIcon>(initial.icon);
-  const [pattern, setPattern] = useState<LinePattern>(initial.linePattern);
+  const [icon, setIcon] = useState<CategorySymbol>(initial.icon);
   const [target, setTarget] = useState(String(initial.weeklyTargetMinutes));
 
   const parsedTarget = Number.parseInt(target, 10);
@@ -69,7 +62,6 @@ function CategoryForm({ initial, onClose }: { initial: CategoryDraft; onClose: (
                 id: initial.id,
                 name,
                 icon,
-                linePattern: pattern,
                 weeklyTargetMinutes: parsedTarget,
               });
               onClose();
@@ -91,34 +83,13 @@ function CategoryForm({ initial, onClose }: { initial: CategoryDraft; onClose: (
       <SelectField
         label={t("settings.categoryIcon")}
         value={icon}
-        options={CATEGORY_ICON_LABEL_KEYS.map((entry) => ({
-          value: entry.value,
-          label: t(entry.labelKey),
-        }))}
-        onChange={(event) => setIcon(event.target.value as CategoryIcon)}
+        options={CATEGORY_SYMBOL_OPTIONS}
+        onChange={(event) => setIcon(event.target.value as CategorySymbol)}
       />
 
-      <SegmentedControl
-        legend={t("settings.categoryPattern")}
-        name="category-pattern"
-        value={pattern}
-        onChange={setPattern}
-        options={PATTERNS.map((value) => ({
-          value,
-          label: t(
-            value === "solid"
-              ? "settings.pattern.solid"
-              : value === "dashed"
-                ? "settings.pattern.dashed"
-                : "settings.pattern.dotted",
-          ),
-        }))}
-      />
-
-      <div className="flex items-center gap-3 rounded-panel border border-line bg-surface p-3">
-        <CategoryGlyph icon={icon} width={22} height={22} />
-        <PatternMark pattern={pattern} className="text-ink-muted" />
-        <span className="text-meta text-ink-muted">{name || "—"}</span>
+      <div className="flex items-center gap-3 rounded-panel border border-line bg-raised p-3">
+        <CategoryGlyph icon={icon} className="text-body text-ink" />
+        <span className="text-caption text-mute">{name || "—"}</span>
       </div>
 
       <NumberInput
@@ -153,7 +124,7 @@ export function CategoriesEditor() {
           action={
             <Button
               onClick={() =>
-                setDraft({ name: "", icon: "sparkle", linePattern: "solid", weeklyTargetMinutes: 300 })
+                setDraft({ name: "", icon: "star", weeklyTargetMinutes: 300 })
               }
             >
               <IconPlus />
@@ -168,7 +139,6 @@ export function CategoriesEditor() {
               <CategoryTag
                 name={category.name}
                 icon={category.icon}
-                pattern={category.linePattern}
               />
               <div className="flex items-center gap-1">
                 <span className="mr-1 text-meta text-ink-muted">
@@ -182,7 +152,6 @@ export function CategoriesEditor() {
                       id: category.id,
                       name: category.name,
                       icon: category.icon,
-                      linePattern: category.linePattern,
                       weeklyTargetMinutes: category.weeklyTargetMinutes,
                     })
                   }
@@ -208,8 +177,7 @@ export function CategoriesEditor() {
             onClick={() =>
               setDraft({
                 name: "",
-                icon: "sparkle",
-                linePattern: "solid",
+                icon: "star",
                 weeklyTargetMinutes: 300,
               })
             }
@@ -242,158 +210,6 @@ export function CategoriesEditor() {
 /* ------------------------------------------------------------------ *
  * Block templates
  * ------------------------------------------------------------------ */
-
-function DayPicker({
-  days,
-  onChange,
-}: {
-  days: number[];
-  onChange: (next: number[]) => void;
-}) {
-  const { t, formatWeekdayIndex } = useI18n();
-
-  const toggle = (day: number) => {
-    onChange(days.includes(day) ? days.filter((value) => value !== day) : [...days, day]);
-  };
-
-  return (
-    <fieldset className="flex flex-col gap-1.5 border-0 p-0">
-      <legend className="mb-1 text-label font-medium text-ink-muted">
-        {t("settings.blockDays")}
-      </legend>
-      <div className="flex flex-wrap gap-1.5">
-        {DAY_INDEXES.map((day) => {
-          const active = days.includes(day);
-          return (
-            <label
-              key={day}
-              className={cn(
-                "inline-flex min-h-10 min-w-14 cursor-pointer items-center justify-center rounded-control border px-2 text-meta",
-                active
-                  ? "border-accent bg-accent-surface text-ink"
-                  : "border-line-strong text-ink-muted hover:bg-accent-surface/50",
-              )}
-            >
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={() => toggle(day)}
-                className="sr-only"
-              />
-              {formatWeekdayIndex(day)}
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
-
-function BlockTemplateForm({
-  initial,
-  onClose,
-}: {
-  initial: BlockTemplateDraft;
-  onClose: () => void;
-}) {
-  const categories = useAppStore((state) => state.categories);
-  const saveBlockTemplate = useAppStore((state) => state.saveBlockTemplate);
-  const { t } = useI18n();
-
-  const [title, setTitle] = useState(initial.title);
-  const [categoryId, setCategoryId] = useState(initial.categoryId);
-  const [duration, setDuration] = useState(String(initial.durationMin));
-  const [days, setDays] = useState<number[]>(initial.days);
-  const [fixedStart, setFixedStart] = useState(initial.plannedStart !== null);
-  const [plannedStart, setPlannedStart] = useState(initial.plannedStart ?? "08:00");
-
-  const parsedDuration = Number.parseInt(duration, 10);
-  const titleMissing = title.trim() === "";
-  const durationInvalid = !Number.isFinite(parsedDuration) || parsedDuration < 1;
-  const daysMissing = days.length === 0;
-  const disabled = titleMissing || durationInvalid || daysMissing || categoryId === "";
-
-  return (
-    <Sheet
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      title={initial.id ? t("common.edit") : t("settings.newBlock")}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            disabled={disabled}
-            onClick={() => {
-              void saveBlockTemplate({
-                id: initial.id,
-                title,
-                categoryId,
-                durationMin: parsedDuration,
-                days,
-                plannedStart: fixedStart ? plannedStart : null,
-              });
-              onClose();
-            }}
-          >
-            {t("common.save")}
-          </Button>
-        </>
-      }
-    >
-      <TextInput
-        label={t("settings.blockTitle")}
-        value={title}
-        maxLength={120}
-        error={titleMissing ? t("a11y.required") : undefined}
-        onChange={(event) => setTitle(event.target.value)}
-      />
-
-      <SelectField
-        label={t("settings.blockCategory")}
-        value={categoryId}
-        error={categoryId === "" ? t("a11y.required") : undefined}
-        options={categories.map((category) => ({ value: category.id, label: category.name }))}
-        onChange={(event) => setCategoryId(event.target.value)}
-      />
-
-      <NumberInput
-        label={t("settings.blockDuration")}
-        value={duration}
-        min={1}
-        max={1440}
-        step={5}
-        error={durationInvalid ? t("a11y.required") : undefined}
-        onChange={(event) => setDuration(event.target.value)}
-      />
-
-      <DayPicker days={days} onChange={setDays} />
-      {daysMissing ? <p className="text-label text-danger">{t("a11y.required")}</p> : null}
-
-      <SegmentedControl
-        legend={t("settings.blockStart")}
-        name="block-start-mode"
-        value={fixedStart ? "fixed" : "flexible"}
-        onChange={(next) => setFixedStart(next === "fixed")}
-        options={[
-          { value: "flexible", label: t("settings.blockStartFlexible") },
-          { value: "fixed", label: t("settings.blockStartFixed") },
-        ]}
-      />
-
-      {fixedStart ? (
-        <TimeInput
-          label={t("settings.blockStart")}
-          value={plannedStart}
-          onChange={(event) => setPlannedStart(event.target.value)}
-        />
-      ) : null}
-    </Sheet>
-  );
-}
 
 export function BlockListEditor({ dense = false }: { dense?: boolean }) {
   const templates = useAppStore((state) => state.templates);
@@ -430,7 +246,6 @@ export function BlockListEditor({ dense = false }: { dense?: boolean }) {
                     <CategoryTag
                       name={category.name}
                       icon={category.icon}
-                      pattern={category.linePattern}
                     />
                   ) : null}
                   <span>{formatMinutes(template.durationMin)}</span>
