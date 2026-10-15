@@ -80,7 +80,7 @@ export function WeekScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
+      <header className="flex flex-col gap-3" data-tour="week-header">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h1 className="text-display">{t("week.title")}</h1>
@@ -99,7 +99,7 @@ export function WeekScreen() {
         </div>
       </header>
 
-      <section aria-labelledby="week-grid-heading">
+      <section aria-labelledby="week-grid-heading" data-tour="week-grid">
         <h2 id="week-grid-heading" className="sr-only">
           {t("week.grid")}
         </h2>
@@ -147,7 +147,7 @@ export function WeekScreen() {
         </ol>
       </section>
 
-      <Panel>
+      <Panel data-tour="week-targets">
         <PanelHeader title={t("week.targets")} />
         {perCategory.length === 0 ? (
           <p className="text-meta text-ink-muted">{t("week.empty")}</p>

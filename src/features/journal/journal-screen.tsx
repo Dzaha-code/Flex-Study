@@ -139,7 +139,7 @@ export function JournalScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-3" data-tour="journal-header">
         <div className="flex flex-col gap-1">
           <h1 className="text-display">{t("journal.title")}</h1>
           <p className="text-meta text-ink-muted">
@@ -156,7 +156,7 @@ export function JournalScreen() {
         </Button>
       </header>
 
-      <Panel>
+      <Panel data-tour="journal-entry">
         <PanelHeader
           title={selected === today ? t("journal.todayEntry") : formatDateLong(selected)}
           description={t("journal.bodyPlaceholder")}
@@ -172,7 +172,7 @@ export function JournalScreen() {
         <JournalEditor key={selected} date={selected} existing={existing} promptId={promptId} />
       </Panel>
 
-      <Panel>
+      <Panel data-tour="journal-history">
         <PanelHeader title={t("journal.history")} />
         {ordered.length === 0 ? (
           <EmptyState

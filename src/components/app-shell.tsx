@@ -135,7 +135,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    data-tour={href === "/guide" ? "guide" : undefined}
                     className={cn(
                       "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-label transition-colors lg:min-h-11 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-control lg:px-3 lg:text-meta",
                       active

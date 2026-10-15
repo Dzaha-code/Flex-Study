@@ -73,7 +73,7 @@ export function SettingsScreen() {
     <div className="flex flex-col gap-6">
       <h1 className="text-display">{t("settings.title")}</h1>
 
-      <Panel>
+      <Panel data-tour="settings-appearance">
         <PanelHeader title={t("settings.appearance")} />
         <div className="flex flex-col gap-5">
           <SegmentedControl
@@ -227,7 +227,7 @@ export function SettingsScreen() {
         </ul>
       </Panel>
 
-      <Panel>
+      <Panel data-tour="settings-data">
         <PanelHeader title={t("settings.data")} description={t("settings.dataHint")} />
         <div className="flex flex-wrap items-center gap-2">
           <Button

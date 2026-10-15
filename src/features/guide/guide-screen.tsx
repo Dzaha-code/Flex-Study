@@ -55,8 +55,8 @@ export function GuideScreen() {
       <header className="flex flex-col gap-3">
         <h1 className="text-display">{t("guide.title")}</h1>
         <p className="measure text-meta text-ink-muted">{t("guide.subtitle")}</p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={startTour} data-tour="guide-replay">
+        <div className="flex flex-wrap items-center gap-3" data-tour="guide-replay">
+          <Button onClick={startTour}>
             <IconPlay />
             {t("guide.startTour")}
           </Button>
@@ -64,7 +64,7 @@ export function GuideScreen() {
         </div>
       </header>
 
-      <Panel>
+      <Panel data-tour="guide-quick">
         <PanelHeader
           title={t("guide.quick.title")}
           description={t("guide.quick.hint")}
@@ -124,7 +124,7 @@ export function GuideScreen() {
         </ul>
       </Panel>
 
-      <Panel>
+      <Panel data-tour="guide-glossary">
         <PanelHeader
           title={t("guide.glossary.title")}
           description={t("guide.glossary.hint")}

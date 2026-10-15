@@ -10,14 +10,14 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.2.0_x64-setup.exe](installers/FlexStudy_0.2.0_x64-setup.exe) — 1,59 MB
+### [FlexStudy_0.2.1_x64-setup.exe](installers/FlexStudy_0.2.1_x64-setup.exe) — sekitar 1,6 MB
 
-Versi **0.2.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+Versi **0.2.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.2.0_x64-setup.exe` — 1.664.731 byte (1,59 MiB). Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.2.0_x64_en-US.msi` — 2.187.264 byte (2,09 MiB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.2.1_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.2.1_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -147,13 +147,14 @@ Yang perlu diketahui:
 
 Aplikasi ini menjelaskan dirinya sendiri, lewat dua jalur supaya orang bisa memilih cara belajar yang cocok.
 
-- **Tur interaktif.** Enam langkah yang menyorot elemen aslinya langsung di layar Hari ini, bukan gambar mockup. Muncul otomatis sekali setelah onboarding selesai, dan bisa diputar ulang dari halaman Panduan maupun dari Atur. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
+- **Tur interaktif.** Tiga belas langkah yang menyorot elemen aslinya di lima layar — Hari ini, Minggu, Jurnal, Atur, dan Panduan — bukan gambar mockup. Tur berpindah halaman sendiri, dan tiap langkah menampilkan chip nama layarnya supaya jelas kapan berpindah. Muncul otomatis sekali setelah onboarding selesai, bisa diputar ulang dari halaman Panduan maupun dari Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
 - **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, enam tips, dan arti setiap lambang status.
 
-Dua hal kecil yang sengaja diputuskan:
+Tiga hal kecil yang sengaja diputuskan:
 
 - Badge di glosarium Panduan adalah **badge asli** yang dipakai aplikasi, bukan gambar terpisah. Karena itu panduannya tidak bisa melenceng dari perilaku sebenarnya.
-- Kalau elemen target tur tidak ada di layar, kartunya tampil di tengah tanpa sorotan — tur tidak pernah menunjuk ke tempat kosong.
+- Kartu tur diletakkan di sisi target yang **paling lapang**, dan diutamakan sisi yang memuat seluruh kartu. Versi pertamanya hanya mencoba bawah lalu atas, sehingga pada target setinggi bilah navigasi kartunya justru menutupi objek yang sedang dijelaskan.
+- Selama layar baru masih digambar, tur tidak menampilkan kartu sama sekali. Lebih baik diam sejenak daripada menampilkan kartu di tengah tanpa sorotan, yang justru membingungkan.
 
 ---
 

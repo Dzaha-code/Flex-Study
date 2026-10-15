@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import type { BlockStatus, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -10,12 +10,15 @@ export function Panel({
   children,
   className,
   as: Component = "section",
+  ...rest
 }: {
-  children: ReactNode;
-  className?: string;
   as?: "section" | "div" | "article" | "aside";
-}) {
-  return <Component className={cn("surface-panel p-4 sm:p-5", className)}>{children}</Component>;
+} & HTMLAttributes<HTMLElement>) {
+  return (
+    <Component className={cn("surface-panel p-4 sm:p-5", className)} {...rest}>
+      {children}
+    </Component>
+  );
 }
 
 export function PanelHeader({
