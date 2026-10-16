@@ -10,16 +10,16 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.4.0_x64-setup.exe](installers/FlexStudy_0.4.0_x64-setup.exe) — sekitar 1,6 MB
+### [FlexStudy_0.4.1_x64-setup.exe](installers/FlexStudy_0.4.1_x64-setup.exe) — sekitar 1,6 MB
 
-Versi **0.4.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+Versi **0.4.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
 
-Yang baru di 0.4.0: riwayat jurnal dikelompokkan **per bulan** dengan pencarian dan penanda favorit, halaman **Rekap** bulan/tahun layaknya raport, gerak pada timer (riak saat *Mulai fokus* dan satu layar penuh saat waktu habis), serta **animasi pembuka yang bisa diatur** — sekali saja, setiap aplikasi dibuka, atau dimatikan.
+Yang baru di 0.4.1: **arsip jurnal dua tingkat** — tahun, lalu bulan di dalamnya. Baris tahun menyebutkan jumlah entri dan jumlah favoritnya, jadi tahun yang tertutup pun tetap bercerita sebelum dibuka. Semua yang ada di 0.4.0 tetap ada: pencarian dan penanda favorit di jurnal, halaman **Rekap** bulan/tahun layaknya raport, gerak pada timer (riak saat *Mulai fokus* dan satu layar penuh saat waktu habis), serta **animasi pembuka yang bisa diatur** — sekali saja, setiap aplikasi dibuka, atau dimatikan.
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.4.0_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.4.0_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.4.1_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.4.1_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -190,10 +190,11 @@ Kedua preferensi disimpan di setelan. Berkas ekspor dari versi lama tetap bisa d
 
 ## Jurnal: riwayat, pencarian, favorit
 
-Riwayat tidak lagi satu daftar datar. Isinya dikelompokkan **per bulan**, tiap bulan bisa dibuka-tutup dan menyebutkan jumlah entrinya, jadi bulan yang jauh tidak ikut memakan layar.
+Riwayat tidak lagi satu daftar datar. Isinya tersusun **per tahun**, dan di dalam tiap tahun **per bulan** — keduanya bisa dibuka-tutup, jadi tahun dan bulan yang jauh tidak ikut memakan layar.
 
 - **Judul per entri.** Tiap jurnal punya kolom judul sendiri dan boleh dikosongkan — kalau kosong, tanggalnya yang jadi kepala entri. Autosave ikut menyimpan judul, dan judul saja sudah cukup untuk membuat sebuah entri.
-- **Pencarian** menyisir judul, isi, tiga pembelajaran, dan tanggal sekaligus, tanpa peduli huruf besar-kecil. Saat mencari, semua bulan yang cocok terbuka otomatis — kalau tidak, yang tersembunyi justru hasil pencariannya.
+- **Arsip dua tingkat.** Baris tahun menyebutkan jumlah entri dan jumlah favoritnya, jadi tahun yang tertutup pun tetap bercerita sebelum dibuka. Tahun terbaru terbuka pada bulan terbaru; sisanya mulai tertutup, dan bulan yang tidak berisi apa-apa tidak muncul sama sekali. Pencarian dipisah dari penyusunan: logika pengelompokannya murni di [`src/domain/reflection.ts`](src/domain/reflection.ts) dan diuji, bukan tersembunyi di dalam komponen.
+- **Pencarian** menyisir judul, isi, tiga pembelajaran, dan tanggal sekaligus, tanpa peduli huruf besar-kecil. Saat mencari, semua tahun dan bulan yang cocok terbuka otomatis — kalau tidak, yang tersembunyi justru hasil pencariannya.
 - **Favorit** adalah bintang di tiap baris: satu ketukan untuk menandai hari yang layak dikenang, dan penyaring *Favorit* untuk mencarinya kembali.
 - **Detail, ubah, hapus.** Menyentuh baris membuka lembar detail berisi isi yang sudah dirender. Ubah dan Hapus ada di dalam lembar itu, bukan berjejer di setiap baris — daftarnya tetap daftar. Hapus selalu lewat konfirmasi, dan menghapus entri yang sedang terbuka membangun ulang editornya, supaya teks lama tidak tersimpan kembali diam-diam.
 
@@ -286,7 +287,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-134 uji unit, 10 berkas, semuanya pada lapisan murni:
+139 uji unit, 10 berkas, semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -294,7 +295,7 @@ npm test
 | `tests/schedule.test.ts` | aliran blok tanpa jam, blok berjam tetap, tabrakan yang ditandai (bukan disembunyikan) |
 | `tests/shift.test.ts` | keempat strategi geser, tumpahan ke hari berikutnya, penerapan, Urungkan, target mingguan tidak berubah |
 | `tests/progress.test.ts` | sisa waktu harian, aturan status, timer tahan tab tidur, target per kategori, rekap minggu |
-| `tests/reflection.test.ts` | jumlah kata id/en, tiga slot pembelajaran, pemicu per tanggal, judul, favorit yang bertahan saat disunting, pencocokan pencarian |
+| `tests/reflection.test.ts` | jumlah kata id/en, tiga slot pembelajaran, pemicu per tanggal, judul, favorit yang bertahan saat disunting, pencocokan pencarian, arsip per tahun dan bulan |
 | `tests/recap.test.ts` | batas bulan (termasuk Februari kabisat), pergeseran bulan, pro-rata target, hari aktif, rentetan, penjumlahan bulan jadi tahun |
 | `tests/schema.test.ts` | ekspor/impor bolak-balik tanpa kehilangan informasi, penolakan berkas rusak |
 | `tests/intro-mode.test.ts` | kapan animasi pembuka diputar: *sekali saja*, *setiap buka*, *mati*, dan permintaan putar sekali yang mengalahkan ketiganya |
@@ -322,7 +323,7 @@ Khusus aplikasi desktop:
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 134 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, riwayat jurnal yang dikelompokkan per bulan beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 139 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
 
 ---
 

@@ -24,6 +24,8 @@ export interface I18n {
   formatWeekdayIndex: (index: number) => string;
   /** `"2026-10"` → "Oktober 2026". */
   formatMonthLabel: (month: string) => string;
+  /** `"2026-10"` → "Oktober". Under a year heading the year would be a repeat. */
+  formatMonthName: (month: string) => string;
   /** `"2026-10"` → "Okt". */
   formatMonthShort: (month: string) => string;
   formatMinutes: (minutes: number) => string;
@@ -55,6 +57,7 @@ export function createI18n(locale: Locale): I18n {
   const shortDate = new Intl.DateTimeFormat(tag, { day: "numeric", month: "short" });
   const shortWeekday = new Intl.DateTimeFormat(tag, { weekday: "short" });
   const longMonth = new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" });
+  const monthName = new Intl.DateTimeFormat(tag, { month: "long" });
   const shortMonth = new Intl.DateTimeFormat(tag, { month: "short" });
 
   return {
@@ -68,6 +71,7 @@ export function createI18n(locale: Locale): I18n {
     // A month key is only ever a label here, so the first of the month is a safe
     // thing to format — the day is never shown.
     formatMonthLabel: (month) => longMonth.format(fromISODate(`${month}-01`)),
+    formatMonthName: (month) => monthName.format(fromISODate(`${month}-01`)),
     formatMonthShort: (month) => shortMonth.format(fromISODate(`${month}-01`)),
     formatMinutes: (minutes) => {
       const { hours, minutes: rest } = durationParts(minutes);

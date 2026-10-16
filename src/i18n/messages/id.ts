@@ -361,7 +361,7 @@ export const id = {
   "tour.journalEntry.title": "Menutup hari dengan tulisan",
   "tour.journalEntry.body": "Jurnal ini bukan buku harian bebas. Ada kolom judul yang boleh dikosongkan, satu pertanyaan pemicu yang berganti setiap hari, tiga slot pelajaran yang kamu isi sendiri, dan Markdown dasar kalau perlu daftar atau penekanan. Tulisan tersimpan otomatis sekitar satu detik setelah kamu berhenti mengetik, jadi tidak ada tombol simpan yang harus dicari.",
   "tour.journalHistory.title": "Riwayat, pencarian, dan favorit",
-  "tour.journalHistory.body": "Riwayat bukan lagi satu daftar datar: entri dikelompokkan per bulan dan tiap bulan bisa dibuka-tutup, jadi bulan yang jauh tidak memakan layar. Kolom pencarian menyisir judul, isi, dan tanggal sekaligus; bintang di tiap baris menandai hari yang layak dikenang, dengan penyaring Favorit untuk mengumpulkannya. Menyentuh satu baris membuka detailnya — di sanalah tombol Ubah dan Hapus berada, bukan berjejer di setiap baris. Tombol kanan atas mengekspor seluruh jurnal jadi satu berkas Markdown.",
+  "tour.journalHistory.body": "Riwayat bukan lagi satu daftar datar: entri tersusun per tahun, dan di dalam tiap tahun per bulan, keduanya bisa dibuka-tutup, jadi tahun dan bulan yang jauh tidak memakan layar. Tiap tahun menyebutkan jumlah entri dan jumlah favoritnya, jadi tahun yang tertutup pun tetap bercerita. Kolom pencarian menyisir judul, isi, dan tanggal sekaligus; bintang di tiap baris menandai hari yang layak dikenang, dengan penyaring Favorit untuk mengumpulkannya. Menyentuh satu baris membuka detailnya — di sanalah tombol Ubah dan Hapus berada, bukan berjejer di setiap baris. Tombol kanan atas mengekspor seluruh jurnal jadi satu berkas Markdown.",
   "tour.settingsAppearance.title": "Tampilan dan bahasa",
   "tour.settingsAppearance.body": "Di sini kamu mengatur tema (mengikuti sistem, terang, atau gelap), lebar konten, bahasa antarmuka, hari pertama dalam sepekan, serta jam mulai dan jam berakhirnya hari. Di panel yang sama ada animasi pembuka: sekali saja, setiap aplikasi dibuka, atau dimatikan — plus tombol untuk memutarnya sekarang. Mengubah hari pertama akan menggeser perhitungan target mingguan, jadi sebaiknya dilakukan sekali di awal saja.",
   "tour.settingsData.title": "Mencadangkan datamu",
@@ -391,7 +391,7 @@ export const id = {
   "guide.screens.week.body": "Target menit per kategori dibanding yang benar-benar selesai, dihitung dari menit blok berstatus selesai.",
   "guide.screens.journal.title": "Jurnal",
   "guide.screens.journal.body":
-    "Catatan harian dengan judul opsional, pemicu sederhana, dan tiga slot pembelajaran. Riwayatnya dikelompokkan per bulan, bisa dicari, dan tiap entri bisa ditandai favorit, dibuka detailnya, diubah, atau dihapus.",
+    "Catatan harian dengan judul opsional, pemicu sederhana, dan tiga slot pembelajaran. Riwayatnya tersusun per tahun dan bulan, bisa dicari, dan tiap entri bisa ditandai favorit, dibuka detailnya, diubah, atau dihapus.",
   "guide.screens.settings.title": "Atur",
   "guide.screens.settings.body":
     "Bahasa, tema, animasi pembuka, lebar konten, jam aktif, pengingat, kategori, blok, serta ekspor dan impor data.",
@@ -406,7 +406,7 @@ export const id = {
   "guide.tips.5": "Perbesar lebar konten lewat Tampilan di bilah kiri kalau memakai layar besar, atau tekan tombol layar penuh.",
   "guide.tips.6": "Ekspor cadangan JSON secara berkala dari Atur. Datanya tinggal di perangkat ini, jadi tidak ada yang mencadangkannya untukmu.",
   "guide.tips.7":
-    "Di Riwayat jurnal, kolom pencarian menyisir judul, isi, dan tanggal sekaligus. Bintang di tiap baris menandai hari yang layak dikenang, dan penyaring Favorit mengumpulkannya.",
+    "Di Riwayat jurnal, kolom pencarian menyisir judul, isi, dan tanggal sekaligus. Arsipnya tersusun per tahun dan bulan, dan bintang di tiap baris menandai hari yang layak dikenang — penyaring Favorit mengumpulkannya.",
   "guide.tips.8":
     "Animasi pembuka bisa diatur di Atur, panel Tampilan: sekali saja, setiap aplikasi dibuka, atau dimatikan.",
   "guide.glossary.title": "Arti lambang status",

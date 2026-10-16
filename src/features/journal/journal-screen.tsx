@@ -10,10 +10,10 @@ import { Chip, EmptyState, Panel, PanelHeader, SegmentedControl } from "@/compon
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import {
+  archiveByYearMonth,
   countWords,
   hasContent,
   LEARNING_SLOTS,
-  monthKey,
   normalizeLearnings,
   promptIdForDate,
   reflectionMatches,
@@ -236,7 +236,7 @@ export function JournalScreen() {
   const reflections = useAppStore((state) => state.reflections);
   const deleteReflection = useAppStore((state) => state.deleteReflection);
   const setReflectionFavorite = useAppStore((state) => state.setReflectionFavorite);
-  const { t, formatDateLong, formatMonthLabel } = useI18n();
+  const { t, formatDateLong, formatMonthName } = useI18n();
 
   const [today] = useState(() => todayISO(Date.now()));
   const [selected, setSelected] = useState(today);
@@ -255,30 +255,28 @@ export function JournalScreen() {
   const detail = reflections.find((reflection) => reflection.id === detailId) ?? null;
   const pendingDelete = reflections.find((reflection) => reflection.id === deleteId) ?? null;
 
-  const visible = useMemo(() => {
-    return [...reflections]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .filter(
+  const visible = useMemo(
+    () =>
+      reflections.filter(
         (reflection) =>
           (filter === "all" || reflection.favorite) && reflectionMatches(reflection, query),
-      );
-  }, [reflections, filter, query]);
+      ),
+    [reflections, filter, query],
+  );
 
-  const groups = useMemo(() => {
-    const buckets = new Map<string, Reflection[]>();
-    for (const reflection of visible) {
-      const key = monthKey(reflection.date);
-      const bucket = buckets.get(key);
-      if (bucket) bucket.push(reflection);
-      else buckets.set(key, [reflection]);
-    }
-    return [...buckets.entries()].map(([month, entries]) => ({ month, entries }));
-  }, [visible]);
+  // Ordering is the archive's own rule, so the store's order does not matter here.
+  const archive = useMemo(() => archiveByYearMonth(visible), [visible]);
 
-  // While searching, a collapsed month would hide the very thing that matched.
+  // Both levels share one map: a year key is `"2026"` and a month key `"2026-10"`,
+  // so they cannot collide. While searching nothing may stay shut — a collapsed
+  // year would hide the very entry that matched.
   const searching = query.trim() !== "" || filter !== "all";
-  const isCollapsed = (month: string, index: number) =>
-    searching ? false : (collapsed[month] ?? index > 0);
+  const isYearCollapsed = (year: string, index: number) =>
+    searching ? false : (collapsed[year] ?? index > 0);
+  // The newest year opens on its newest month; every other month starts shut, so
+  // a long year is a short list of dates rather than a wall of entries.
+  const isMonthCollapsed = (month: string, index: number, yearIndex: number) =>
+    searching ? false : (collapsed[month] ?? !(yearIndex === 0 && index === 0));
 
   function handleExport() {
     if (reflections.length === 0) return;
@@ -382,101 +380,152 @@ export function JournalScreen() {
               </p>
             ) : (
               <div className="flex flex-col gap-4">
-                {groups.map((group, index) => {
-                  const open = !isCollapsed(group.month, index);
+                {archive.map((year, yearIndex) => {
+                  const yearOpen = !isYearCollapsed(year.year, yearIndex);
                   return (
-                    <section key={group.month} className="flex flex-col">
-                      <button
-                        type="button"
-                        aria-expanded={open}
-                        onClick={() =>
-                          setCollapsed((previous) => ({
-                            ...previous,
-                            [group.month]: open,
-                          }))
-                        }
-                        className="flex items-center justify-between gap-2 rounded-ctl px-1 py-2 text-left hover:bg-accent-surface/40"
-                      >
-                        <span className="text-label font-semibold uppercase tracking-wide text-ink-muted">
-                          {formatMonthLabel(group.month)}
-                        </span>
-                        <span className="flex items-center gap-2 text-label text-ink-muted">
-                          {t("journal.entryCount", { count: group.entries.length })}
-                          <IconCaretDown
-                            size={14}
-                            className={cn(
-                              "transition-transform duration-200 motion-reduce:transition-none",
-                              open ? "rotate-180" : "rotate-0",
-                            )}
-                          />
-                        </span>
-                      </button>
+                    <section key={year.year} className="flex flex-col">
+                      <h3 className="flex">
+                        <button
+                          type="button"
+                          aria-expanded={yearOpen}
+                          onClick={() =>
+                            setCollapsed((previous) => ({
+                              ...previous,
+                              [year.year]: yearOpen,
+                            }))
+                          }
+                          className="flex w-full items-center justify-between gap-2 rounded-ctl border-b border-line px-1 py-2 text-left hover:bg-accent-surface/40"
+                        >
+                          <span className="text-body font-semibold tabular-nums">
+                            {year.year}
+                          </span>
+                          <span className="flex items-center gap-2 text-label text-ink-muted">
+                            {year.favoriteCount > 0 ? (
+                              <span className="flex items-center gap-1">
+                                <IconStarFilled size={12} />
+                                {year.favoriteCount}
+                              </span>
+                            ) : null}
+                            {t("journal.entryCount", { count: year.entryCount })}
+                            <IconCaretDown
+                              size={14}
+                              className={cn(
+                                "transition-transform duration-200 motion-reduce:transition-none",
+                                yearOpen ? "rotate-180" : "rotate-0",
+                              )}
+                            />
+                          </span>
+                        </button>
+                      </h3>
 
-                      {open ? (
-                        <ul className="flex flex-col divide-y divide-line">
-                          {group.entries.map((reflection) => {
-                            const heading = headingOf(reflection, formatDateLong(reflection.date));
-                            const preview =
-                              reflectionPreview(reflection.body) ||
-                              reflection.learnings.filter(Boolean).join(" · ");
+                      {yearOpen ? (
+                        <div className="flex flex-col gap-3 pt-3">
+                          {year.months.map((month, monthIndex) => {
+                            const monthOpen = !isMonthCollapsed(
+                              month.month,
+                              monthIndex,
+                              yearIndex,
+                            );
                             return (
-                              <li key={reflection.id} className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setDetailId(reflection.id)}
-                                  aria-label={t("journal.openDetail", { title: heading })}
-                                  className="flex min-w-0 flex-1 flex-col gap-1 py-3 text-left hover:bg-accent-surface/40"
-                                >
-                                  <span className="flex min-w-0 items-center gap-2">
-                                    <span
-                                      className={cn(
-                                        "truncate text-body",
-                                        reflection.date === selected && "font-medium text-accent",
-                                      )}
-                                    >
-                                      {heading}
+                              <section key={month.month} className="flex flex-col">
+                                <h4 className="flex">
+                                  <button
+                                    type="button"
+                                    aria-expanded={monthOpen}
+                                    onClick={() =>
+                                      setCollapsed((previous) => ({
+                                        ...previous,
+                                        [month.month]: monthOpen,
+                                      }))
+                                    }
+                                    className="flex w-full items-center justify-between gap-2 rounded-ctl px-1 py-1.5 text-left hover:bg-accent-surface/40"
+                                  >
+                                    <span className="text-label font-semibold uppercase tracking-wide text-ink-muted">
+                                      {formatMonthName(month.month)}
                                     </span>
-                                    {reflection.favorite ? (
-                                      <IconStarFilled size={14} className="shrink-0 text-accent" />
-                                    ) : null}
-                                  </span>
-                                  <span className="flex flex-wrap items-baseline gap-x-2 text-label text-ink-muted">
-                                    <span>{formatDateLong(reflection.date)}</span>
-                                    <span>
-                                      {t("journal.words", { count: reflection.wordCount })}
+                                    <span className="flex items-center gap-2 text-label text-ink-muted">
+                                      {t("journal.entryCount", { count: month.entries.length })}
+                                      <IconCaretDown
+                                        size={14}
+                                        className={cn(
+                                          "transition-transform duration-200 motion-reduce:transition-none",
+                                          monthOpen ? "rotate-180" : "rotate-0",
+                                        )}
+                                      />
                                     </span>
-                                  </span>
-                                  {preview ? (
-                                    <span className="truncate text-meta text-ink-muted">
-                                      {preview}
-                                    </span>
-                                  ) : null}
-                                </button>
-                                <IconButton
-                                  label={
-                                    reflection.favorite
-                                      ? t("journal.favoriteRemove")
-                                      : t("journal.favoriteAdd")
-                                  }
-                                  aria-pressed={reflection.favorite}
-                                  onClick={() =>
-                                    void setReflectionFavorite(
-                                      reflection.id,
-                                      !reflection.favorite,
-                                    )
-                                  }
-                                  className={reflection.favorite ? "text-accent" : undefined}
-                                >
-                                  {reflection.favorite ? (
-                                    <IconStarFilled size={18} />
-                                  ) : (
-                                    <IconStar size={18} />
-                                  )}
-                                </IconButton>
-                              </li>
+                                  </button>
+                                </h4>
+
+                                {monthOpen ? (
+                                    <ul className="flex flex-col divide-y divide-line">
+                                      {month.entries.map((reflection) => {
+                                        const heading = headingOf(reflection, formatDateLong(reflection.date));
+                                        const preview =
+                                          reflectionPreview(reflection.body) ||
+                                          reflection.learnings.filter(Boolean).join(" · ");
+                                        return (
+                                          <li key={reflection.id} className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => setDetailId(reflection.id)}
+                                              aria-label={t("journal.openDetail", { title: heading })}
+                                              className="flex min-w-0 flex-1 flex-col gap-1 py-3 text-left hover:bg-accent-surface/40"
+                                            >
+                                              <span className="flex min-w-0 items-center gap-2">
+                                                <span
+                                                  className={cn(
+                                                    "truncate text-body",
+                                                    reflection.date === selected && "font-medium text-accent",
+                                                  )}
+                                                >
+                                                  {heading}
+                                                </span>
+                                                {reflection.favorite ? (
+                                                  <IconStarFilled size={14} className="shrink-0 text-accent" />
+                                                ) : null}
+                                              </span>
+                                              <span className="flex flex-wrap items-baseline gap-x-2 text-label text-ink-muted">
+                                                <span>{formatDateLong(reflection.date)}</span>
+                                                <span>
+                                                  {t("journal.words", { count: reflection.wordCount })}
+                                                </span>
+                                              </span>
+                                              {preview ? (
+                                                <span className="truncate text-meta text-ink-muted">
+                                                  {preview}
+                                                </span>
+                                              ) : null}
+                                            </button>
+                                            <IconButton
+                                              label={
+                                                reflection.favorite
+                                                  ? t("journal.favoriteRemove")
+                                                  : t("journal.favoriteAdd")
+                                              }
+                                              aria-pressed={reflection.favorite}
+                                              onClick={() =>
+                                                void setReflectionFavorite(
+                                                  reflection.id,
+                                                  !reflection.favorite,
+                                                )
+                                              }
+                                              className={reflection.favorite ? "text-accent" : undefined}
+                                            >
+                                              {reflection.favorite ? (
+                                                <IconStarFilled size={18} />
+                                              ) : (
+                                                <IconStar size={18} />
+                                              )}
+                                            </IconButton>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                ) : null}
+                              </section>
                             );
                           })}
-                        </ul>
+                        </div>
                       ) : null}
                     </section>
                   );

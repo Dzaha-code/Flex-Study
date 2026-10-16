@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createSequentialIdFactory } from "@/domain/ids";
 import {
+  archiveByYearMonth,
   countWords,
   hasContent,
   LEARNING_SLOTS,
@@ -180,5 +181,70 @@ describe("editor helpers", () => {
 
   it("keeps instance builders independent of reflections", () => {
     expect(makeInstance({ id: "x", date: DAY }).status).toBe("planned");
+  });
+});
+
+describe("archive", () => {
+  const newId = createSequentialIdFactory();
+  const entry = (date: string, favorite = false) =>
+    makeReflection({
+      date,
+      title: "",
+      body: "isi",
+      learnings: [],
+      promptId: null,
+      favorite,
+      now: NOW,
+      newId,
+    });
+
+  const shape = (input: readonly string[]) =>
+    archiveByYearMonth(input.map((date) => entry(date))).map((year) => ({
+      year: year.year,
+      months: year.months.map((month) => ({
+        month: month.month,
+        dates: month.entries.map((item) => item.date),
+      })),
+    }));
+
+  it("puts years newest first, and months newest first inside them", () => {
+    expect(shape(["2025-03-02", "2026-01-05", "2026-10-01", "2026-10-14"])).toEqual([
+      {
+        year: "2026",
+        months: [
+          { month: "2026-10", dates: ["2026-10-14", "2026-10-01"] },
+          { month: "2026-01", dates: ["2026-01-05"] },
+        ],
+      },
+      { year: "2025", months: [{ month: "2025-03", dates: ["2025-03-02"] }] },
+    ]);
+  });
+
+  it("counts the year's entries and favourites, for a year that is collapsed", () => {
+    const archive = archiveByYearMonth([
+      entry("2026-10-01", true),
+      entry("2026-10-02"),
+      entry("2026-09-01", true),
+      entry("2025-03-02"),
+    ]);
+
+    expect(archive[0].entryCount).toBe(3);
+    expect(archive[0].favoriteCount).toBe(2);
+    expect(archive[1].entryCount).toBe(1);
+    expect(archive[1].favoriteCount).toBe(0);
+  });
+
+  it("leaves out the months that hold nothing", () => {
+    const archive = archiveByYearMonth([entry("2026-01-05"), entry("2026-10-14")]);
+    expect(archive[0].months).toHaveLength(2);
+  });
+
+  it("is empty when there is nothing to archive", () => {
+    expect(archiveByYearMonth([])).toEqual([]);
+  });
+
+  it("does not depend on the order it is handed", () => {
+    const dates = ["2026-10-14", "2025-03-02", "2026-01-05", "2026-10-01"];
+    expect(shape([...dates].reverse())).toEqual(shape(dates));
   });
 });
