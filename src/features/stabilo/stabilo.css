@@ -1,0 +1,110 @@
+/*
+ * Stabilo's effects. Tokens only — no literal colours except the scrim and the
+ * vignette, which are darkening layers rather than theme surfaces.
+ *
+ * Everything here is opt-out twice: the `fx` preference removes it, and the
+ * global `prefers-reduced-motion` block in globals.css removes the motion even
+ * when the preference is on.
+ */
+
+.stabilo-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 45%,
+    rgb(0 0 0 / 0.35) 100%
+  );
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+
+.stabilo-vignette[data-on="true"] {
+  opacity: 1;
+}
+
+/* Per-character tremble. The amplitude comes from --stabilo-shake on the line. */
+.stabilo-char {
+  display: inline-block;
+  will-change: transform;
+  animation: stabilo-tremble 70ms steps(2, end) infinite;
+  animation-delay: var(--stabilo-delay, 0ms);
+}
+
+@keyframes stabilo-tremble {
+  0% {
+    transform: translate(calc(var(--stabilo-shake, 1px) * -1), 0);
+  }
+  100% {
+    transform: translate(var(--stabilo-shake, 1px), calc(var(--stabilo-shake, 1px) * 0.5));
+  }
+}
+
+.stabilo-banner {
+  animation: stabilo-banner-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes stabilo-banner-in {
+  from {
+    transform: translateX(-12%) skewX(-6deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) skewX(0);
+    opacity: 1;
+  }
+}
+
+.stabilo-sparkle {
+  position: absolute;
+  color: var(--hl);
+  font-size: 14px;
+  pointer-events: none;
+  animation: stabilo-sparkle 500ms ease-out both;
+}
+
+@keyframes stabilo-sparkle {
+  from {
+    transform: scale(0.4) translateY(0);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1) translateY(-14px);
+    opacity: 0;
+  }
+}
+
+/* A slow breath while she waits; never on the reduced-motion path. */
+.stabilo-idle {
+  animation: stabilo-breathe 4s ease-in-out infinite;
+}
+
+@keyframes stabilo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stabilo-char,
+  .stabilo-banner,
+  .stabilo-idle {
+    animation: none !important;
+  }
+
+  .stabilo-sparkle {
+    display: none;
+  }
+
+  .stabilo-vignette {
+    transition: none;
+  }
+}

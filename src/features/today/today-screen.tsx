@@ -149,7 +149,10 @@ function TodayContent({ date }: { date: string }) {
             <h1 className="text-display">{formatDateLong(date)}</h1>
             <p className="text-meta text-ink-muted">{progressLine}</p>
           </div>
-          <Button variant="secondary" onClick={() => setShiftOpen(true)}>
+          {/* Its own target, not part of `progress`: the tour points at this
+              button on its own step, and a shared target would highlight the
+              whole header twice. */}
+          <Button data-tour="shift" variant="secondary" onClick={() => setShiftOpen(true)}>
             <IconShuffle />
             {t("today.messy")}
           </Button>

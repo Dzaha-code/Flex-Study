@@ -1,0 +1,26 @@
+Audio in this folder
+====================
+
+Files
+  ui-advance.ogg
+  quiz-correct.ogg
+  quiz-wrong.ogg
+  phase-glitch.ogg
+  appear.ogg
+  accent-scratch.ogg
+
+Source
+  Kenney — "Interface Sounds" (1.0)
+  https://kenney.nl/assets/interface-sounds
+  Created and distributed by Kenney (www.kenney.nl), 11-02-2020.
+
+Licence
+  Creative Commons Zero (CC0 1.0 Universal).
+  Public domain: commercial use allowed, attribution not required.
+
+Changes
+  Files renamed to describe their role in FlexStudy. Audio content is
+  unmodified — no trimming, no level changes.
+
+Retrieved
+  17 October 2026.

@@ -205,6 +205,49 @@ export interface Settings {
   activeTemplateId: string | null;
 }
 
+/**
+ * How much of Stabilo the user wants. `full` unlocks the gated phase-4 module
+ * and is never offered while `STABILO_FULL_HORROR` is false.
+ */
+export type StabiloIntensity = "sweet" | "spooky" | "full";
+
+/**
+ * Stabilo's own preferences and progress.
+ *
+ * Kept in the `meta` table under one key rather than as new Dexie tables: this
+ * is a single small row, and adding an index for it would force a storage
+ * migration for no query benefit.
+ */
+export interface StabiloPrefs {
+  enabled: boolean;
+  intensity: StabiloIntensity;
+  /** Trembling, glitch and sudden movement. Reduced motion always wins. */
+  fx: boolean;
+  /** Off by default: nothing makes noise until the user asks for it. */
+  sound: "off" | "soft" | "normal";
+  nickname: string;
+  introSeen: boolean;
+  tourDone: boolean;
+  ph3Seen: number;
+  progress: { nodeId: string; phase: 0 | 1 | 2 | 3 } | null;
+}
+
+/**
+ * Defaults for a fresh install. Stabilo starts enabled because the whole first
+ * run depends on her being there; `sweet` and `off` are one tap away in Atur.
+ */
+export const DEFAULT_STABILO_PREFS: StabiloPrefs = {
+  enabled: true,
+  intensity: "spooky",
+  fx: true,
+  sound: "off",
+  nickname: "",
+  introSeen: false,
+  tourDone: false,
+  ph3Seen: 0,
+  progress: null,
+};
+
 export interface Workspace {
   categories: Category[];
   templates: BlockTemplate[];
@@ -212,6 +255,12 @@ export interface Workspace {
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
   settings: Settings;
+  /**
+   * Optional so a backup exported before Stabilo existed still imports. Losing
+   * a nickname on restore would be a small betrayal, so it travels with the
+   * export instead of staying trapped on one machine.
+   */
+  stabilo?: StabiloPrefs;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

@@ -8,6 +8,7 @@ import type {
   Settings,
   ShiftEvent,
   ShiftMove,
+  StabiloPrefs,
   Workspace,
 } from "@/domain/types";
 
@@ -151,6 +152,24 @@ export const SettingsSchema = z.object({
   activeTemplateId: z.string().nullable(),
 });
 
+export const StabiloPrefsSchema = z.object({
+  enabled: z.boolean().default(true),
+  intensity: z.enum(["sweet", "spooky", "full"]).default("spooky"),
+  fx: z.boolean().default(true),
+  sound: z.enum(["off", "soft", "normal"]).default("off"),
+  nickname: z.string().max(40).default(""),
+  introSeen: z.boolean().default(false),
+  tourDone: z.boolean().default(false),
+  ph3Seen: z.number().int().min(0).default(0),
+  progress: z
+    .object({
+      nodeId: z.string().min(1),
+      phase: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
+    })
+    .nullable()
+    .default(null),
+});
+
 export const WorkspaceSchema = z.object({
   categories: z.array(CategorySchema),
   templates: z.array(BlockTemplateSchema),
@@ -158,6 +177,9 @@ export const WorkspaceSchema = z.object({
   reflections: z.array(ReflectionSchema),
   shiftEvents: z.array(ShiftEventSchema),
   settings: SettingsSchema,
+  // Optional rather than defaulted: an older export without the key must keep
+  // importing, and an absent field means "keep whatever this device has".
+  stabilo: StabiloPrefsSchema.optional(),
 });
 
 export const WorkspaceExportSchema = z.object({
@@ -181,4 +203,7 @@ export const reflectionTypeCheck = (value: z.infer<typeof ReflectionSchema>): Re
 export const shiftMoveTypeCheck = (value: z.infer<typeof ShiftMoveSchema>): ShiftMove => value;
 export const shiftEventTypeCheck = (value: z.infer<typeof ShiftEventSchema>): ShiftEvent => value;
 export const settingsTypeCheck = (value: z.infer<typeof SettingsSchema>): Settings => value;
+export const stabiloPrefsTypeCheck = (
+  value: z.infer<typeof StabiloPrefsSchema>,
+): StabiloPrefs => value;
 export const workspaceTypeCheck = (value: z.infer<typeof WorkspaceSchema>): Workspace => value;

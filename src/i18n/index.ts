@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { addDays, durationParts, formatClock, formatCountdown, fromISODate } from "@/domain";
 import type { Locale } from "@/domain/types";
 import { useAppStore } from "@/data/store";
+import { readMirroredLocale } from "@/lib/preferences";
+import { useMounted } from "@/lib/use-mounted";
 import { en } from "./messages/en";
 import { id, type MessageKey, type Messages } from "./messages/id";
 
@@ -86,8 +88,20 @@ export function createI18n(locale: Locale): I18n {
   };
 }
 
+/**
+ * The language screen is answered before IndexedDB exists, so the mirrored
+ * choice has to win until hydration finishes. Without this, an English pick
+ * would be overwritten by the default `id` for the first frames — and the
+ * introduction, which runs exactly in that window, would speak Indonesian.
+ *
+ * `useMounted` keeps the server render and the first client render on the stored
+ * value, so hydration still matches.
+ */
 export function useI18n(): I18n {
-  const locale = useAppStore((state) => state.settings.locale);
+  const stored = useAppStore((state) => state.settings.locale);
+  const status = useAppStore((state) => state.status);
+  const mounted = useMounted();
+  const locale = mounted && status !== "ready" ? (readMirroredLocale() ?? stored) : stored;
   return useMemo(() => createI18n(locale), [locale]);
 }
 

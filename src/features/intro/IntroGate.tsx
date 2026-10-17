@@ -1,10 +1,18 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { useI18n } from "@/i18n";
 import { readMirroredIntro } from "@/lib/preferences";
 import { Intro } from "./Intro";
 import { DEFAULT_INTRO_MODE, INTRO_FORCE_KEY, INTRO_SEEN_KEY, resolveIntroPhase } from "./intro-mode";
+import { setIntroHolding } from "./intro-status";
 
 /**
  * What the intro shows on this launch (INTRO-ANIMATION.md §9).
@@ -61,6 +69,13 @@ export function IntroGate({ children }: { children: ReactNode }) {
   const stored = useSyncExternalStore(subscribe, readPhase, serverPhase);
   const phase: Phase = forced ? "done" : stored;
   const holding = phase !== "done";
+
+  // Anything outside this gate that has to wait — Stabilo, on a first launch —
+  // subscribes here instead of guessing from the DOM.
+  useEffect(() => {
+    setIntroHolding(holding);
+    return () => setIntroHolding(false);
+  }, [holding]);
 
   const finish = useCallback(() => {
     try {

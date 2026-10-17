@@ -10,16 +10,18 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.4.1_x64-setup.exe](installers/FlexStudy_0.4.1_x64-setup.exe) — sekitar 1,6 MB
+### [FlexStudy_0.5.0_x64-setup.exe](installers/FlexStudy_0.5.0_x64-setup.exe) — sekitar 2,5 MB
 
-Versi **0.4.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+Versi **0.5.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
 
-Yang baru di 0.4.1: **arsip jurnal dua tingkat** — tahun, lalu bulan di dalamnya. Baris tahun menyebutkan jumlah entri dan jumlah favoritnya, jadi tahun yang tertutup pun tetap bercerita sebelum dibuka. Semua yang ada di 0.4.0 tetap ada: pencarian dan penanda favorit di jurnal, halaman **Rekap** bulan/tahun layaknya raport, gerak pada timer (riak saat *Mulai fokus* dan satu layar penuh saat waktu habis), serta **animasi pembuka yang bisa diatur** — sekali saja, setiap aplikasi dibuka, atau dimatikan.
+Yang baru di 0.5.0: **Stabilo**, pemandu tur yang berbicara. Pada pemasangan baru, urutannya kini: pilih bahasa → animasi pembuka → Stabilo memperkenalkan diri → pilih template → **tur interaktif** di layar Hari ini. Tur itu memakai sorotan yang sama dengan tur klasik, tapi setiap penjelasan diberi pilihan jujur *Paham / Belum paham*, dan tiga kuis pendek bergaya "Eh, tunggu dulu!". Tiga jawaban salah beruntun membawanya ke fase kesal — getar, glitch, vinyet — lalu ia mengalah, memberi petunjuk, dan tidak pernah menahan kamu. Kamu bisa melewati tur kapan saja tanpa dimarahi, dan mematikan Stabilo sepenuhnya di **Atur → Stabilo**; tur klasik tetap ada.
+
+Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favorit di jurnal, halaman Rekap, gerak pada timer, dan animasi pembuka yang bisa diatur.
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.4.1_x64-setup.exe` — sekitar 1,6 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.4.1_x64_en-US.msi` — sekitar 2,1 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.5.0_x64-setup.exe` — sekitar 2,5 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.5.0_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -287,7 +289,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-139 uji unit, 10 berkas, semuanya pada lapisan murni:
+161 uji unit, 11 berkas, semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -299,6 +301,7 @@ npm test
 | `tests/recap.test.ts` | batas bulan (termasuk Februari kabisat), pergeseran bulan, pro-rata target, hari aktif, rentetan, penjumlahan bulan jadi tahun |
 | `tests/schema.test.ts` | ekspor/impor bolak-balik tanpa kehilangan informasi, penolakan berkas rusak |
 | `tests/intro-mode.test.ts` | kapan animasi pembuka diputar: *sekali saja*, *setiap buka*, *mati*, dan permintaan putar sekali yang mengalahkan ketiganya |
+| `tests/stabilo-dialogue.test.ts` | naskah id/en punya id simpul yang sama, semua penunjuk hidup, tiap kuis punya tepat satu jawaban benar, tangga gedeg ph1→ph3 lalu mengalah, dan mode *manis* tidak pernah naik |
 | `tests/cn.test.ts` | penggabungan kelas Tailwind — ukuran huruf tidak boleh menelan warna teks |
 | `tests/propagate.test.ts` | penyebaran suntingan template ke blok hari ini + hari berikutnya, dan pembersihan blok yatim |
 
@@ -323,7 +326,7 @@ Khusus aplikasi desktop:
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 139 uji unit, build web, build desktop, dan build installer. Yang butuh mata manusia — animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 161 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
 
 ---
 

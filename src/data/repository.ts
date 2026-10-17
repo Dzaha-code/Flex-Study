@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS } from "@/domain/types";
+import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
+import type { StabiloPrefs } from "@/domain/types";
 import { isUntouchedInstance } from "@/domain/propagate";
 import type {
   BlockInstance,
@@ -10,7 +11,7 @@ import type {
   Workspace,
 } from "@/domain/types";
 import { getDatabase, isQuotaError, isStorageAvailable } from "./db";
-import { SettingsSchema } from "./schema";
+import { SettingsSchema, StabiloPrefsSchema } from "./schema";
 
 export type WriteOutcome =
   | { ok: true }
@@ -34,16 +35,38 @@ async function guard(operation: () => Promise<unknown>): Promise<WriteOutcome> {
 
 export async function loadWorkspace(): Promise<Workspace> {
   const db = getDatabase();
-  const [categories, templates, instances, reflections, shiftEvents, settings] = await Promise.all([
-    db.categories.toArray(),
-    db.templates.toArray(),
-    db.instances.toArray(),
-    db.reflections.toArray(),
-    db.shiftEvents.toArray(),
-    readSettings(),
-  ]);
+  const [categories, templates, instances, reflections, shiftEvents, settings, stabilo] =
+    await Promise.all([
+      db.categories.toArray(),
+      db.templates.toArray(),
+      db.instances.toArray(),
+      db.reflections.toArray(),
+      db.shiftEvents.toArray(),
+      readSettings(),
+      readStabilo(),
+    ]);
 
-  return { categories, templates, instances, reflections, shiftEvents, settings };
+  return { categories, templates, instances, reflections, shiftEvents, settings, stabilo };
+}
+
+/**
+ * Stabilo's row shares the `meta` table with settings, so no Dexie version bump
+ * is needed. A missing or unreadable row means "defaults", never an error: the
+ * character is decoration, and a corrupt pref must not block the app.
+ */
+export async function readStabilo(): Promise<StabiloPrefs> {
+  try {
+    const row = await getDatabase().meta.get("stabilo");
+    const parsed = StabiloPrefsSchema.safeParse(row?.value);
+    if (!parsed.success) return { ...DEFAULT_STABILO_PREFS };
+    return { ...DEFAULT_STABILO_PREFS, ...parsed.data };
+  } catch {
+    return { ...DEFAULT_STABILO_PREFS };
+  }
+}
+
+export async function persistStabilo(prefs: StabiloPrefs): Promise<WriteOutcome> {
+  return guard(() => getDatabase().meta.put({ key: "stabilo", value: prefs }));
 }
 
 export async function readSettings(): Promise<Settings> {
@@ -133,6 +156,11 @@ export async function replaceAll(workspace: Workspace): Promise<WriteOutcome> {
         await db.reflections.bulkPut(workspace.reflections);
         await db.shiftEvents.bulkPut(workspace.shiftEvents);
         await db.meta.put({ key: "settings", value: workspace.settings });
+        // An older export has no `stabilo` key; writing defaults there would
+        // silently erase the nickname this device already had.
+        if (workspace.stabilo) {
+          await db.meta.put({ key: "stabilo", value: workspace.stabilo });
+        }
       },
     ),
   );

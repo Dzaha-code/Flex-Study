@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
-import { TimeInput } from "@/components/ui/field";
+import { TextInput, TimeInput } from "@/components/ui/field";
 import {
   IconBook,
   IconCompass,
@@ -27,10 +27,14 @@ import type {
   ContentWidth,
   IntroPreference,
   Locale,
+  StabiloIntensity,
   ThemePreference,
   WeekStart,
 } from "@/domain/types";
 import { INTRO_FORCE_KEY } from "@/features/intro/intro-mode";
+import { STABILO_FULL_HORROR } from "@/features/stabilo/flags";
+import { offeredIntensities, type StabiloPrefs } from "@/features/stabilo/prefs";
+import { openStabilo } from "@/features/stabilo/stabilo-store";
 import { startTour } from "@/features/tour/tour-store";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
@@ -55,6 +59,8 @@ export function SettingsScreen() {
   const importWorkspace = useAppStore((state) => state.importWorkspace);
   const resetEverything = useAppStore((state) => state.resetEverything);
   const applyTemplate = useAppStore((state) => state.applyTemplate);
+  const stabilo = useAppStore((state) => state.stabilo);
+  const updateStabilo = useAppStore((state) => state.updateStabilo);
 
   const { t, locale } = useI18n();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -218,10 +224,102 @@ export function SettingsScreen() {
         </div>
       </Panel>
 
+      <Panel data-tour="settings-stabilo">
+        <PanelHeader title={t("settings.stabilo")} description={t("settings.stabilo.hint")} />
+        <div className="flex flex-col gap-4">
+          <SwitchRow
+            label={t("settings.stabilo.enabled")}
+            hint={t("settings.stabilo.enabledHint")}
+            checked={stabilo.enabled}
+            onChange={(next) => void updateStabilo({ enabled: next })}
+          />
+
+          <SegmentedControl
+            legend={t("settings.stabilo.intensity")}
+            name="stabilo-intensity"
+            value={stabilo.intensity}
+            onChange={(next) => void updateStabilo({ intensity: next as StabiloIntensity })}
+            options={offeredIntensities(STABILO_FULL_HORROR).map((value) => ({
+              value,
+              label: t(`settings.stabilo.intensity.${value}` as MessageKey),
+            }))}
+          />
+
+          <SwitchRow
+            label={t("settings.stabilo.fx")}
+            hint={t("settings.stabilo.fxHint")}
+            checked={stabilo.fx}
+            onChange={(next) => void updateStabilo({ fx: next })}
+          />
+
+          <SegmentedControl
+            legend={t("settings.stabilo.sound")}
+            name="stabilo-sound"
+            value={stabilo.sound}
+            onChange={(next) => void updateStabilo({ sound: next as StabiloPrefs["sound"] })}
+            options={(["off", "soft", "normal"] as const).map((value) => ({
+              value,
+              label: t(`settings.stabilo.sound.${value}` as MessageKey),
+            }))}
+          />
+
+          <TextInput
+            label={t("settings.stabilo.nickname")}
+            hint={t("settings.stabilo.nicknameHint")}
+            value={stabilo.nickname}
+            onChange={(event) => void updateStabilo({ nickname: event.target.value })}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!stabilo.enabled}
+              onClick={() => openStabilo("intro")}
+            >
+              <IconPlay size={16} />
+              {t("settings.stabilo.replayIntro")}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!stabilo.enabled}
+              onClick={() => openStabilo("tour")}
+            >
+              <IconCompass size={16} />
+              {t("settings.stabilo.replayTour")}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                void updateStabilo({
+                  introSeen: false,
+                  tourDone: false,
+                  ph3Seen: 0,
+                  progress: null,
+                });
+                toastManager.add({ title: t("settings.stabilo.resetDone"), timeout: 3_000 });
+              }}
+            >
+              {t("settings.stabilo.reset")}
+            </Button>
+          </div>
+        </div>
+      </Panel>
+
       <Panel>
         <PanelHeader title={t("settings.help")} description={t("settings.helpHint")} />
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={startTour}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              // Same tour content, different presenter. With Stabilo off the
+              // classic one is the only option, and it never stopped existing.
+              if (stabilo.enabled) openStabilo("tour");
+              else startTour();
+            }}
+          >
             <IconCompass />
             {t("guide.startTour")}
           </Button>

@@ -22,7 +22,8 @@ import type {
   ShiftPlan,
 } from "@/domain";
 import { buildFromTemplate, findTemplate } from "@/templates";
-import { DEFAULT_SETTINGS } from "@/domain/types";
+import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
+import type { StabiloPrefs } from "@/domain/types";
 import { orphanedInstanceIds, propagateTemplateEdit } from "@/domain/propagate";
 import {
   clearWorkspace,
@@ -32,6 +33,7 @@ import {
   persistInstances,
   persistReflection,
   persistSettings,
+  persistStabilo,
   persistShiftEvent,
   persistTemplates,
   removeCategory as removeCategoryRow,
@@ -101,6 +103,7 @@ export interface AppState {
   status: AppStatus;
   storageNotice: "quota" | "unavailable" | "unknown" | null;
   settings: Settings;
+  stabilo: StabiloPrefs;
   categories: Category[];
   templates: BlockTemplate[];
   instances: BlockInstance[];
@@ -112,6 +115,7 @@ export interface AppState {
   dismissStorageNotice: () => void;
 
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
+  updateStabilo: (patch: Partial<StabiloPrefs>) => Promise<void>;
 
   saveCategory: (draft: CategoryDraft) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -185,14 +189,16 @@ export const useAppStore = create<AppState>()((set, get) => {
     templates: state.templates,
     instances: state.instances,
     reflections: state.reflections,
-    shiftEvents: state.shiftEvents,
-    settings: state.settings,
-  });
+      shiftEvents: state.shiftEvents,
+      settings: state.settings,
+      stabilo: state.stabilo,
+    });
 
   return {
     status: "loading",
     storageNotice: null,
     settings: { ...DEFAULT_SETTINGS },
+    stabilo: { ...DEFAULT_STABILO_PREFS },
     categories: [],
     templates: [],
     instances: [],
@@ -225,6 +231,12 @@ export const useAppStore = create<AppState>()((set, get) => {
       set({ settings });
       mirrorPreferences(settings);
       guardWrite(await persistSettings(settings));
+    },
+
+    updateStabilo: async (patch) => {
+      const stabilo = { ...get().stabilo, ...patch };
+      set({ stabilo });
+      guardWrite(await persistStabilo(stabilo));
     },
 
     saveCategory: async (draft) => {
@@ -709,6 +721,7 @@ export const useAppStore = create<AppState>()((set, get) => {
         shiftEvents: [],
         lastShiftEventId: null,
         settings: { ...DEFAULT_SETTINGS },
+        stabilo: { ...DEFAULT_STABILO_PREFS },
         status: "ready",
       });
       // The boot mirror has to be reset too, or the erased preference would keep
