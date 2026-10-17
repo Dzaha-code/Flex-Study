@@ -225,6 +225,7 @@ export const id = {
   "stabilo.skip": "Lewati",
   "stabilo.skipQuiz": "Lewati kuis ini",
   "stabilo.gauge": "Kesabaran Stabilo",
+  "stabilo.namePlaceholder": "Tulis namamu di sini",
   "settings.stabilo": "Stabilo",
   "settings.stabilo.hint":
     "Pemandu tur dan penunggu yang muncul di momen harian. Bisa dimatikan kapan saja.",

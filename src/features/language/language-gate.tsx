@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/data/store";
 import type { Locale } from "@/domain/types";
 import { useI18n } from "@/i18n";
-import { LOCALE_STORAGE_KEY } from "@/lib/preferences";
+import { LOCALE_STORAGE_KEY, markLanguageChosen } from "@/lib/preferences";
 
 /**
  * The first screen, before anything else — including the opening animation and
@@ -35,6 +35,7 @@ export function LanguageGate({ onDone }: { onDone: () => void }) {
       /* Storage blocked: the store still gets the choice once it is ready. */
     }
     document.documentElement.lang = locale;
+    markLanguageChosen();
   }
 
   const busy = chosen !== null;

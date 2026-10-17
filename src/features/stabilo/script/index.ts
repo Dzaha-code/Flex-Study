@@ -31,25 +31,24 @@ export interface Reactions {
 
 export const REACTIONS: Record<Lang, Reactions> = {
   id: {
-    correct: "Betul! Pintar~ ✿",
-    wrong1: "Hehe. Bukan yang itu, lho~",
-    wrong2: "...Kamu dengerin aku, kan? Kan...?",
-    wrong3: "Aduh, aduh, ADUH! Tiga kali, lho!!",
-    reset:
-      "...Hhh. Maaf, aku kebawa suasana. Kita ulang pelan-pelan, ya? Aku kasih petunjuk deh.",
-    sweet: "Hmm, bukan yang itu~ Coba lagi?",
-    skipped: "Oke, kapan-kapan ya~ Aku di sini kalau kamu butuh.",
-    unsure: "Nggak apa-apa! Aku jelasin lebih pelan.",
+    correct: "Betul! ✿",
+    wrong1: "Hehe, bukan itu~",
+    wrong2: "Kamu dengerin aku, kan?",
+    wrong3: "Aduh. Tiga kali, lho.",
+    reset: "Hhh. Maaf, aku kebawa. Kita ulang pelan-pelan, ya.",
+    sweet: "Hmm, bukan itu~ Coba lagi?",
+    skipped: "Oke, kapan-kapan ya.",
+    unsure: "Nggak apa-apa, aku ulangi.",
   },
   en: {
-    correct: "Correct! Nice one~ ✿",
-    wrong1: "Hehe. That's not the one, you know~",
-    wrong2: "...You're listening to me, right? Right...?",
-    wrong3: "Ugh, ugh, UGH! That's three times!!",
-    reset: "...Hah. Sorry, I got carried away. Let's go again, slowly, okay? I'll give you a hint.",
+    correct: "Correct! ✿",
+    wrong1: "Hehe, not that one~",
+    wrong2: "You're listening, right?",
+    wrong3: "Ugh. Three times, you know.",
+    reset: "Hah. Sorry, I got carried away. Let's take it slow.",
     sweet: "Hmm, not that one~ Try again?",
-    skipped: "Okay, another time~ I'll be here if you need me.",
-    unsure: "No worries! I'll go slower.",
+    skipped: "Okay, another time.",
+    unsure: "No worries, I'll repeat.",
   },
 };
 

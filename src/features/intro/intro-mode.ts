@@ -10,7 +10,7 @@ import type { IntroPreference } from "@/domain/types";
 export type IntroPhase = "run" | "done";
 
 /** What an install that has never been configured uses: the first launch only. */
-export const DEFAULT_INTRO_MODE: IntroPreference = "once";
+export const DEFAULT_INTRO_MODE: IntroPreference = "always";
 
 /**
  * Storage keys. They sit next to the decision rather than in the gate component

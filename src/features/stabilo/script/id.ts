@@ -1,15 +1,12 @@
 import type { DialogueScript } from "../engine/types";
 
 /**
- * Naskah Indonesia. Ditulis sebagai ucapan, bukan terjemahan dari bahasa
- * Inggris: partikel ("lho", "ya~") dan pemendekan sehari-hari adalah bagian dari
- * suaranya, dan menerjemahkannya harfiah akan membuatnya terdengar kaku.
+ * Naskah Indonesia.
  *
- * `{{name}}` sudah memuat koma di depannya (", Rani" atau ""), supaya kalimat
- * salam tetap benar saat nama dikosongkan.
- *
- * Aturan yang dipegang di sini (tourStabilo.md §3): kengerian diarahkan ke
- * situasi permainan — kuis, jeda canggung — tidak pernah ke kehidupan pengguna.
+ * Aturan yang dipegang: satu gagasan per simpul, kalimat pendek, dan tidak ada
+ * daftar berkolon — bahasa yang diucapkan jarang berbunyi seperti dokumentasi.
+ * Partikel ("ya", "kok", "lho") dipakai secukupnya supaya terdengar seperti
+ * orang, bukan seperti teks bantuan.
  */
 
 export const INTRO_ID: DialogueScript = {
@@ -19,12 +16,13 @@ export const INTRO_ID: DialogueScript = {
   nodes: {
     i01: {
       id: "i01",
-      text: "Halo, halo~ Akhirnya ketemu juga! Aku Stabilo, penunggu FlexStudy.",
+      text: "Halo! Akhirnya ketemu juga. Aku Stabilo, penunggu FlexStudy.",
       next: "i02",
     },
     i02: {
       id: "i02",
-      text: "Boleh aku tahu namamu? Boleh dikosongkan, kok.",
+      text: "Sebelum mulai, aku boleh tahu namamu?",
+      input: "nickname",
       next: "i03",
     },
     i03: {
@@ -35,22 +33,23 @@ export const INTRO_ID: DialogueScript = {
     },
     i04: {
       id: "i04",
-      text: "Satu hal lagi: kamu mau aku manis banget, atau dengan sedikit... bumbu?",
+      text: "Mau aku yang manis, atau boleh sedikit nakal?",
+      pick: "intensity",
       next: "i05",
     },
     i05: {
       id: "i05",
-      text: "Jadwal di sini memaafkan: harimu jadi blok, dan kalau berantakan, tinggal digeser.",
+      text: "FlexStudy itu jadwal yang memaafkan. Kalau harimu berantakan, tinggal digeser.",
       next: "i06",
     },
     i06: {
       id: "i06",
-      text: "Sekarang pilih template yang paling mirip hidupmu, ya~",
+      text: "Sekarang pilih template yang paling mirip hidupmu, ya.",
       next: "i07",
     },
     i07: {
       id: "i07",
-      text: "Aku tunggu di sana. Kalau bingung, panggil saja~",
+      text: "Aku tunggu di sana. Panggil saja kalau bingung.",
       fx: ["sparkle"],
     },
   },
@@ -65,24 +64,14 @@ export const TOUR_ID: DialogueScript = {
       id: "t01",
       route: "/",
       target: "nav",
-      text: "Ini menu utama. Kamu akan paling sering ada di {{today}}.",
-      ask: "understood",
-      onUnsure: "t01b",
-      next: "t02",
-    },
-    t01b: {
-      id: "t01b",
-      route: "/",
-      target: "nav",
-      slow: true,
-      text: "Menu ada di kiri. Yang paling sering kamu buka: {{today}}.",
+      text: "Ini menu utama. Paling sering kamu buka {{today}}.",
       next: "t02",
     },
     t02: {
       id: "t02",
       route: "/",
       target: "focus",
-      text: "Blok pertamamu ada di sini. Tekan {{start}} dan timernya langsung jalan.",
+      text: "Blok pertamamu di sini. Tombol {{start}} langsung menyalakan timer.",
       ask: "understood",
       onUnsure: "t02b",
       next: "q1",
@@ -92,7 +81,7 @@ export const TOUR_ID: DialogueScript = {
       route: "/",
       target: "focus",
       slow: true,
-      text: "Ini blok yang sedang berjalan. Tombol {{start}} ada di dalamnya.",
+      text: "Lihat blok ini. Ada tombol {{start}} di dalamnya.",
       next: "q1",
     },
     q1: {
@@ -104,7 +93,7 @@ export const TOUR_ID: DialogueScript = {
       quiz: {
         id: "quiz-start",
         kind: "choice",
-        prompt: "Kalau mau memulai timer, kamu tekan yang mana?",
+        prompt: "Mau menyalakan timer, tekan yang mana?",
         options: [
           { label: "{{start}}", correct: true },
           { label: "{{finish}}" },
@@ -117,24 +106,14 @@ export const TOUR_ID: DialogueScript = {
       id: "t03",
       route: "/",
       target: "progress",
-      text: "Garis ini menunjukkan berapa blok yang sudah beres hari ini.",
-      ask: "understood",
-      onUnsure: "t03b",
-      next: "t04",
-    },
-    t03b: {
-      id: "t03b",
-      route: "/",
-      target: "progress",
-      slow: true,
-      text: "Garis di atas itu kemajuan hari ini.",
+      text: "Garis ini kemajuan hari ini.",
       next: "t04",
     },
     t04: {
       id: "t04",
       route: "/",
       target: "shift",
-      text: "Kalau hari berantakan, ada {{shift}}: sisa blok pindah, target tetap aman.",
+      text: "Kalau hari berantakan, pakai {{shift}}. Sisa blok pindah, target tetap.",
       ask: "understood",
       onUnsure: "t04b",
       next: "q2",
@@ -144,7 +123,7 @@ export const TOUR_ID: DialogueScript = {
       route: "/",
       target: "shift",
       slow: true,
-      text: "Tombol {{shift}} memindahkan sisa blok. Target tidak ikut turun.",
+      text: "Tombol {{shift}} memindahkan sisa blok. Targetmu tidak ikut turun.",
       next: "q2",
     },
     q2: {
@@ -160,7 +139,7 @@ export const TOUR_ID: DialogueScript = {
         options: [
           { label: "{{shift}}", correct: true },
           { label: "Hapus semua blok" },
-          { label: "Pura-pura nggak lihat" },
+          { label: "Diamkan saja" },
         ],
       },
       next: "t05",
@@ -170,7 +149,7 @@ export const TOUR_ID: DialogueScript = {
       route: "/week",
       target: "week-targets",
       accent: true,
-      text: "Di {{week}}, lihat target tiap kategori. Pelan-pelan aja, yang penting konsisten.",
+      text: "Di {{week}}, lihat target tiap kategori.",
       next: "q3",
     },
     q3: {
@@ -182,7 +161,7 @@ export const TOUR_ID: DialogueScript = {
       quiz: {
         id: "quiz-week",
         kind: "choice",
-        prompt: "Di layar mana kamu melihat target minggu ini?",
+        prompt: "Target mingguan ada di layar mana?",
         options: [
           { label: "{{week}}", correct: true },
           { label: "{{journal}}" },
@@ -195,18 +174,17 @@ export const TOUR_ID: DialogueScript = {
       id: "t06",
       route: "/journal",
       target: "journal-entry",
-      text: "Di {{journal}}, dua kalimat saja sudah cukup. Aku suka kalau kamu bercerita~",
+      text: "Di {{journal}}, dua kalimat sudah cukup.",
       next: "t07",
     },
     t07: {
       id: "t07",
       route: "/settings",
       target: "settings-appearance",
-      text: "Kalau kamu lebih suka tanpa aku, matikan aku di {{settings}} → Stabilo.",
+      text: "Kalau bosan sama aku, matikan di {{settings}}.",
       mode: {
-        sweet: "Kalau kamu lebih suka tanpa aku, matikan di {{settings}} → Stabilo. Aku nggak marah, kok.",
-        spooky:
-          "Matikan di {{settings}} → Stabilo kalau kamu mau. Aku nggak marah... mungkin. Hehe.",
+        sweet: "Kalau mau, aku bisa dimatikan di {{settings}}. Nggak apa-apa, kok.",
+        spooky: "Kalau bosan sama aku, matikan di {{settings}}. Aku nggak marah... mungkin.",
       },
       accent: true,
       next: "t08",
@@ -215,7 +193,7 @@ export const TOUR_ID: DialogueScript = {
       id: "t08",
       route: "/guide",
       target: "guide-quick",
-      text: "Itu saja. Kalau lupa, panggil aku lewat {{guide}}. Selamat belajar, ya~ ✿",
+      text: "Itu saja. Kalau lupa, panggil aku di {{guide}}.",
       fx: ["sparkle"],
     },
   },

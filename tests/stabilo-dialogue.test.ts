@@ -190,9 +190,9 @@ describe("navigation", () => {
   });
 
   it("takes the unsure branch when one is declared", () => {
-    const state = startDialogue(TOUR_ID);
+    const state = { ...startDialogue(TOUR_ID), nodeId: "t02" };
     const next = advance(TOUR_ID, state, "unsure");
-    expect(next?.nodeId).toBe("t01b");
+    expect(next?.nodeId).toBe("t02b");
   });
 
   it("falls back to next when a node has no unsure branch", () => {

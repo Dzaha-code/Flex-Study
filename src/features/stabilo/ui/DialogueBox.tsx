@@ -72,6 +72,18 @@ export interface DialogueBoxProps {
     options: Array<{ label: string; correct?: boolean }>;
     hinted: boolean;
   } | null;
+  /** Asked out loud in the dialogue, not in a settings form. */
+  nameInput?: {
+    value: string;
+    placeholder: string;
+    onChange: (value: string) => void;
+    onSubmit: () => void;
+  } | null;
+  intensityPick?: {
+    sweetLabel: string;
+    spookyLabel: string;
+    onPick: (value: "sweet" | "spooky") => void;
+  } | null;
   gauge?: 0 | 1 | 2 | 3 | null;
   gaugeLabel: string;
   onContinue: () => void;
@@ -106,6 +118,8 @@ export function DialogueBox({
   feedback = null,
   ask = false,
   quiz = null,
+  nameInput = null,
+  intensityPick = null,
   gauge = null,
   gaugeLabel,
   onContinue,
@@ -131,7 +145,7 @@ export function DialogueBox({
   return (
     <div
       className={cn(
-        "surface-floating pointer-events-auto flex w-full max-w-[720px] flex-col gap-3 p-4 sm:p-5",
+        "surface-floating pointer-events-auto flex w-full max-w-[680px] flex-col gap-3 p-4 sm:p-5",
         banner && "stabilo-banner",
       )}
       onClick={onContinue}
@@ -145,7 +159,10 @@ export function DialogueBox({
         </div>
         <button
           type="button"
-          onClick={onSkip}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSkip();
+          }}
           className="text-caption text-ink-muted underline hover:text-ink"
         >
           {labels.skip}
@@ -155,11 +172,7 @@ export function DialogueBox({
       {banner ? (
         <p className="text-title font-semibold">{text}</p>
       ) : (
-        <p
-          className="min-h-[3.2em] text-body leading-relaxed text-ink"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <p className="text-body leading-relaxed text-ink" aria-live="polite" aria-atomic="true">
           {amplitude > 0 ? (
             <TremblingLine text={glitched} amplitude={amplitude} />
           ) : (
@@ -204,22 +217,10 @@ export function DialogueBox({
               </li>
             ))}
           </ul>
-          {quiz.hinted ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onSkipQuiz();
-              }}
-              className="self-start text-caption text-ink-muted underline hover:text-ink"
-            >
-              {labels.skipQuiz}
-            </button>
-          ) : null}
         </div>
       ) : null}
 
-      {feedback && quiz?.hinted ? (
+      {quiz?.hinted ? (
         <button
           type="button"
           onClick={(event) => {
@@ -259,7 +260,63 @@ export function DialogueBox({
         </div>
       ) : null}
 
-      {!quiz && !ask ? (
+      {nameInput && !feedback ? (
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            nameInput.onSubmit();
+          }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            value={nameInput.value}
+            onChange={(event) => nameInput.onChange(event.target.value)}
+            placeholder={nameInput.placeholder}
+            maxLength={40}
+            disabled={!done}
+            aria-label={speaker}
+            className="h-10 min-w-0 flex-1 rounded-control border border-line-strong bg-surface px-3 text-body text-ink outline-none focus-visible:border-accent"
+          />
+          <button
+            type="submit"
+            disabled={!done}
+            className="h-10 rounded-control bg-accent px-4 text-meta font-medium text-accent-ink disabled:opacity-50"
+          >
+            {labels.next}
+          </button>
+        </form>
+      ) : null}
+
+      {intensityPick && !feedback ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={!interactive}
+            onClick={(event) => {
+              event.stopPropagation();
+              intensityPick.onPick("sweet");
+            }}
+            className="h-10 rounded-control border border-line-strong px-4 text-meta text-ink hover:bg-accent-surface disabled:opacity-60"
+          >
+            {intensityPick.sweetLabel}
+          </button>
+          <button
+            type="button"
+            disabled={!interactive}
+            onClick={(event) => {
+              event.stopPropagation();
+              intensityPick.onPick("spooky");
+            }}
+            className="h-10 rounded-control bg-accent px-4 text-meta font-medium text-accent-ink disabled:opacity-60"
+          >
+            {intensityPick.spookyLabel}
+          </button>
+        </div>
+      ) : null}
+
+      {!quiz && !ask && !nameInput && !intensityPick ? (
         <button
           type="button"
           disabled={!interactive}

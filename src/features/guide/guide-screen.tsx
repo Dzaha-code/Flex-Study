@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/data/store";
 import { IconBook, IconCheck, IconCompass, IconLightbulb, IconPlay } from "@/components/ui/icons";
 import { Panel, PanelHeader, StatusBadge } from "@/components/ui/surface";
 import type { BlockStatus } from "@/domain/types";
 import { useI18n, type MessageKey } from "@/i18n";
+import { openStabilo } from "@/features/stabilo/stabilo-store";
 import { startTour } from "@/features/tour/tour-store";
 
 const QUICK_STEPS: MessageKey[] = [
@@ -59,7 +61,14 @@ export function GuideScreen() {
         <h1 className="text-display">{t("guide.title")}</h1>
         <p className="measure text-meta text-ink-muted">{t("guide.subtitle")}</p>
         <div className="flex flex-wrap items-center gap-3" data-tour="guide-replay">
-          <Button onClick={startTour}>
+          {/* Same tour, different presenter. With Stabilo enabled the long
+              classic cards would be a step backwards. */}
+          <Button
+            onClick={() => {
+              if (useAppStore.getState().stabilo.enabled) openStabilo("tour");
+              else startTour();
+            }}
+          >
             <IconPlay />
             {t("guide.startTour")}
           </Button>

@@ -32,7 +32,9 @@ describe("resolveIntroPhase", () => {
   });
 
   it("defaults to the shipped behaviour, not to silence", () => {
-    expect(DEFAULT_SETTINGS.intro).toBe("once");
+    // The opening animation plays on every launch by default; it is never the
+    // silent option, and the pre-hydration constant must agree with the store.
+    expect(DEFAULT_SETTINGS.intro).toBe("always");
     expect(DEFAULT_INTRO_MODE).toBe(DEFAULT_SETTINGS.intro);
   });
 });

@@ -130,6 +130,8 @@ function StabiloSession({ flow }: { flow: Flow }) {
 
   const [mouth, setMouth] = useState<Mouth>("closed");
   const [feedback, setFeedback] = useState<string | null>(null);
+  /** Typed into the dialogue itself, then saved when the line is submitted. */
+  const [draftName, setDraftName] = useState(prefs.nickname);
   /**
    * Both of these are keyed by what they describe instead of being reset inside
    * an effect. A stale key simply reads as "not started yet", which is the same
@@ -290,9 +292,10 @@ function StabiloSession({ flow }: { flow: Flow }) {
       }
       return;
     }
-    if (node?.quiz || node?.ask) return;
+    // These nodes wait for their own control; a stray click must not skip them.
+    if (node?.quiz || node?.ask || node?.input || node?.pick) return;
     go();
-  }, [done, feedback, finishLine, go, node?.ask, node?.quiz]);
+  }, [done, feedback, finishLine, go, node?.ask, node?.input, node?.pick, node?.quiz]);
 
   function answer(index: number) {
     if (!node?.quiz) return;
@@ -404,11 +407,13 @@ function StabiloSession({ flow }: { flow: Flow }) {
         <div className="relative w-full max-w-[720px]">
           <div
             className={cn(
-              "pointer-events-none absolute left-1/2 h-[260px] -translate-x-1/2",
-              placeTop ? "top-full mt-2" : "bottom-full mb-1",
+              // Kept to the right of the box so she does not sit on top of the
+              // card the user is being asked to read.
+              "pointer-events-none absolute right-2 h-[300px] w-[240px]",
+              placeTop ? "top-full mt-1" : "bottom-full mb-1",
             )}
           >
-            <div className="h-full w-[240px] stabilo-idle">
+            <div className="h-full w-full stabilo-idle">
               <Sprite
                 sprite={sprite}
                 mouth={mouth}
@@ -446,6 +451,31 @@ function StabiloSession({ flow }: { flow: Flow }) {
             onUnderstood={() => go("next")}
             onUnsure={() => go("unsure")}
             onSkipQuiz={() => go("next")}
+            nameInput={
+              node.input === "nickname"
+                ? {
+                    value: draftName,
+                    placeholder: t("stabilo.namePlaceholder"),
+                    onChange: setDraftName,
+                    onSubmit: () => {
+                      void updateStabilo({ nickname: draftName.trim() });
+                      go();
+                    },
+                  }
+                : null
+            }
+            intensityPick={
+              node.pick === "intensity"
+                ? {
+                    sweetLabel: t("settings.stabilo.intensity.sweet"),
+                    spookyLabel: t("settings.stabilo.intensity.spooky"),
+                    onPick: (intensity) => {
+                      void updateStabilo({ intensity });
+                      go();
+                    },
+                  }
+                : null
+            }
             onSkip={finish}
             labels={{
               understood: t("stabilo.understood"),

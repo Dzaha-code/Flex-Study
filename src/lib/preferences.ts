@@ -13,6 +13,22 @@ export const LOCALE_STORAGE_KEY = "flexstudy.locale";
  * database answers, or the intro plays over a screen the user can already read.
  */
 export const INTRO_STORAGE_KEY = "flexstudy.intro";
+/**
+ * Whether the language has ever been chosen on this device. The mirror alone is
+ * not enough: an existing install already has one, and the first conversation
+ * with Stabilo must still be preceded by an explicit choice.
+ */
+export const LANGUAGE_CHOSEN_KEY = "flexstudy.langChosen.v1";
+
+export function readLanguageChosen(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(LANGUAGE_CHOSEN_KEY) === "1";
+}
+
+export function markLanguageChosen(): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(LANGUAGE_CHOSEN_KEY, "1");
+}
 
 export function mirrorPreferences(
   settings: Pick<Settings, "theme" | "locale" | "intro">,

@@ -156,7 +156,7 @@ export const StabiloPrefsSchema = z.object({
   enabled: z.boolean().default(true),
   intensity: z.enum(["sweet", "spooky", "full"]).default("spooky"),
   fx: z.boolean().default(true),
-  sound: z.enum(["off", "soft", "normal"]).default("off"),
+  sound: z.enum(["off", "soft", "normal"]).default("normal"),
   nickname: z.string().max(40).default(""),
   introSeen: z.boolean().default(false),
   tourDone: z.boolean().default(false),

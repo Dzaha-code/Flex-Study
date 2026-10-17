@@ -13,7 +13,7 @@ import { LanguageGate } from "@/features/language/language-gate";
 import { OnboardingScreen } from "@/features/onboarding/onboarding-screen";
 import { StabiloHost } from "@/features/stabilo/StabiloHost";
 import { useI18n } from "@/i18n";
-import { readMirroredLocale } from "@/lib/preferences";
+import { readLanguageChosen, readMirroredLocale } from "@/lib/preferences";
 import { useMounted } from "@/lib/use-mounted";
 import { AppShell } from "./app-shell";
 import { Button } from "./ui/button";
@@ -97,8 +97,21 @@ export function AppBoundary({ children }: { children: ReactNode }) {
     () => readMirroredLocale() !== null,
     () => null,
   );
+  const languageChosen = useSyncExternalStore(
+    subscribeToNothing,
+    () => readLanguageChosen(),
+    () => null,
+  );
+  const introSeen = useAppStore((state) => state.stabilo.introSeen);
   const [forcedLocale, setForcedLocale] = useState(false);
-  const localeChosen = forcedLocale ? true : storedLocaleChoice;
+  /**
+   * A stored mirror is not proof of a choice: an install from before the
+   * language screen already has one. So the screen also appears once when the
+   * character is about to speak for the first time — the language has to be
+   * settled before the first line, not after it.
+   */
+  const needsLanguage = storedLocaleChoice === false || (!languageChosen && !introSeen);
+  const localeChosen = forcedLocale || !needsLanguage;
 
   useEffect(() => {
     if (mounted) void hydrate();
@@ -114,7 +127,7 @@ export function AppBoundary({ children }: { children: ReactNode }) {
 
   // The language screen comes before everything, including the intro: the tour
   // script is written per language, so it cannot be spoken until this is known.
-  if (mounted && localeChosen === false) {
+  if (mounted && !localeChosen) {
     return <LanguageGate onDone={handleLocaleDone} />;
   }
 

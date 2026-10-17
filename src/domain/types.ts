@@ -240,7 +240,7 @@ export const DEFAULT_STABILO_PREFS: StabiloPrefs = {
   enabled: true,
   intensity: "spooky",
   fx: true,
-  sound: "off",
+  sound: "normal",
   nickname: "",
   introSeen: false,
   tourDone: false,
@@ -266,7 +266,10 @@ export interface Workspace {
 export const DEFAULT_SETTINGS: Settings = {
   locale: "id",
   theme: "system",
-  intro: "once",
+  // The opening animation plays on every launch by default; `once` stays
+  // available in Settings, and old backups without the field still import as
+  // `once` because the schema default did not change.
+  intro: "always",
   weekStart: 1,
   remindersEnabled: false,
   dayStart: "08:00",

@@ -59,6 +59,10 @@ export interface DialogueNode {
   fx?: EffectId[];
   /** Whether the accent smile may appear here (12%, max twice per tour). */
   accent?: boolean;
+  /** Ask for the nickname right here, in the dialogue, instead of in a form later. */
+  input?: "nickname";
+  /** A preference the character asks for out loud, with two answers. */
+  pick?: "intensity";
   /** Show the honest "Paham / Belum paham" pair before moving on. */
   ask?: "understood";
   /** Where "Belum paham" leads. Falls through to `next` when absent. */

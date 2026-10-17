@@ -222,6 +222,7 @@ export const en: Messages = {
   "stabilo.skip": "Skip",
   "stabilo.skipQuiz": "Skip this quiz",
   "stabilo.gauge": "Stabilo's patience",
+  "stabilo.namePlaceholder": "Type your name here",
   "settings.stabilo": "Stabilo",
   "settings.stabilo.hint":
     "The tour guide and the presence that shows up through the day. You can switch her off anytime.",
