@@ -12,7 +12,7 @@ Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
 ### [FlexStudy_0.5.0_x64-setup.exe](installers/FlexStudy_0.5.0_x64-setup.exe) — sekitar 2,5 MB
 
-Versi **0.5.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah.
+Versi **0.5.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 Yang baru di 0.5.0: **Stabilo**, pemandu tur yang berbicara. Pada pemasangan baru, urutannya kini: pilih bahasa → animasi pembuka → Stabilo memperkenalkan diri → pilih template → **tur interaktif** di layar Hari ini. Tur itu memakai sorotan yang sama dengan tur klasik, tapi setiap penjelasan diberi pilihan jujur *Paham / Belum paham*, dan tiga kuis pendek bergaya "Eh, tunggu dulu!". Tiga jawaban salah beruntun membawanya ke fase kesal — getar, glitch, vinyet — lalu ia mengalah, memberi petunjuk, dan tidak pernah menahan kamu. Kamu bisa melewati tur kapan saja tanpa dimarahi, dan mematikan Stabilo sepenuhnya di **Atur → Stabilo**; tur klasik tetap ada.
 
