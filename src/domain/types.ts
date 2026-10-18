@@ -264,7 +264,9 @@ export interface Workspace {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  locale: "id",
+  // English is the shipping default. The language screen still asks once, and a
+  // stored choice always wins; this only decides the state before that answer.
+  locale: "en",
   theme: "system",
   // The opening animation plays on every launch by default; `once` stays
   // available in Settings, and old backups without the field still import as

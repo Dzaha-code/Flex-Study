@@ -426,6 +426,18 @@ Aslinya hanya `stabilo_flat.png` yang diekspor dengan transparansi; sepuluh sisa
 
 **Catatan aset.** Perbedaan `flat` → `ph1` → `ph3` ada di lengkung mulut, sangat halus pada tinggi 170–215 px. Karena itu getaran dan sentakan bukan hiasan: itulah yang membuat perubahan fase terbaca.
 
+### 11.10 Rilis 0.5.3 — tur 14 perhentian, dan percakapan yang bergerak
+
+**Auto-open setelah onboarding.** Penjaga `autoOpened` dulu satu untuk dua alur. Perkenalan memakainya saat onboarding, jadi ketika `onboardingCompleted` berubah menjadi `true` — tepat saat tur seharusnya mulai — guard sudah `true` dan cabang tur tidak pernah jalan. Sekarang ada `autoIntro` dan `autoTour` terpisah, dan tur dijadwalkan 500 ms setelah onboarding selesai supaya navigasi "Buka Hari ini" mendarat lebih dulu.
+
+**Cakupan tur.** Enam simpul baru: `t04c` (`add`), `t04d` (`streak`), `t04e` (`recap`, penanda baru di tautan Rekap), `t06b` (`journal-history`), `t07b` (`settings-data`), `t07c` (`settings-stabilo`). `t07` tidak lagi berbicara soal mematikan karakter (itu tugas `t07c`), melainkan soal tema dan lebar layar — panel yang memang disorotnya. Varian hari kosong mewarisi simpul baru lewat spread, jadi ketiga simpul yang berbeda tetap satu-satunya perbedaan.
+
+**Gerak percakapan.** Semua CSS, tanpa dependensi baru: `stabilo-card-in` (kartu masuk), `stabilo-sprite-in` pada pembungkus stabil (bukan pada div yang di-*key* per jawaban salah, kalau tidak animasi masuk ikut terulang tiap salah), `stabilo-option-in` dengan `animation-delay` per pilihan, `stabilo-pop-in` untuk umpan balik, `stabilo-caret` berkedip, dan `stabilo-speaking-dot` di sebelah nama selama `!done`. Semuanya berhenti di bawah `prefers-reduced-motion`.
+
+**Kedip.** `stabilo_blink.webp` sudah terdaftar di `CORE_SPRITES` tetapi tidak pernah dipakai. Sekarang dipakai tiap 2,6–5,2 detik acak, hanya pada `visualPhase === 0`; pada frame fase gambarnya berbeda dan pertukaran itu akan terbaca sebagai glitch, bukan kedipan. Dimatikan bersama preferensi `fx`.
+
+**Bahasa bawaan.** `DEFAULT_SETTINGS.locale` dan `lang` di `layout.tsx` menjadi `"en"`. Pilihan tersimpan tetap menang, dan gerbang bahasa tetap muncul sekali.
+
 ---
 
 ## 12. Pekerjaan terbuka (belum dikerjakan, sudah diketahui)

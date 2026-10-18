@@ -1,7 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import {
   GAUGE_FOR_PHASE,
-  PHASE_SPRITE,
   advance,
   correctOption,
   judge,
@@ -40,6 +39,7 @@ const TOUR_TARGETS = new Set([
   "add",
   "focus",
   "streak",
+  "recap",
   "shift",
   "week-header",
   "week-grid",

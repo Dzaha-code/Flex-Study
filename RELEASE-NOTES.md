@@ -6,6 +6,61 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.3 — 18 Oktober 2026
+
+Tur sekarang menyambut sendiri setelah onboarding, menjelaskan lebih banyak fitur,
+dan percakapannya bergerak seperti percakapan. Bahasa bawaan: **Inggris**.
+
+### Yang diperbaiki
+
+- **Tur menyambut otomatis setelah "Buka Hari ini".** Penjaga auto-open-nya satu
+  untuk dua alur: perkenalan memakainya lebih dulu saat onboarding, jadi ketika
+  onboarding selesai — tepat saat tur seharusnya mulai — jatahnya sudah terpakai
+  dan layar Hari ini terbuka tanpa disambut siapa pun. Sekarang perkenalan dan tur
+  punya penjaga masing-masing, dan tur menunggu setengah detik agar perpindahan
+  layar dari onboarding selesai lebih dulu.
+- **Tur menjelaskan lebih banyak.** Enam perhentian baru: **Tambah blok**,
+  **tujuh hari terakhir** (streak), **Rekap bulanan**, **riwayat jurnal**
+  (cari dan bintang), **cadangkan data** di Atur, dan **panel Stabilo** tempat ia
+  bisa dimatikan. Total 14 perhentian singkat, ditambah tiga kuis.
+
+### Yang baru
+
+- **Percakapan yang bergerak.** Kartu dialog masuk dengan lembut, karakternya
+  masuk dari kanan, pilihan kuis muncul bertahap, umpan balik jawaban "pop",
+  kursor ketik berkedip, dan ada titik kecil di sebelah nama yang berdenyut
+  selama ia masih bicara.
+- **Ia berkedip.** Frame `stabilo_blink.webp` sudah ada sejak awal tetapi belum
+  pernah dipakai; sekarang ia berkedip tiap 2,6–5,2 detik pada frame tenang.
+  Intervalnya tidak tetap supaya tidak terasa seperti metronom.
+- **Bahasa bawaan Inggris.** Pilihan bahasa tetap ditanyakan sekali di awal, dan
+  pilihan yang tersimpan selalu menang; ini hanya menentukan keadaan sebelum
+  pertanyaan itu dijawab.
+
+### Pemasangan
+
+| Berkas | Ukuran | Untuk siapa |
+|---|---|---|
+| `FlexStudy_0.5.3_x64-setup.exe` | 2.616.834 B (2,50 MiB) | **Disarankan.** Terpasang per pengguna, tidak butuh hak admin |
+| `FlexStudy_0.5.3_x64_en-US.msi` | 3.141.632 B (3,00 MiB) | Terpasang mesin-luas di `Program Files`, butuh admin |
+
+```text
+4C14C4DB4CC9D6F6AE68184A1A4F7AFF5961C62E4B4C2B127E3CBA83524FB83A  FlexStudy_0.5.3_x64-setup.exe
+EF08B32C517A568227478ED8978C41FBF760240E66C936E73FCCA6745CAE6E21  FlexStudy_0.5.3_x64_en-US.msi
+```
+
+### Yang perlu diketahui
+
+- **Tidak ada dependensi animasi baru.** Semua gerak di atas adalah CSS satu kali
+  jalan, jadi tidak ada pustaka gerak yang ikut ke bundel. Kalau nanti butuh
+  pegas/fisika sungguhan, Motion bisa ditambahkan — tetapi untuk efek sependek
+  ini hasilnya sama dengan biaya ± 50 KB.
+- **Profil yang sudah menuntaskan tur tidak melihatnya lagi secara otomatis.**
+  Untuk mencoba: **Atur → Stabilo → Atur ulang kemajuan**, lalu buka ulang aplikasi.
+- Installer belum ditandatangani; SmartScreen akan memperingatkan.
+
+---
+
 ## 0.5.2 — 18 Oktober 2026
 
 Tur sekarang muncul sendiri, tahu apakah hari ini sudah punya blok, dan Stabilo

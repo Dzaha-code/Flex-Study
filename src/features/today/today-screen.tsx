@@ -241,6 +241,7 @@ function TodayContent({ date }: { date: string }) {
           step away instead of being crowded in here. */}
       <Link
         href="/recap"
+        data-tour="recap"
         className="inline-flex h-11 w-fit items-center gap-2 rounded-control border border-line-strong bg-surface-raised px-4 text-meta hover:bg-accent-surface"
       >
         <IconCalendar size={16} />

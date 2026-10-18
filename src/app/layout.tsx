@@ -35,7 +35,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="id"
+      lang="en"
       // The pre-paint script sets `data-theme`, so the attribute differs from
       // the server-rendered markup by design.
       suppressHydrationWarning

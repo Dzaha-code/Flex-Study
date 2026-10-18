@@ -97,7 +97,14 @@ export function StabiloHost() {
   const holding = useIntroHolding();
 
   const [available, setAvailable] = useState<boolean | null>(STABILO_PLACEHOLDER ? true : null);
-  const autoOpened = useRef(false);
+  /**
+   * One guard per flow, not one for both. The introduction opens during
+   * onboarding, and a shared flag meant that by the time onboarding finished —
+   * the moment the tour is supposed to start — the slot had already been spent,
+   * so "Open Today" handed over to a silent screen.
+   */
+  const autoIntro = useRef(false);
+  const autoTour = useRef(false);
 
   useEffect(() => {
     if (STABILO_PLACEHOLDER) return;
@@ -130,7 +137,6 @@ export function StabiloHost() {
 
   // First-run order: language → intro animation → Stabilo → template → tour.
   useEffect(() => {
-    if (autoOpened.current) return;
     if (!prefs.enabled || holding) return;
     if (status !== "ready" || available !== true) return;
 
@@ -141,7 +147,8 @@ export function StabiloHost() {
      * exactly the kind of surprise this project avoids.
      */
     if (!onboardingCompleted && !prefs.introSeen) {
-      autoOpened.current = true;
+      if (autoIntro.current) return;
+      autoIntro.current = true;
       showStabilo("intro");
       return;
     }
@@ -152,8 +159,15 @@ export function StabiloHost() {
      * never saw a tour unless it was started by hand.
      */
     if (onboardingCompleted && !prefs.tourDone) {
-      autoOpened.current = true;
-      showStabilo("tour");
+      if (autoTour.current) return;
+      autoTour.current = true;
+      /**
+       * "Open Today" hands over with its own navigation. Half a second lets that
+       * land, so the first step finds the nav rail instead of pointing at a
+       * screen that is already being replaced.
+       */
+      const timer = window.setTimeout(() => showStabilo("tour"), 500);
+      return () => window.clearTimeout(timer);
     }
   }, [prefs.enabled, prefs.introSeen, prefs.tourDone, onboardingCompleted, status, available, holding]);
 
@@ -458,6 +472,33 @@ function StabiloSession({ flow }: { flow: Flow }) {
     return () => stopAmbience();
   }, [prefs.sound]);
 
+  /**
+   * A blink every few seconds. Irregular on purpose: a fixed interval reads as
+   * a metronome, and the eye picks that up faster than it picks up the blink.
+   */
+  const [blink, setBlink] = useState(false);
+  useEffect(() => {
+    if (!prefs.fx) return;
+    let open = 0;
+    let close = 0;
+
+    const loop = () => {
+      open = window.setTimeout(() => {
+        setBlink(true);
+        close = window.setTimeout(() => {
+          setBlink(false);
+          loop();
+        }, 130);
+      }, 2600 + Math.random() * 2600);
+    };
+
+    loop();
+    return () => {
+      window.clearTimeout(open);
+      window.clearTimeout(close);
+    };
+  }, [prefs.fx]);
+
   // She arrives once per session, not on every line.
   useEffect(() => {
     if (state.nodeId !== script.start) return;
@@ -474,7 +515,13 @@ function StabiloSession({ flow }: { flow: Flow }) {
   if (!node) return null;
 
   const visualPhase = visualPhaseFor(state, prefs.intensity);
-  const sprite: SpriteKey = PHASE_SPRITE[visualPhase] as SpriteKey;
+  /**
+   * Idle blinking, on the calm frame only. `stabilo_blink.webp` shares the flat
+   * canvas, so swapping it in is a true blink; on the phase frames the drawings
+   * differ and the swap would read as a glitch instead.
+   */
+  const sprite: SpriteKey =
+    blink && visualPhase === 0 ? "blink" : (PHASE_SPRITE[visualPhase] as SpriteKey);
   /** A one-shot flinch on every wrong answer, in both temperaments. */
   const recoil = feedback !== null && state.wrongRun > 0;
   /**
@@ -600,24 +647,27 @@ function StabiloSession({ flow }: { flow: Flow }) {
               1670×1670 canvas, so a tall, narrow slot would let the image spill
               sideways over the dialogue card. */}
           <div className="pointer-events-none hidden w-[170px] shrink-0 sm:block lg:w-[215px]">
-            {/* Keyed by the wrong-answer count so the flinch replays on every
-                miss; a plain class would only animate the first time. */}
-            <div
-              key={`${sprite}-${state.nodeId}-${state.wrongRun}`}
-              className={cn("h-[170px] w-full lg:h-[215px]", recoil && "stabilo-recoil")}
-            >
-              <div className={cn("h-full w-full", trembleClass ?? "stabilo-idle")}>
-                <Sprite
-                  sprite={sprite}
-                  mouth={mouth}
-                  placeholder={STABILO_PLACEHOLDER}
-                  onMissing={() => finish()}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            {/* The entrance lives on a stable wrapper: the inner div is keyed by
+                the wrong-answer count, so putting it there would replay the
+                entrance on every miss instead of the flinch. */}
+            <div className="stabilo-sprite-in h-[170px] w-full lg:h-[215px]">
+                <div
+                  key={`${sprite}-${state.nodeId}-${state.wrongRun}`}
+                  className={cn("h-full w-full", recoil && "stabilo-recoil")}
+                >
+                  <div className={cn("h-full w-full", trembleClass ?? "stabilo-idle")}>
+                    <Sprite
+                      sprite={sprite}
+                      mouth={mouth}
+                      placeholder={STABILO_PLACEHOLDER}
+                      onMissing={() => finish()}
+                    />
+                  </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+     </div>
+   );
+ }

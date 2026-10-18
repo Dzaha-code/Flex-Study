@@ -146,7 +146,7 @@ export function DialogueBox({
     <div
       className={cn(
         "surface-floating pointer-events-auto flex w-full max-w-[680px] flex-col gap-3 p-4 sm:p-5",
-        banner && "stabilo-banner",
+        banner ? "stabilo-banner" : "stabilo-card-in",
       )}
       onClick={onContinue}
     >
@@ -155,6 +155,9 @@ export function DialogueBox({
           <span className="rounded-[3px] bg-hl px-1.5 py-0.5 text-label font-semibold text-ink">
             {speaker}
           </span>
+          {/* A speaking light: the same information as the caret, but readable
+              at a glance without following the text. */}
+          {done ? null : <span className="stabilo-speaking-dot" aria-hidden="true" />}
           {gauge !== null ? <Gauge value={gauge} label={gaugeLabel} /> : null}
         </div>
         <button
@@ -178,12 +181,16 @@ export function DialogueBox({
           ) : (
             glitched
           )}
-          {done ? null : <span aria-hidden="true">▌</span>}
+          {done ? null : (
+            <span aria-hidden="true" className="stabilo-caret">
+              ▌
+            </span>
+          )}
         </p>
       )}
 
       {feedback ? (
-        <p className="rounded-ctl border border-line bg-accent-surface px-3 py-2 text-meta text-ink">
+        <p className="stabilo-pop-in rounded-ctl border border-line bg-accent-surface px-3 py-2 text-meta text-ink">
           {feedback}
         </p>
       ) : null}
@@ -193,7 +200,11 @@ export function DialogueBox({
           {quiz.prompt ? <p className="text-meta text-ink-muted">{quiz.prompt}</p> : null}
           <ul className="flex flex-col gap-1.5">
             {quiz.options.map((option, index) => (
-              <li key={option.label}>
+              <li
+                key={option.label}
+                className="stabilo-option-in"
+                style={{ animationDelay: `${index * 45}ms` }}
+              >
                 <button
                   type="button"
                   disabled={!interactive}
