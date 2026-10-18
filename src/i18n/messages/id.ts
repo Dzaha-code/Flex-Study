@@ -72,6 +72,11 @@ export const id = {
   "today.empty.title": "Belum ada blok untuk hari ini",
   "today.empty.body": "Mulai dari template, atau buat blok pertamamu sekarang.",
   "today.empty.cta": "Buka template",
+  "today.emptyPlanned.title": "Hari ini kosong, tapi rencanamu ada",
+  "today.emptyPlanned.body":
+    "Rencana ini berisi {{count}} blok; tidak ada yang jatuh pada hari ini. Lihat Pekan, atau tambah satu blok untuk hari ini.",
+  "today.emptyPlanned.cta": "Lihat Pekan",
+  "today.clock": "Waktu sekarang",
   "today.empty.addBlock": "Buat blok pertama",
 
   "timer.announce": "{{title}}, sisa {{time}}.",
@@ -279,6 +284,26 @@ export const id = {
   "settings.blocksHint": "Blok berulang menghasilkan entri harian secara otomatis.",
   "settings.templates": "Template",
   "settings.templatesHint": "Template adalah data. Terapkan, lalu ubah sesukamu.",
+  "settings.customTemplates": "Template buatanmu",
+  "settings.customTemplatesHint":
+    "Simpan susunan blok yang sekarang, lalu pakai lagi kapan saja.",
+  "settings.customTemplateEmpty":
+    "Belum ada yang disimpan. Susun blokmu di panel Blok, lalu simpan di sini.",
+  "settings.customTemplateSave": "Simpan sebagai template",
+  "settings.customTemplateName": "Nama template",
+  "settings.customTemplateNamePlaceholder": "Mis. Rutinitas hari kerja",
+  "settings.customTemplateDescription": "Catatan (opsional)",
+  "settings.customTemplateBlocks": "{{count}} blok",
+  "settings.customTemplateSaved": "Template tersimpan",
+  "settings.customTemplateDeleted": "Template dihapus",
+  "settings.customTemplateApplied": "Template diterapkan",
+  "settings.customTemplateNeedsBlocks":
+    "Tambahkan minimal satu blok sebelum menyimpan template.",
+  "settings.customTemplateDeleteTitle": "Hapus template ini?",
+  "settings.customTemplateDeleteBody":
+    "Template dihapus. Blok yang sudah ada di kalender tidak ikut terhapus.",
+  "stabilo.customTemplateTip":
+    "Simpan susunan ini sebagai template? Nanti kamu bisa memakainya lagi tanpa menyusun ulang.",
   "settings.applyTemplate": "Terapkan",
   "settings.applyTemplateWarning":
     "Blok mendatang yang belum disentuh akan diganti. Riwayat dan jurnal tetap aman.",
@@ -343,6 +368,12 @@ export const id = {
   "onboarding.stepLabel": "Langkah {{current}} dari {{total}}",
   "onboarding.useEmpty": "Mulai dari kosong",
   "onboarding.tuneHint": "Ubah nama, durasi, atau hari aktif kalau perlu. Bisa dilewati.",
+  "onboarding.readyTitleEmpty": "Belum ada blok",
+  "onboarding.readyBodyEmpty":
+    "Kamu memilih mulai dari nol. Buat blok pertama kapan saja — satu blok sudah cukup untuk hari pertama.",
+  "onboarding.readyTitleLater": "Rencanamu sudah terpasang",
+  "onboarding.readyBodyLater":
+    "{{blocks}} blok tersimpan, tetapi tidak ada yang jatuh pada hari ini. Pekan menunjukkan semuanya.",
   "onboarding.readyTitle": "Blok pertamamu sudah siap.",
   "onboarding.readyBody":
     "Dari membuka aplikasi sampai timer berjalan seharusnya kurang dari satu menit. Tanpa akun.",

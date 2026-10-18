@@ -70,6 +70,11 @@ export const en: Messages = {
   "today.empty.title": "No blocks for today yet",
   "today.empty.body": "Start from a template, or create your first block now.",
   "today.empty.cta": "Open templates",
+  "today.emptyPlanned.title": "Nothing today, but your plan exists",
+  "today.emptyPlanned.body":
+    "This plan holds {{count}} blocks; none of them land on this weekday. Check the week, or add one block for today.",
+  "today.emptyPlanned.cta": "See the week",
+  "today.clock": "Current time",
   "today.empty.addBlock": "Create the first block",
 
   "timer.announce": "{{title}}, {{time}} left.",
@@ -275,6 +280,24 @@ export const en: Messages = {
   "settings.blocksHint": "Recurring blocks generate a daily entry automatically.",
   "settings.templates": "Templates",
   "settings.templatesHint": "Templates are data. Apply one, then change anything.",
+  "settings.customTemplates": "Your templates",
+  "settings.customTemplatesHint": "Save the current block layout and apply it again later.",
+  "settings.customTemplateEmpty":
+    "Nothing saved yet. Arrange your blocks in the Blocks panel, then save them here.",
+  "settings.customTemplateSave": "Save as template",
+  "settings.customTemplateName": "Template name",
+  "settings.customTemplateNamePlaceholder": "e.g. Weekday routine",
+  "settings.customTemplateDescription": "Note (optional)",
+  "settings.customTemplateBlocks": "{{count}} blocks",
+  "settings.customTemplateSaved": "Template saved",
+  "settings.customTemplateDeleted": "Template deleted",
+  "settings.customTemplateApplied": "Template applied",
+  "settings.customTemplateNeedsBlocks": "Add at least one block before saving a template.",
+  "settings.customTemplateDeleteTitle": "Delete this template?",
+  "settings.customTemplateDeleteBody":
+    "The template is removed. Blocks already on your calendar stay.",
+  "stabilo.customTemplateTip":
+    "Save this layout as a template? You can use it again without rebuilding it.",
   "settings.applyTemplate": "Apply",
   "settings.applyTemplateWarning":
     "Untouched upcoming blocks will be replaced. History and journal stay safe.",
@@ -339,6 +362,12 @@ export const en: Messages = {
   "onboarding.stepLabel": "Step {{current}} of {{total}}",
   "onboarding.useEmpty": "Start empty",
   "onboarding.tuneHint": "Rename, retime or change active days. You can skip this.",
+  "onboarding.readyTitleEmpty": "No blocks yet",
+  "onboarding.readyBodyEmpty":
+    "You chose to start from scratch. Create the first block whenever you like — one is enough for day one.",
+  "onboarding.readyTitleLater": "Your plan is installed",
+  "onboarding.readyBodyLater":
+    "{{blocks}} blocks saved, but none of them fall on today. The week shows all of them.",
   "onboarding.readyTitle": "Your first block is ready.",
   "onboarding.readyBody":
     "From opening the app to a running timer should take under a minute. No account needed.",

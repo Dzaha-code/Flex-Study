@@ -170,6 +170,40 @@ export const StabiloPrefsSchema = z.object({
     .default(null),
 });
 
+/**
+ * A template saved from the user's own plan. Kept in `meta`, like Stabilo's
+ * preferences: a single JSON row does not justify a Dexie version bump, and a
+ * failed parse falls back to an empty list rather than blocking the boot.
+ */
+export const customTemplateSchema = z.object({
+  id: identifierSchema,
+  name: z.string().min(1).max(80),
+  description: z.string().max(240).default(""),
+  createdAt: timestampSchema,
+  categories: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(80),
+        icon: categoryIconSchema,
+        weeklyTargetMinutes: z.number().int().min(0),
+      }),
+    )
+    .min(1),
+  blocks: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(120),
+        categoryIndex: z.number().int().min(0),
+        durationMin: z.number().int().min(1),
+        days: z.array(z.number().int().min(0).max(6)),
+        plannedStart: clockTimeSchema.nullable(),
+      }),
+    )
+    .default([]),
+});
+
+export const customTemplatesSchema = z.array(customTemplateSchema);
+
 export const WorkspaceSchema = z.object({
   categories: z.array(CategorySchema),
   templates: z.array(BlockTemplateSchema),
@@ -180,6 +214,8 @@ export const WorkspaceSchema = z.object({
   // Optional rather than defaulted: an older export without the key must keep
   // importing, and an absent field means "keep whatever this device has".
   stabilo: StabiloPrefsSchema.optional(),
+  // Same rule as `stabilo`: absent means "keep what this device already has".
+  customTemplates: customTemplatesSchema.optional(),
 });
 
 export const WorkspaceExportSchema = z.object({

@@ -212,6 +212,13 @@ export const TOUR_EN: DialogueScript = {
         spooky: "Theme and width live here. I like the dark one.",
       },
       accent: true,
+      next: "t07a",
+    },
+    t07a: {
+      id: "t07a",
+      route: "/settings",
+      target: "settings-custom-templates",
+      text: "Save your block layout as your own template, then reuse it anytime.",
       next: "t07b",
     },
     t07b: {

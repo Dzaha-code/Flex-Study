@@ -215,6 +215,13 @@ export const TOUR_ID: DialogueScript = {
         spooky: "Tema dan lebar layar diatur di sini. Aku suka yang gelap.",
       },
       accent: true,
+      next: "t07a",
+    },
+    t07a: {
+      id: "t07a",
+      route: "/settings",
+      target: "settings-custom-templates",
+      text: "Simpan susunan blokmu jadi template sendiri, lalu pakai lagi kapan saja.",
       next: "t07b",
     },
     t07b: {

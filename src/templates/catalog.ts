@@ -26,6 +26,13 @@ const utbkPkl: StudyTemplate = {
     { title: { id: "Pengembangan proyek", en: "Project work" }, categoryId: "project", durationMin: 90, days: WEEKDAYS, plannedStart: null },
     { title: { id: "Jurnal harian", en: "Daily journal" }, categoryId: "log", durationMin: 45, days: WEEKDAYS, plannedStart: null },
     { title: { id: "Refleksi dan bahasa Inggris", en: "Reflection and English" }, categoryId: "language", durationMin: 60, days: WEEKDAYS, plannedStart: null },
+    /**
+     * A weekend block on purpose. Without one, applying this template on a
+     * Saturday or Sunday left Today completely empty, which reads as "the
+     * template never applied". A short review is also the honest thing for a
+     * study plan to ask of a weekend.
+     */
+    { title: { id: "Review mingguan", en: "Weekly review" }, categoryId: "study", durationMin: 45, days: [0, 6], plannedStart: null },
   ],
 };
 
@@ -48,7 +55,7 @@ const selfStudy: StudyTemplate = {
     { title: { id: "Blok fokus 25 menit", en: "25-minute focus block" }, categoryId: "focus", durationMin: 25, days: WEEKDAYS, plannedStart: null },
     { title: { id: "Latihan bahasa", en: "Language practice" }, categoryId: "language", durationMin: 30, days: WEEKDAYS, plannedStart: null },
     { title: { id: "Jurnal harian", en: "Daily journal" }, categoryId: "reflection", durationMin: 15, days: WEEKDAYS, plannedStart: null },
-    { title: { id: "Refleksi mingguan", en: "Weekly reflection" }, categoryId: "reflection", durationMin: 30, days: [0], plannedStart: null },
+    { title: { id: "Refleksi mingguan", en: "Weekly reflection" }, categoryId: "reflection", durationMin: 30, days: [0, 6], plannedStart: null },
   ],
 };
 

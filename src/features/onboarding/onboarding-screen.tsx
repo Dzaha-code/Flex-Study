@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { IconCheck, IconPlay } from "@/components/ui/icons";
 import { Chip, Panel } from "@/components/ui/surface";
 import { useAppStore } from "@/data/store";
+import { todayISO } from "@/domain";
 import { useI18n, type MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { pickLocalized, TEMPLATES } from "@/templates";
@@ -21,7 +22,12 @@ export function OnboardingScreen() {
   const applyTemplate = useAppStore((state) => state.applyTemplate);
   const updateSettings = useAppStore((state) => state.updateSettings);
   const blockTemplates = useAppStore((state) => state.templates);
+  const instances = useAppStore((state) => state.instances);
   const categories = useAppStore((state) => state.categories);
+  // Read once, in an initialiser: reading the clock during render is not pure,
+  // and onboarding never spans midnight.
+  const [today] = useState(() => todayISO(Date.now()));
+  const todayCount = instances.filter((instance) => instance.date === today).length;
 
   const [step, setStep] = useState(0);
 
@@ -80,16 +86,23 @@ export function OnboardingScreen() {
                     <p className="text-meta text-ink-muted measure">
                       {pickLocalized(template.description, locale)}
                     </p>
-                    <p className="text-label text-ink-muted">
-                      {t(template.audienceKey as MessageKey)}
-                    </p>
+                    {template.audienceKey ? (
+                      <p className="text-label text-ink-muted">
+                        {t(template.audienceKey as MessageKey)}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       onClick={() => {
                         void applyTemplate(template.templateId, {
                           completeOnboarding: false,
-                        }).then(() => setStep(1));
+                        }).then((applied) => {
+                          // Never advance past a template that did not land:
+                          // that is how the first screen ends up empty with no
+                          // explanation.
+                          if (applied) setStep(1);
+                        });
                       }}
                     >
                       <IconPlay />
@@ -128,8 +141,22 @@ export function OnboardingScreen() {
 
       {step === 2 ? (
         <Panel className="flex flex-col gap-3">
-          <h2 className="text-title">{t("onboarding.readyTitle")}</h2>
-          <p className="text-meta text-ink-muted measure">{t("onboarding.readyBody")}</p>
+          {/* "Your first block is ready" is a lie when the empty starter was
+              chosen or when the plan has nothing scheduled today. */}
+          <h2 className="text-title">
+            {blockTemplates.length === 0
+              ? t("onboarding.readyTitleEmpty")
+              : todayCount === 0
+                ? t("onboarding.readyTitleLater")
+                : t("onboarding.readyTitle")}
+          </h2>
+          <p className="text-meta text-ink-muted measure">
+            {blockTemplates.length === 0
+              ? t("onboarding.readyBodyEmpty")
+              : todayCount === 0
+                ? t("onboarding.readyBodyLater", { blocks: blockTemplates.length })
+                : t("onboarding.readyBody")}
+          </p>
           <ul className="flex flex-wrap gap-2">
             <li>
               <Chip>{t("settings.count.blocks", { count: blockTemplates.length })}</Chip>

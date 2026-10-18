@@ -6,6 +6,61 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.4 — 18 Oktober 2026
+
+Template benar-benar terpasang dan terlihat, kamu bisa menyimpan rencanamu sendiri
+sebagai template, dan jam di header akhirnya hidup.
+
+### Yang diperbaiki
+
+- **Template tidak lagi terlihat "gagal terpasang".** Rencana bawaan hanya mengisi
+  hari kerja, jadi menerapkannya pada Sabtu atau Minggu meninggalkan Hari ini
+  kosong tanpa penjelasan. Kedua template sekarang punya satu blok akhir pekan
+  (review/refleksi 30–45 menit), jadi selalu ada sesuatu di hari pertama.
+- **Tidak lagi diam-diam gagal.** Tombol template di onboarding hanya maju ke
+  langkah berikutnya kalau template benar-benar terpasang. Sebelumnya, kegagalan
+  apa pun tetap membawa pengguna ke layar "sudah siap" yang kosong.
+- **Layar "sudah siap" tidak lagi berbohong.** Kalau yang dipilih template kosong,
+  judulnya "Belum ada blok", bukan "Blok pertamamu sudah siap".
+- **Hari kosong dibedakan.** Kalau rencana sudah ada tetapi tidak ada blok pada
+  hari ini, Hari ini mengatakan itu — berapa blok yang tersimpan, dan tautan ke
+  Pekan. Sebelumnya pesannya sama dengan "belum pernah menyusun apa pun".
+
+### Yang baru
+
+- **Simpan rencanamu sebagai template.** Di **Atur → Template** ada bagian
+  *Template buatanmu*: susun blok seperti biasa, tekan **Simpan sebagai template**,
+  beri nama, dan susunan itu bisa diterapkan lagi kapan saja. Template buatanmu
+  ikut dalam Ekspor/Impor JSON, dan menghapusnya tidak menghapus blok yang sudah
+  ada di kalender.
+- **Stabilo menjelaskannya.** Satu perhentian baru di tur menyorot bagian itu, dan
+  saat panel simpan dibuka ia muncul kecil di dalam form — tanpa menutupi isian.
+- **Jam di header Hari ini.** Jam 24 jam dengan detik, angka `tabular-nums` supaya
+  tidak bergoyang, dan titik aksen sebagai penanda hidup. Ia berhenti menghitung
+  saat jendela disembunyikan, dan menghilang di jendela sempit.
+
+### Pemasangan
+
+| Berkas | Ukuran | Untuk siapa |
+|---|---|---|
+| `FlexStudy_0.5.4_x64-setup.exe` | 2.619.277 B (2,50 MiB) | **Disarankan.** Terpasang per pengguna, tidak butuh hak admin |
+| `FlexStudy_0.5.4_x64_en-US.msi` | 3.145.728 B (3,00 MiB) | Terpasang mesin-luas di `Program Files`, butuh admin |
+
+```text
+5AEE55C9F2073353932206F47289E15DB0EB98AAF758EE9A112595F2CECF0993  FlexStudy_0.5.4_x64-setup.exe
+BF119634C0C0562A4E8D31EE0E13452BFBD234428340DCA28D9BCF1F87E78C60  FlexStudy_0.5.4_x64_en-US.msi
+```
+
+### Yang perlu diketahui
+
+- **Template adalah potret, bukan tautan.** Menyimpan template mengambil susunan
+  blok saat itu; mengubah blok sesudahnya tidak mengubah template tersimpan.
+- **Profil lama tidak mendapat blok akhir pekan secara otomatis** — template hanya
+  berubah saat diterapkan. Kalau Hari ini masih kosong, terapkan ulang dari Atur.
+- Installer belum ditandatangani; SmartScreen akan memperingatkan.
+
+---
+
 ## 0.5.3 — 18 Oktober 2026
 
 Tur sekarang menyambut sendiri setelah onboarding, menjelaskan lebih banyak fitur,

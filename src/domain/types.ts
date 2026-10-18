@@ -248,6 +248,33 @@ export const DEFAULT_STABILO_PREFS: StabiloPrefs = {
   progress: null,
 };
 
+/**
+ * A template saved from the user's own plan.
+ *
+ * Blocks reference their category by index rather than by id: the categories are
+ * re-created with fresh ids every time the template is applied, so an id would
+ * point at a row that no longer exists.
+ */
+export interface CustomTemplate {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  categories: Array<{
+    name: string;
+    icon: CategorySymbol;
+    weeklyTargetMinutes: number;
+  }>;
+  blocks: Array<{
+    title: string;
+    categoryIndex: number;
+    durationMin: number;
+    /** 0 = Sunday … 6 = Saturday. */
+    days: number[];
+    plannedStart: ClockTime | null;
+  }>;
+}
+
 export interface Workspace {
   categories: Category[];
   templates: BlockTemplate[];
@@ -261,6 +288,8 @@ export interface Workspace {
    * export instead of staying trapped on one machine.
    */
   stabilo?: StabiloPrefs;
+  /** Optional for the same reason as `stabilo`: older exports must still import. */
+  customTemplates?: CustomTemplate[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

@@ -16,12 +16,13 @@ import type {
   BlockTemplate,
   Category,
   CategorySymbol,
+  CustomTemplate,
   Reflection,
   Settings,
   ShiftEvent,
   ShiftPlan,
 } from "@/domain";
-import { buildFromTemplate, findTemplate } from "@/templates";
+import { buildFromTemplate, findTemplate, toStudyTemplate, type StudyTemplate } from "@/templates";
 import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
 import type { StabiloPrefs } from "@/domain/types";
 import { orphanedInstanceIds, propagateTemplateEdit } from "@/domain/propagate";
@@ -30,6 +31,7 @@ import {
   deleteUntouchedInstancesAfter,
   loadWorkspace,
   persistCategories,
+  persistCustomTemplates,
   persistInstances,
   persistReflection,
   persistSettings,
@@ -106,6 +108,7 @@ export interface AppState {
   stabilo: StabiloPrefs;
   categories: Category[];
   templates: BlockTemplate[];
+  customTemplates: CustomTemplate[];
   instances: BlockInstance[];
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
@@ -125,10 +128,18 @@ export interface AppState {
   updateInstance: (id: string, patch: InstanceEditPatch) => Promise<void>;
   /** Order decides the sequence of blocks that have no fixed start time. */
   reorderBlockTemplate: (id: string, direction: -1 | 1) => Promise<void>;
+  /**
+   * Applies a catalog template. Returns false when the id is unknown, so a
+   * first-run screen cannot silently advance past a template that never landed.
+   */
   applyTemplate: (
     templateId: string,
     options?: { completeOnboarding?: boolean },
-  ) => Promise<void>;
+  ) => Promise<boolean>;
+  /** Saved templates: snapshot the plan, re-apply it later. */
+  saveCustomTemplate: (input: { name: string; description?: string }) => Promise<string | null>;
+  deleteCustomTemplate: (id: string) => Promise<void>;
+  applyCustomTemplate: (id: string) => Promise<boolean>;
 
   ensureRange: (from: string, to: string) => Promise<void>;
   addInstance: (draft: InstanceDraft) => Promise<void>;
@@ -184,6 +195,61 @@ export const useAppStore = create<AppState>()((set, get) => {
     if (!outcome.ok) set({ storageNotice: outcome.reason });
   };
 
+  /**
+   * One apply path for both the shipped catalog and the user's saved templates;
+   * the only difference is where the `StudyTemplate` came from.
+   *
+   * History is kept — only untouched future blocks are dropped — and the active
+   * id is recorded so Settings can mark which plan is in force.
+   */
+  const applyStudyTemplate = async (
+    template: StudyTemplate,
+    options?: { completeOnboarding?: boolean },
+  ): Promise<void> => {
+    const state = get();
+    const now = Date.now();
+    const today = todayISO(now);
+
+    const { categories, blockTemplates } = buildFromTemplate({
+      template,
+      now,
+      newId: createId,
+      locale: state.settings.locale,
+    });
+
+    const keptInstances = state.instances.filter(
+      (instance) =>
+        instance.date <= today ||
+        instance.status !== "planned" ||
+        instance.actualSeconds > 0 ||
+        instance.note.trim() !== "" ||
+        instance.movedFrom !== null,
+    );
+
+    const settings: Settings = {
+      ...state.settings,
+      activeTemplateId: template.templateId,
+      // Onboarding keeps the shell open across its own steps and flips this flag
+      // only on the last one.
+      onboardingCompleted:
+        options?.completeOnboarding === false ? state.settings.onboardingCompleted : true,
+    };
+
+    const workspace = {
+      categories,
+      templates: blockTemplates,
+      instances: keptInstances,
+      reflections: state.reflections,
+      shiftEvents: state.shiftEvents,
+      settings,
+    };
+
+    set({ ...workspace });
+    mirrorPreferences(settings);
+    guardWrite(await replaceAll(workspace));
+    await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
+  };
+
   const currentWorkspace = (state: AppState) => ({
     categories: state.categories,
     templates: state.templates,
@@ -192,6 +258,7 @@ export const useAppStore = create<AppState>()((set, get) => {
       shiftEvents: state.shiftEvents,
       settings: state.settings,
       stabilo: state.stabilo,
+      customTemplates: state.customTemplates,
     });
 
   return {
@@ -201,6 +268,7 @@ export const useAppStore = create<AppState>()((set, get) => {
     stabilo: { ...DEFAULT_STABILO_PREFS },
     categories: [],
     templates: [],
+    customTemplates: [],
     instances: [],
     reflections: [],
     shiftEvents: [],
@@ -214,7 +282,7 @@ export const useAppStore = create<AppState>()((set, get) => {
       }
       try {
         const workspace = await loadWorkspace();
-        set({ ...workspace, status: "ready" });
+        set({ ...workspace, customTemplates: workspace.customTemplates ?? [], status: "ready" });
         mirrorPreferences(workspace.settings);
         const today = todayISO(Date.now());
         await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
@@ -353,50 +421,60 @@ export const useAppStore = create<AppState>()((set, get) => {
 
     applyTemplate: async (templateId, options) => {
       const template = findTemplate(templateId);
-      if (!template) return;
+      if (!template) return false;
+      await applyStudyTemplate(template, options);
+      return true;
+    },
 
+    applyCustomTemplate: async (id) => {
+      const saved = get().customTemplates.find((item) => item.id === id);
+      if (!saved) return false;
+      await applyStudyTemplate(toStudyTemplate(saved));
+      return true;
+    },
+
+    saveCustomTemplate: async ({ name, description }) => {
       const state = get();
-      const now = Date.now();
-      const today = todayISO(now);
-      const { categories, blockTemplates } = buildFromTemplate({
-        template,
-        now,
-        newId: createId,
-        locale: state.settings.locale,
-      });
+      const active = state.templates.filter((template) => !template.archived);
+      // Nothing to snapshot yet: the caller shows the hint instead.
+      if (active.length === 0 || state.categories.length === 0) return null;
 
-      // History is kept: only generated-and-untouched future blocks are dropped.
-      const keptInstances = state.instances.filter(
-        (instance) =>
-          instance.date <= today ||
-          instance.status !== "planned" ||
-          instance.actualSeconds > 0 ||
-          instance.note.trim() !== "" ||
-          instance.movedFrom !== null,
-      );
+      const categoryIds = state.categories.map((category) => category.id);
 
-      const settings: Settings = {
-        ...state.settings,
-        activeTemplateId: templateId,
-        // Onboarding keeps the shell open across its own steps and flips this
-        // flag only on the last one.
-        onboardingCompleted:
-          options?.completeOnboarding === false ? state.settings.onboardingCompleted : true,
+      const saved: CustomTemplate = {
+        id: createId("ctpl"),
+        name: name.trim().slice(0, 80) || `Template ${state.customTemplates.length + 1}`,
+        description: (description ?? "").trim().slice(0, 240),
+        createdAt: new Date().toISOString(),
+        categories: state.categories.map((category) => ({
+          name: category.name,
+          icon: category.icon,
+          weeklyTargetMinutes: category.weeklyTargetMinutes,
+        })),
+        blocks: active.map((template) => {
+          const index = categoryIds.indexOf(template.categoryId);
+          return {
+            title: template.title,
+            // A block whose category vanished still needs a home; the first
+            // category is a visible fallback rather than a dangling id.
+            categoryIndex: index >= 0 ? index : 0,
+            durationMin: template.durationMin,
+            days: [...template.days].sort((a, b) => a - b),
+            plannedStart: template.plannedStart,
+          };
+        }),
       };
 
-      const workspace = {
-        categories,
-        templates: blockTemplates,
-        instances: keptInstances,
-        reflections: state.reflections,
-        shiftEvents: state.shiftEvents,
-        settings,
-      };
+      const customTemplates = [saved, ...state.customTemplates];
+      set({ customTemplates });
+      guardWrite(await persistCustomTemplates(customTemplates));
+      return saved.id;
+    },
 
-      set({ ...workspace });
-      mirrorPreferences(settings);
-      guardWrite(await replaceAll(workspace));
-      await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
+    deleteCustomTemplate: async (id) => {
+      const customTemplates = get().customTemplates.filter((item) => item.id !== id);
+      set({ customTemplates });
+      guardWrite(await persistCustomTemplates(customTemplates));
     },
 
     ensureRange: async (from, to) => {
@@ -702,7 +780,13 @@ export const useAppStore = create<AppState>()((set, get) => {
       const parsed = parseWorkspaceImport(json);
       if (!parsed.ok) return parsed;
 
-      set({ ...parsed.workspace, lastShiftEventId: null });
+      set({
+        ...parsed.workspace,
+        // An older backup has no saved templates; importing it must not erase
+        // the ones already on this device.
+        customTemplates: parsed.workspace.customTemplates ?? get().customTemplates,
+        lastShiftEventId: null,
+      });
       mirrorPreferences(parsed.workspace.settings);
 
       const outcome = await replaceAll(parsed.workspace);
@@ -719,6 +803,7 @@ export const useAppStore = create<AppState>()((set, get) => {
       set({
         categories: [],
         templates: [],
+        customTemplates: [],
         instances: [],
         reflections: [],
         shiftEvents: [],

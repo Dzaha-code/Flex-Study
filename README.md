@@ -10,13 +10,13 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.5.3_x64-setup.exe](installers/FlexStudy_0.5.3_x64-setup.exe) — sekitar 2,5 MB
+### [FlexStudy_0.5.4_x64-setup.exe](installers/FlexStudy_0.5.4_x64-setup.exe) — sekitar 2,6 MB
 
-Versi **0.5.3**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi **0.5.4**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
-Yang baru di 0.5.3: **tur menyambut sendiri setelah "Buka Hari ini".** Penjaga auto-open dulu dipakai bersama oleh perkenalan, jadi ketika onboarding selesai jatahnya sudah terpakai dan layar Hari ini terbuka tanpa sambutan. Sekarang tur berjalan otomatis dan menjelaskan **14 perhentian**: termasuk Tambah blok, tujuh hari terakhir, Rekap bulanan, riwayat jurnal, cadangkan data, dan panel tempat mematikan Stabilo. Percakapannya juga lebih hidup — kartu dan karakter masuk dengan lembut, pilihan kuis muncul bertahap, kursor ketik berkedip, dan **ia benar-benar berkedip** tiap beberapa detik. Bahasa bawaan sekarang **Inggris**.
+Yang baru di 0.5.4: **template benar-benar terpasang.** Rencana bawaan dulu hanya mengisi hari kerja, jadi menerapkannya pada Sabtu atau Minggu meninggalkan Hari ini kosong dan terlihat seperti gagal — sekarang setiap template punya satu blok akhir pekan, dan layar "sudah siap" menyebut jumlah blok yang benar-benar tersimpan. **Kamu juga bisa menyimpan rencanamu sendiri sebagai template** di *Atur → Template → Template buatanmu*: potret susunan blok yang bisa diterapkan ulang kapan saja, ikut dalam Ekspor/Impor JSON, dan dijelaskan satu perhentian tur baru. Ditambah **jam di header Hari ini** — 24 jam dengan detik, angka `tabular-nums`, dan berhenti menghitung saat jendela disembunyikan.
 
-Yang diperbaiki di 0.5.2 tetap ada: tur membaca keadaan hari (kosong atau sudah ada blok) dan menyorot tombol yang benar, wajah Stabilo berubah saat salah menjawab, plus sentakan dan getaran fase 2–3. Yang diperbaiki di 0.5.1 juga tetap: dua tur tidak pernah muncul bersamaan, posisi karakter tetap di panggung bawah, sorotan menggeser target agar tidak tertutup dialog, musik latar dan suara ketikan, serta kategori baru langsung dari form blok.
+Yang diperbaiki di 0.5.3 tetap ada: tur menyambut sendiri setelah "Buka Hari ini" dan menjelaskan belasan perhentian, percakapan yang bergerak, kedipan mata, dan bahasa bawaan Inggris. Yang diperbaiki di 0.5.2 dan 0.5.1 juga tetap: tur membaca keadaan hari, wajah dan getaran saat salah menjawab, satu tur pada satu waktu, panggung karakter yang tetap, musik latar, serta kategori baru langsung dari form blok.
 
 Yang baru di 0.5.0 tetap ada: **Stabilo**, pemandu tur yang berbicara, dengan pilihan jujur *Paham / Belum paham*, tiga kuis pendek, temperamen yang mengalah sendiri, dan panel **Atur → Stabilo**. Tur klasik tetap tersedia sebagai cadangan saat karakternya dimatikan.
 
@@ -24,8 +24,8 @@ Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favor
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.5.3_x64-setup.exe` — sekitar 2,5 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.5.3_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.5.4_x64-setup.exe` — sekitar 2,6 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.5.4_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -173,7 +173,7 @@ Satu hal yang sengaja berbeda dari sisa aplikasi: kanvasnya **selalu gelap** dan
 
 Aplikasi ini menjelaskan dirinya sendiri, lewat dua jalur supaya orang bisa memilih cara belajar yang cocok.
 
-- **Tur interaktif, dua penyaji — tidak pernah bersamaan.** Dengan Stabilo menyala (bawaan), tur dibawakan karakternya: empat belas perhentian pendek di Hari ini, Pekan, Jurnal, Atur, dan Panduan — dari blok pertama, tambah blok, tujuh hari terakhir, dan Rekap, sampai riwayat jurnal, cadangan data, dan panel tempat mematikannya. Masing-masing menyorot elemen aslinya, bukan gambar mockup. Dengan Stabilo dimatikan — atau asetnya gagal dimuat — tur klasik empat belas langkah mengambil alih; teksnya lebih panjang dan hanya versi itu yang menyentuh **Rekap**, layar yang bukan tab keenam. Keduanya berpindah halaman sendiri, bisa diputar ulang dari Panduan maupun Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tur klasik memakai tombol Lanjut/Kembali, panah kiri–kanan, dan Esc; Stabilo memakai Enter/Spasi, klik, dan Esc yang tidak pernah memarahi.
+- **Tur interaktif, dua penyaji — tidak pernah bersamaan.** Dengan Stabilo menyala (bawaan), tur dibawakan karakternya: lima belas perhentian pendek di Hari ini, Pekan, Jurnal, Atur, dan Panduan — dari blok pertama, tambah blok, tujuh hari terakhir, dan Rekap, sampai riwayat jurnal, template buatanmu, cadangan data, dan panel tempat mematikannya. Masing-masing menyorot elemen aslinya, bukan gambar mockup. Dengan Stabilo dimatikan — atau asetnya gagal dimuat — tur klasik empat belas langkah mengambil alih; teksnya lebih panjang dan hanya versi itu yang menyentuh **Rekap**, layar yang bukan tab keenam. Keduanya berpindah halaman sendiri, bisa diputar ulang dari Panduan maupun Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tur klasik memakai tombol Lanjut/Kembali, panah kiri–kanan, dan Esc; Stabilo memakai Enter/Spasi, klik, dan Esc yang tidak pernah memarahi.
 - **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, delapan tips, dan arti setiap lambang status.
 
 Tiga hal kecil yang sengaja diputuskan:

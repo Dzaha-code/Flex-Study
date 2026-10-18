@@ -438,6 +438,20 @@ Aslinya hanya `stabilo_flat.png` yang diekspor dengan transparansi; sepuluh sisa
 
 **Bahasa bawaan.** `DEFAULT_SETTINGS.locale` dan `lang` di `layout.tsx` menjadi `"en"`. Pilihan tersimpan tetap menang, dan gerbang bahasa tetap muncul sekali.
 
+### 11.11 Rilis 0.5.4 — template yang benar-benar terpasang, dan template buatan sendiri
+
+**Kenapa "template tidak terpasang".** Katalog hanya menjadwalkan blok pada hari kerja (`days: [1..5]`), sedangkan layar pendaratan selalu Hari ini. Menerapkan template pada Sabtu/Minggu karena itu menghasilkan hari kosong — terbaca sebagai kegagalan, padahal bloknya ada di Pekan. Sekarang kedua template punya satu blok akhir pekan (review/refleksi), dan `tests/template.test.ts` menegakkan aturan itu: gabungan `days` setiap template berpenutup harus mencakup ketujuh hari.
+
+Tiga hal lain yang menutup celah yang sama: `applyTemplate` mengembalikan `boolean` sehingga onboarding tidak maju kalau penerapan gagal; judul layar "sudah siap" mengikuti jumlah blok; dan Hari ini membedakan "belum pernah menyusun" dari "rencana ada, hari ini kosong" (`today.emptyPlanned.*`, tautan ke Pekan).
+
+**Template buatan pengguna.** `CustomTemplate` ada di `domain/types.ts` (bukan di `templates/`) karena ia data pengguna yang ikut ekspor. Disimpan di `meta` dengan kunci `customTemplates` — satu baris JSON tidak layak menaikkan versi Dexie. `templates/types.ts` menyediakan `toStudyTemplate()` yang mengubahnya ke bentuk yang sudah dipahami `buildFromTemplate`; blok merujuk kategori lewat **indeks**, bukan id, karena id kategori dibuat ulang setiap penerapan.
+
+Satu jalur penerapan: `applyStudyTemplate()` di dalam store dipakai `applyTemplate` (katalog) dan `applyCustomTemplate`. `saveCustomTemplate` mengambil potret `templates` yang tidak diarsipkan + semua kategori. `replaceAll` menulis kunci `customTemplates` hanya bila ada di workspace, jadi impor berkas lama tidak menghapus template di perangkat ini.
+
+**Tur.** Perhentian `t07a` menyorot `[data-tour="settings-custom-templates"]`, satu blok di dalam panel Template yang memuat daftar, tombol simpan, dan `StabiloAside`.
+
+**Jam header.** `features/today/header-clock.tsx` memiliki `setInterval` sendiri, berhenti saat `document.hidden`, merender `null` saat SSR (tidak ada hydration mismatch), dan tidak menyentuh store — jam bukan state aplikasi, dan menaruhnya di store akan merender ulang seluruh layar tiap detik.
+
 ---
 
 ## 12. Pekerjaan terbuka (belum dikerjakan, sudah diketahui)

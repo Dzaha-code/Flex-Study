@@ -5,13 +5,14 @@ import type {
   BlockInstance,
   BlockTemplate,
   Category,
+  CustomTemplate,
   Reflection,
   Settings,
   ShiftEvent,
   Workspace,
 } from "@/domain/types";
 import { getDatabase, isQuotaError, isStorageAvailable } from "./db";
-import { SettingsSchema, StabiloPrefsSchema } from "./schema";
+import { customTemplatesSchema, SettingsSchema, StabiloPrefsSchema } from "./schema";
 
 export type WriteOutcome =
   | { ok: true }
@@ -35,18 +36,57 @@ async function guard(operation: () => Promise<unknown>): Promise<WriteOutcome> {
 
 export async function loadWorkspace(): Promise<Workspace> {
   const db = getDatabase();
-  const [categories, templates, instances, reflections, shiftEvents, settings, stabilo] =
-    await Promise.all([
-      db.categories.toArray(),
-      db.templates.toArray(),
-      db.instances.toArray(),
-      db.reflections.toArray(),
-      db.shiftEvents.toArray(),
-      readSettings(),
-      readStabilo(),
-    ]);
+  const [
+    categories,
+    templates,
+    instances,
+    reflections,
+    shiftEvents,
+    settings,
+    stabilo,
+    customTemplates,
+  ] = await Promise.all([
+    db.categories.toArray(),
+    db.templates.toArray(),
+    db.instances.toArray(),
+    db.reflections.toArray(),
+    db.shiftEvents.toArray(),
+    readSettings(),
+    readStabilo(),
+    readCustomTemplates(),
+  ]);
 
-  return { categories, templates, instances, reflections, shiftEvents, settings, stabilo };
+  return {
+    categories,
+    templates,
+    instances,
+    reflections,
+    shiftEvents,
+    settings,
+    stabilo,
+    customTemplates,
+  };
+}
+
+/**
+ * Saved templates live in the same `meta` row space as settings and Stabilo's
+ * preferences. A corrupt row returns an empty list: losing a shortcut is
+ * recoverable, failing the boot is not.
+ */
+export async function readCustomTemplates(): Promise<CustomTemplate[]> {
+  try {
+    const row = await getDatabase().meta.get("customTemplates");
+    const parsed = customTemplatesSchema.safeParse(row?.value);
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function persistCustomTemplates(
+  templates: CustomTemplate[],
+): Promise<WriteOutcome> {
+  return guard(() => getDatabase().meta.put({ key: "customTemplates", value: templates }));
 }
 
 /**
@@ -160,6 +200,9 @@ export async function replaceAll(workspace: Workspace): Promise<WriteOutcome> {
         // silently erase the nickname this device already had.
         if (workspace.stabilo) {
           await db.meta.put({ key: "stabilo", value: workspace.stabilo });
+        }
+        if (workspace.customTemplates) {
+          await db.meta.put({ key: "customTemplates", value: workspace.customTemplates });
         }
       },
     ),

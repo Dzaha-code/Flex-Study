@@ -50,6 +50,8 @@ const TOUR_TARGETS = new Set([
   "journal-history",
   "settings-appearance",
   "settings-data",
+  "settings-templates",
+  "settings-custom-templates",
   "settings-stabilo",
   "guide-replay",
   "guide-quick",

@@ -16,6 +16,7 @@ import { Chip, Panel, PanelHeader, SegmentedControl, SwitchRow } from "@/compone
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import { estimateUsage } from "@/data/repository";
+import { CustomTemplates } from "./custom-templates";
 import {
   countWorkspace,
   parseWorkspaceImport,
@@ -342,7 +343,8 @@ export function SettingsScreen() {
         <BlockListEditor />
       </Panel>
 
-      <Panel>
+      {/* Its own target: the tour explains saved templates on this panel. */}
+      <Panel data-tour="settings-templates">
         <PanelHeader title={t("settings.templates")} description={t("settings.templatesHint")} />
         <ul className="flex flex-col divide-y divide-line">
           {TEMPLATES.map((template) => {
@@ -357,9 +359,11 @@ export function SettingsScreen() {
                     <span className="text-meta text-ink-muted measure">
                       {pickLocalized(template.description, locale)}
                     </span>
-                    <span className="text-label text-ink-muted">
-                      {t(template.audienceKey as MessageKey)}
-                    </span>
+                    {template.audienceKey ? (
+                      <span className="text-label text-ink-muted">
+                        {t(template.audienceKey as MessageKey)}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     {applied ? <Chip>{t("settings.applyTemplate")} ✓</Chip> : null}
@@ -377,6 +381,7 @@ export function SettingsScreen() {
             );
           })}
         </ul>
+        <CustomTemplates />
       </Panel>
 
       <Panel data-tour="settings-data">

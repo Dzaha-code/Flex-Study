@@ -20,6 +20,7 @@ import { useI18n } from "@/i18n";
 import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
+import { HeaderClock } from "./header-clock";
 import { ShiftSheet } from "./shift-sheet";
 import { TimerWatcher } from "./running-timer";
 import { AddBlockSheet, NoteSheet, Timeline, type CategoryLookup } from "./timeline";
@@ -87,6 +88,7 @@ function StreakStrip({ anchor, instances }: { anchor: string; instances: BlockIn
 function TodayContent({ date }: { date: string }) {
   const instances = useAppStore((state) => state.instances);
   const categories = useAppStore((state) => state.categories);
+  const planSize = useAppStore((state) => state.templates.length);
   const dayStart = useAppStore((state) => state.settings.dayStart);
   const remindersEnabled = useAppStore((state) => state.settings.remindersEnabled);
   const { t, formatDateLong, formatDateShort, formatMinutes } = useI18n();
@@ -149,13 +151,16 @@ function TodayContent({ date }: { date: string }) {
             <h1 className="text-display">{formatDateLong(date)}</h1>
             <p className="text-meta text-ink-muted">{progressLine}</p>
           </div>
-          {/* Its own target, not part of `progress`: the tour points at this
-              button on its own step, and a shared target would highlight the
-              whole header twice. */}
-          <Button data-tour="shift" variant="secondary" onClick={() => setShiftOpen(true)}>
-            <IconShuffle />
-            {t("today.messy")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <HeaderClock />
+            {/* Its own target, not part of `progress`: the tour points at this
+                button on its own step, and a shared target would highlight the
+                whole header twice. */}
+            <Button data-tour="shift" variant="secondary" onClick={() => setShiftOpen(true)}>
+              <IconShuffle />
+              {t("today.messy")}
+            </Button>
+          </div>
         </div>
         <ProgressBar
           value={progress.ratio}
@@ -171,9 +176,18 @@ function TodayContent({ date }: { date: string }) {
       <TimerWatcher enabled={remindersEnabled} running={hasRunning} blocks={timeline} />
 
       {timeline.length === 0 ? (
+        /**
+         * Two different emptinesses, told apart: nothing has ever been planned,
+         * or a plan exists and simply has no block on this weekday. Saying "no
+         * blocks yet" in the second case reads as "the template never applied".
+         */
         <EmptyState
-          title={t("today.empty.title")}
-          body={t("today.empty.body")}
+          title={planSize > 0 ? t("today.emptyPlanned.title") : t("today.empty.title")}
+          body={
+            planSize > 0
+              ? t("today.emptyPlanned.body", { count: planSize })
+              : t("today.empty.body")
+          }
           action={
             // Its own target: with no blocks there is no focus card to point
             // at, and the tour adapts to exactly this state.
@@ -184,10 +198,10 @@ function TodayContent({ date }: { date: string }) {
           }
           secondaryAction={
             <Link
-              href="/settings"
+              href={planSize > 0 ? "/week" : "/settings"}
               className="inline-flex h-11 items-center rounded-control border border-line-strong bg-surface-raised px-4 text-meta hover:bg-accent-surface"
             >
-              {t("today.empty.cta")}
+              {planSize > 0 ? t("today.emptyPlanned.cta") : t("today.empty.cta")}
             </Link>
           }
         />
