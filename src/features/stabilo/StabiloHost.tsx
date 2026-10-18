@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "@/data/store";
 import { useIntroHolding } from "@/features/intro/intro-status";
 import { useI18n } from "@/i18n";
-import { cn } from "@/lib/utils";
+import { startAmbience, stopAmbience, voiceBlip } from "./ambience";
 import { prefetchPhaseSprites, probeCoreSprites, type SpriteKey } from "./assets";
 import { playClip } from "./audio";
 import {
@@ -23,9 +23,10 @@ import type { EffectId } from "./engine/types";
 import { interpolate, nameParam } from "./engine/text";
 import { TYPE_MS, TYPE_MS_SLOW, speak, speakInstant, type Mouth } from "./engine/typewriter";
 import { STABILO_PLACEHOLDER } from "./flags";
-import { startTour } from "@/features/tour/tour-store";
+import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
+import { closeTour } from "@/features/tour/tour-store";
 import { REACTIONS, scriptFor, wrongLine, type Flow } from "./script";
-import { closeStabilo, openStabilo, useStabiloHost } from "./stabilo-store";
+import { closeStabilo, useStabiloHost } from "./stabilo-store";
 import { DialogueBox } from "./ui/DialogueBox";
 import { Sprite } from "./ui/Sprite";
 
@@ -41,6 +42,40 @@ function prefersReducedMotion(): boolean {
 
 function normalisePath(path: string): string {
   return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+}
+
+function sameRect(a: DOMRect | null, b: DOMRect | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    Math.round(a.top) === Math.round(b.top) &&
+    Math.round(a.left) === Math.round(b.left) &&
+    Math.round(a.width) === Math.round(b.width) &&
+    Math.round(a.height) === Math.round(b.height)
+  );
+}
+
+/**
+ * Scrolls a target into the part of the window the bottom stage does not cover.
+ *
+ * `scrollIntoView({ block: "center" })` centres the element in the *viewport*,
+ * which on a short window leaves its lower half under the dialogue box — the card
+ * covering the thing it is describing. The centre is therefore computed against
+ * the free band above the stage instead.
+ */
+function scrollIntoBand(element: HTMLElement, dockHeight: number): void {
+  const margin = 18;
+  const bandTop = margin;
+  const bandBottom = window.innerHeight - dockHeight - margin;
+  const rect = element.getBoundingClientRect();
+  const available = Math.max(120, bandBottom - bandTop);
+
+  // A target taller than the band can only be aligned at its top: centring it
+  // would put its heading off-screen.
+  const targetTop =
+    rect.height >= available ? bandTop : bandTop + (available - rect.height) / 2;
+  const delta = rect.top - targetTop;
+  if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "smooth" });
 }
 
 /**
@@ -78,9 +113,17 @@ export function StabiloHost() {
    */
   useEffect(() => {
     if (available !== false || !flow) return;
-    closeStabilo();
-    startTour();
+    showClassicTour();
   }, [available, flow]);
+
+  /**
+   * One walkthrough at a time. The coordinator already closes the classic tour
+   * when she is asked for, but the first-run path can open her while a tour is
+   * still on screen — and two overlays is exactly the bug this fixes.
+   */
+  useEffect(() => {
+    if (flow) closeTour();
+  }, [flow]);
 
   // First-run order: language → intro animation → Stabilo → template → tour.
   useEffect(() => {
@@ -96,12 +139,12 @@ export function StabiloHost() {
      */
     if (!onboardingCompleted && !prefs.introSeen) {
       autoOpened.current = true;
-      openStabilo("intro");
+      showStabilo("intro");
       return;
     }
     if (onboardingCompleted && prefs.introSeen && !prefs.tourDone) {
       autoOpened.current = true;
-      openStabilo("tour");
+      showStabilo("tour");
     }
   }, [prefs.enabled, prefs.introSeen, prefs.tourDone, onboardingCompleted, status, available, holding]);
 
@@ -116,6 +159,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const { t, locale } = useI18n();
   const prefs = useAppStore((state) => state.stabilo);
   const updateStabilo = useAppStore((state) => state.updateStabilo);
+  const updateSettings = useAppStore((state) => state.updateSettings);
 
   const script = useMemo(() => scriptFor(flow, locale), [flow, locale]);
   const reactions = REACTIONS[locale];
@@ -150,6 +194,8 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const abortRef = useRef<AbortController | null>(null);
   /** True when the current feedback should advance instead of retrying. */
   const advanceAfterFeedback = useRef(false);
+  /** The bottom stage, measured so targets are never scrolled under it. */
+  const dockRef = useRef<HTMLDivElement>(null);
 
   const node = nodeAt(script, state);
 
@@ -179,15 +225,20 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const typed = progress.key === lineKey ? progress.typed : 0;
   const done = progress.key === lineKey ? progress.done : false;
   const spotKey = `${node?.target ?? ""}|${pathname}`;
-  const measured = !node?.target || spotlight.key === spotKey;
   const rect = node?.target && spotlight.key === spotKey ? spotlight.rect : null;
 
   const finish = useCallback(() => {
     void updateStabilo(
       flow === "intro" ? { introSeen: true } : { tourDone: true, progress: null },
     );
+    /**
+     * The classic tour carries its own completion flag. Without this, a user who
+     * finished *this* tour and later turned the character off would be shown the
+     * fourteen-step one as if they had never seen a tour at all.
+     */
+    if (flow === "tour") void updateSettings({ tourCompleted: true });
     closeStabilo();
-  }, [flow, updateStabilo]);
+  }, [flow, updateStabilo, updateSettings]);
 
   const go = useCallback(
     (branch: "next" | "unsure" = "next") => {
@@ -210,7 +261,8 @@ function StabiloSession({ flow }: { flow: Flow }) {
     if (normalisePath(pathname) !== node.route) router.push(node.route);
   }, [node?.route, pathname, router]);
 
-  // Measure the target the node points at, exactly like the classic tour.
+  // Measure the target the node points at, and keep the ring on it while the
+  // page moves underneath — including the scroll this hook causes itself.
   useEffect(() => {
     if (!node?.target) return;
 
@@ -218,27 +270,41 @@ function StabiloSession({ flow }: { flow: Flow }) {
     let attempts = 0;
     let poll = 0;
     let settle = 0;
+    let frame = 0;
 
     const selector = `[data-tour="${node.target}"]`;
 
     const read = () => {
       if (cancelled) return;
       const element = document.querySelector(selector);
-      setSpotlight({ key: spotKey, rect: element ? element.getBoundingClientRect() : null });
+      const next = element ? element.getBoundingClientRect() : null;
+      setSpotlight((previous) =>
+        previous.key === spotKey && sameRect(previous.rect, next)
+          ? previous
+          : { key: spotKey, rect: next },
+      );
     };
 
     const look = () => {
       if (cancelled) return;
-      const element = document.querySelector(selector);
+      const element = document.querySelector<HTMLElement>(selector);
       if (!element) {
         attempts += 1;
         if (attempts < POLL_ATTEMPTS) poll = window.setTimeout(look, POLL_INTERVAL_MS);
         else read();
         return;
       }
-      element.scrollIntoView({ block: "center", behavior: "smooth" });
+      scrollIntoBand(element, dockRef.current?.offsetHeight ?? 240);
       settle = window.setTimeout(read, SCROLL_SETTLE_MS);
     };
+
+    const track = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(read);
+    };
+
+    window.addEventListener("scroll", track, true);
+    window.addEventListener("resize", track);
 
     poll = window.setTimeout(look, 60);
 
@@ -246,6 +312,9 @@ function StabiloSession({ flow }: { flow: Flow }) {
       cancelled = true;
       window.clearTimeout(poll);
       window.clearTimeout(settle);
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", track, true);
+      window.removeEventListener("resize", track);
     };
   }, [node?.target, spotKey]);
 
@@ -256,7 +325,12 @@ function StabiloSession({ flow }: { flow: Flow }) {
 
     const options = {
       signal: controller.signal,
-      onChar: (index: number) => setProgress({ key: lineKey, typed: index, done: false }),
+      onChar: (index: number) => {
+        // Every third character: dense enough to sound like speech, sparse
+        // enough not to turn into a machine gun. `voiceBlip` also rate-limits.
+        if (index % 3 === 1) voiceBlip();
+        setProgress({ key: lineKey, typed: index, done: false });
+      },
       onFrame: setMouth,
     };
 
@@ -356,16 +430,31 @@ function StabiloSession({ flow }: { flow: Flow }) {
     if (flow === "tour") prefetchPhaseSprites();
   }, [flow]);
 
+  /**
+   * The bed runs only while she is on screen. It is started from an effect so a
+   * blocked autoplay simply stays silent — the dialogue never waits for audio.
+   */
+  useEffect(() => {
+    startAmbience(prefs.sound);
+    return () => stopAmbience();
+  }, [prefs.sound]);
+
   // She arrives once per session, not on every line.
   useEffect(() => {
     if (state.nodeId !== script.start) return;
     playClip("appear", useAppStore.getState().stabilo.sound);
   }, [script.start, state.nodeId]);
 
-  if (!node || !measured) return null;
+  /**
+   * The overlay is *not* unmounted while a target is being measured any more.
+   * On a screen the node navigates to, that gap used to tear the scrim away and
+   * show the bare page for a few frames — the flash that made the whole guide
+   * feel broken. The card can be read before the ring appears; the ring is the
+   * only thing that has to wait for a measurement.
+   */
+  if (!node) return null;
 
   const sprite: SpriteKey = PHASE_SPRITE[state.phase] as SpriteKey;
-  const placeTop = rect !== null && rect.bottom > window.innerHeight * 0.55;
   const phaseFx: EffectId[] =
     state.phase > 0 ? [`tremble${state.phase}` as EffectId, "vignette"] : [];
   const fx: EffectId[] = [...(prefs.fx ? (node.fx ?? []) : []), ...(prefs.fx ? phaseFx : [])];
@@ -398,32 +487,17 @@ function StabiloSession({ flow }: { flow: Flow }) {
 
       <div className="stabilo-vignette" data-on={state.phase > 0} aria-hidden="true" />
 
-      <div
-        className={cn(
-          "absolute inset-x-0 flex justify-center px-3",
-          placeTop ? "top-3" : "bottom-3",
-        )}
-      >
-        <div className="relative w-full max-w-[720px]">
-          <div
-            className={cn(
-              // Kept to the right of the box so she does not sit on top of the
-              // card the user is being asked to read.
-              "pointer-events-none absolute right-2 h-[300px] w-[240px]",
-              placeTop ? "top-full mt-1" : "bottom-full mb-1",
-            )}
-          >
-            <div className="h-full w-full stabilo-idle">
-              <Sprite
-                sprite={sprite}
-                mouth={mouth}
-                placeholder={STABILO_PLACEHOLDER}
-                onMissing={() => finish()}
-              />
-            </div>
-          </div>
-
-          <DialogueBox
+      {/* One fixed stage at the bottom of the window. It used to jump between
+          the top and the bottom depending on where the target was, which is why
+          she appeared to teleport between lines and why the card sometimes sat
+          in the middle of the page with no relation to anything. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-3 pb-3 sm:px-4 sm:pb-4">
+        <div
+          ref={dockRef}
+          className="flex w-full max-w-[860px] items-end justify-center gap-2 sm:gap-4"
+        >
+          <div className="pointer-events-auto w-full min-w-0 max-w-[620px]">
+            <DialogueBox
             speaker={t("stabilo.speaker")}
             text={text}
             typed={typed}
@@ -484,7 +558,24 @@ function StabiloSession({ flow }: { flow: Flow }) {
               skipQuiz: t("stabilo.skipQuiz"),
               next: t("stabilo.next"),
             }}
-          />
+            />
+          </div>
+
+          {/* Her slot is fixed: bottom-right of the stage, bottom-aligned with
+              the card, the same place on every single line.
+              The slot is square on purpose — every sprite is exported on one
+              1670×1670 canvas, so a tall, narrow slot would let the image spill
+              sideways over the dialogue card. */}
+          <div className="pointer-events-none hidden w-[170px] shrink-0 sm:block lg:w-[215px]">
+            <div className="stabilo-idle h-[170px] w-full lg:h-[215px]">
+              <Sprite
+                sprite={sprite}
+                mouth={mouth}
+                placeholder={STABILO_PLACEHOLDER}
+                onMissing={() => finish()}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

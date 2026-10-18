@@ -7,8 +7,7 @@ import { IconBook, IconCheck, IconCompass, IconLightbulb, IconPlay } from "@/com
 import { Panel, PanelHeader, StatusBadge } from "@/components/ui/surface";
 import type { BlockStatus } from "@/domain/types";
 import { useI18n, type MessageKey } from "@/i18n";
-import { openStabilo } from "@/features/stabilo/stabilo-store";
-import { startTour } from "@/features/tour/tour-store";
+import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
 
 const QUICK_STEPS: MessageKey[] = [
   "guide.quick.1",
@@ -65,8 +64,8 @@ export function GuideScreen() {
               classic cards would be a step backwards. */}
           <Button
             onClick={() => {
-              if (useAppStore.getState().stabilo.enabled) openStabilo("tour");
-              else startTour();
+              if (useAppStore.getState().stabilo.enabled) showStabilo("tour");
+              else showClassicTour();
             }}
           >
             <IconPlay />

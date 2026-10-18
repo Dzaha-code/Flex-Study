@@ -64,7 +64,7 @@ export const TOUR_ID: DialogueScript = {
       id: "t01",
       route: "/",
       target: "nav",
-      text: "Ini menu utama. Paling sering kamu buka {{today}}.",
+      text: "Ini menu utama. Pagi-pagi kamu paling sering ke {{today}}.",
       next: "t02",
     },
     t02: {
@@ -106,7 +106,7 @@ export const TOUR_ID: DialogueScript = {
       id: "t03",
       route: "/",
       target: "progress",
-      text: "Garis ini kemajuan hari ini.",
+      text: "Garis ini terisi pelan-pelan tiap blok selesai.",
       next: "t04",
     },
     t04: {
@@ -149,7 +149,7 @@ export const TOUR_ID: DialogueScript = {
       route: "/week",
       target: "week-targets",
       accent: true,
-      text: "Di {{week}}, lihat target tiap kategori.",
+      text: "Target tiap kategori tinggal di {{week}}.",
       next: "q3",
     },
     q3: {
@@ -174,7 +174,7 @@ export const TOUR_ID: DialogueScript = {
       id: "t06",
       route: "/journal",
       target: "journal-entry",
-      text: "Di {{journal}}, dua kalimat sudah cukup.",
+      text: "Malamnya, dua kalimat di {{journal}} sudah cukup.",
       next: "t07",
     },
     t07: {

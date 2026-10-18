@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconClose } from "@/components/ui/icons";
 import { useAppStore } from "@/data/store";
+import { useStabiloHost } from "@/features/stabilo/stabilo-store";
 import { useI18n, type MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { closeTour, nextStep, previousStep, useTour } from "./tour-store";
@@ -123,8 +124,16 @@ function pickSide(rect: DOMRect, cardWidth: number, cardHeight: number): Side {
   ];
 
   const fitting = room.filter(([, score]) => score >= 0);
-  const pool = fitting.length > 0 ? fitting : room;
-  return pool.reduce((best, current) => (current[1] > best[1] ? current : best))[0];
+  /**
+   * When nothing fits — a full-width panel such as the Settings appearance
+   * section — the card used to take the "least bad" side, which put it straight
+   * over the middle of the thing it was describing. Docking it at the bottom of
+   * the window instead keeps the top of the target readable and stops the card
+   * from wandering into the middle of the page.
+   */
+  if (fitting.length === 0) return "bottom";
+
+  return fitting.reduce((best, current) => (current[1] > best[1] ? current : best))[0];
 }
 
 function cardStyle(rect: DOMRect | null, cardWidth: number, cardHeight: number): CSSProperties {
@@ -181,6 +190,13 @@ function cardStyle(rect: DOMRect | null, cardWidth: number, cardHeight: number):
  */
 export function GuidedTour() {
   const { open, index } = useTour();
+  /**
+   * The character has priority. This is the second half of the coordination:
+   * the coordinator closes this tour when she is asked for, and this guard stops
+   * an in-flight tour from painting (or listening for keys) if she appears
+   * anyway — for instance through the first-run path.
+   */
+  const suspended = useStabiloHost().flow !== null;
   const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -230,14 +246,14 @@ export function GuidedTour() {
 
   // Follow the current step's screen.
   useEffect(() => {
-    if (!open || !step) return;
+    if (!open || suspended || !step) return;
     if (step.route !== pathname) router.push(step.route);
-  }, [open, step, pathname, router]);
+  }, [open, suspended, step, pathname, router]);
 
   // Find the target, measure it, and keep the spotlight in step with the page.
   // Every state write happens inside a callback, never in the effect body.
   useEffect(() => {
-    if (!open || !step) return;
+    if (!open || suspended || !step) return;
 
     let cancelled = false;
     let poll = 0;
@@ -298,13 +314,13 @@ export function GuidedTour() {
       window.removeEventListener("resize", remeasure);
       window.removeEventListener("scroll", remeasure, true);
     };
-  }, [open, step, stepKey]);
+  }, [open, suspended, step, stepKey]);
 
   // The card's height decides which side it fits on, so measure it rather than
   // guessing with a constant. Re-observes when the card mounts for a new step.
   useLayoutEffect(() => {
     const element = cardRef.current;
-    if (!open || !element) return;
+    if (!open || suspended || !element) return;
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -314,11 +330,11 @@ export function GuidedTour() {
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [open, stepKey, measured]);
+  }, [open, suspended, stepKey, measured]);
 
   // Keyboard control, and focus the card so it is reachable without a mouse.
   useEffect(() => {
-    if (!open) return;
+    if (!open || suspended) return;
     cardRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -336,9 +352,9 @@ export function GuidedTour() {
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, finish, total]);
+  }, [open, suspended, finish, total]);
 
-  if (!open || !step) return null;
+  if (!open || suspended || !step) return null;
 
   // While the next screen is still painting there is nothing honest to point
   // at, so the overlay stays out of the way rather than centring a card over an

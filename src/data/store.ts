@@ -117,7 +117,7 @@ export interface AppState {
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
   updateStabilo: (patch: Partial<StabiloPrefs>) => Promise<void>;
 
-  saveCategory: (draft: CategoryDraft) => Promise<void>;
+  saveCategory: (draft: CategoryDraft) => Promise<string>;
   deleteCategory: (id: string) => Promise<void>;
   saveBlockTemplate: (draft: BlockTemplateDraft) => Promise<void>;
   deleteBlockTemplate: (id: string) => Promise<void>;
@@ -259,6 +259,9 @@ export const useAppStore = create<AppState>()((set, get) => {
 
       set({ categories: upsertById(state.categories, [category]) });
       guardWrite(await persistCategories([category]));
+      // Returned so a caller creating a category *inside* another form can
+      // select it immediately without re-reading the store.
+      return category.id;
     },
 
     deleteCategory: async (id) => {

@@ -395,9 +395,24 @@ Sudah dibangun dan lolos `tsc`, ESLint, `npm run build`, serta 161 uji (139 lama
 
 Aslinya hanya `stabilo_flat.png` yang diekspor dengan transparansi; sepuluh sisanya JPG (JPEG tidak punya kanal alpha) dengan latar hitam pekat. Alpha direkonstruksi dengan memakai kanal alpha `flat` sebagai topeng siluet — semua ekspresi memakai kanvas dan pose yang sama. **Keterbatasan yang diketahui:** tanda yang berada di luar siluet tubuh ikut hilang, mis. tanda tanya mengambang di `ph2`. Kalau itu penting, ekspor ulang kesepuluhnya sebagai PNG ber-alpha lalu jalankan ulang konversi. Sumber asli disimpan di `design/stabilo-source/` (di luar `public/`, jadi tidak ikut installer).
 
-**Audio.** Enam klip OGG CC0 dari Kenney "Interface Sounds" ada di `public/audio/`, total 39 KB, provenance di `public/audio/LICENSE.txt`. Disambungkan lewat `src/features/stabilo/audio.ts`: malas (tidak ada unduhan sampai diputar), volume 0 / 0,35 / 0,7, dan `play()` yang gagal dibiarkan senyap. Preferensi `sound` bawaannya `"off"`, kontrolnya di Atur → Stabilo.
+**Audio.** Enam klip OGG CC0 dari Kenney "Interface Sounds" ada di `public/audio/`, total 39 KB, provenance di `public/audio/LICENSE.txt`. Disambungkan lewat `src/features/stabilo/audio.ts`: malas (tidak ada unduhan sampai diputar), volume 0 / 0,35 / 0,7, dan `play()` yang gagal dibiarkan senyap. Preferensi `sound` bawaannya `"normal"`, kontrolnya di Atur → Stabilo.
 
 **Belum dikerjakan dari Fase 3:** izin gestur eksplisit (sekarang mengandalkan `play()` yang menolak sendiri), dan stinger ph5 (masih di balik `STABILO_FULL_HORROR = false`).
+
+### 11.8 Rilis 0.5.1 — satu pemandu, satu panggung
+
+**Tabrakan yang diperbaiki.** Sebelumnya tur klasik (`features/tour/`) dan Stabilo (`features/stabilo/`) punya status sendiri-sendiri dan bisa terbuka bersamaan: `AppShell` memulai tur klasik 700 ms setelah layar Hari ini tampil, sementara `StabiloHost` juga membuka turnya sendiri. Hasilnya dua scrim (layar jadi dua kali lebih gelap), dua sorotan, dan dua listener `keydown` — menekan Enter memajukan kedua kartu. Sekarang:
+
+- `src/features/guide/guide-coordinator.ts` adalah satu-satunya pintu masuk: `showStabilo(flow)` menutup tur klasik lebih dulu, `showClassicTour()` menutup Stabilo lebih dulu. Semua pemanggil (Panduan, Atur, fallback aset, alur pertama) lewat sini.
+- `GuidedTour` membaca `useStabiloHost().flow` dan berhenti menggambar *serta* berhenti mendengarkan tombol selama Stabilo aktif.
+- `AppShell` tidak memulai tur klasik selama `stabilo.enabled`; tur klasik tetap menjadi fallback saat karakternya dimatikan atau asetnya gagal dimuat.
+- Menyelesaikan tur Stabilo juga menulis `settings.tourCompleted = true`, supaya mematikan karakter di kemudian hari tidak memunculkan tur 14 langkah yang belum pernah dilihat.
+
+**Panggung tetap.** Posisi dialog tidak lagi berpindah atas/bawah mengikuti target (`placeTop` dihapus). Kotak dialog selalu di bawah-tengah, karakternya di slot kanan panggung yang sama, rata bawah dengan kotak — ia tidak lagi muncul di tengah layar dan tidak berpindah antar baris. Sorotan tidak lagi memakai `scrollIntoView({ block: "center" })`; `scrollIntoBand()` menggeser target ke bagian jendela yang tidak tertutup panggung, jadi kartu tidak menimpa elemen yang sedang dijelaskan. Overlay juga tidak lagi di-unmount saat target sedang diukur — itu penyebab layar berkedip di setiap perpindahan halaman.
+
+**Suara.** `src/features/stabilo/ambience.ts` menambahkan lapisan kontinu yang sebelumnya tidak ada: pad pelan (tiga osilator + filter yang bernapas) dan melodi kotak musik pentatonik, disintesis dengan Web Audio, bukan berkas loop — loop yang cukup panjang agar tidak terasa berulang akan memakan megabyte di installer. Ditambah `voiceBlip()` tiap tiga karakter saat mengetik. Semua konstanta rasa ada di berkas itu; `sound: "off"` mematikan keduanya.
+
+**Kategori di dalam form blok.** `features/plan/category-picker.tsx` menambahkan pembuatan kategori langsung dari form blok (nama + lambang, target awal 5 jam), dan `saveCategory` sekarang mengembalikan id supaya kategori baru langsung terpilih. Saat panel itu dibuka, `StabiloAside` tampil di dalam sheet — bentuk kecil tanpa scrim, bukan dialog penuh — dengan tautan "Ambil dari nama blok". `BlockListEditor` tidak lagi menonaktifkan "Blok baru" ketika daftar kategori kosong.
 
 ---
 

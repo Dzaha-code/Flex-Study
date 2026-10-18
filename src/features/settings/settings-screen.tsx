@@ -34,8 +34,7 @@ import type {
 import { INTRO_FORCE_KEY } from "@/features/intro/intro-mode";
 import { STABILO_FULL_HORROR } from "@/features/stabilo/flags";
 import { offeredIntensities, type StabiloPrefs } from "@/features/stabilo/prefs";
-import { openStabilo } from "@/features/stabilo/stabilo-store";
-import { startTour } from "@/features/tour/tour-store";
+import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
 import { ensureNotificationPermission } from "@/lib/desktop";
@@ -275,7 +274,7 @@ export function SettingsScreen() {
               size="sm"
               variant="secondary"
               disabled={!stabilo.enabled}
-              onClick={() => openStabilo("intro")}
+              onClick={() => showStabilo("intro")}
             >
               <IconPlay size={16} />
               {t("settings.stabilo.replayIntro")}
@@ -284,7 +283,7 @@ export function SettingsScreen() {
               size="sm"
               variant="secondary"
               disabled={!stabilo.enabled}
-              onClick={() => openStabilo("tour")}
+              onClick={() => showStabilo("tour")}
             >
               <IconCompass size={16} />
               {t("settings.stabilo.replayTour")}
@@ -316,8 +315,8 @@ export function SettingsScreen() {
             onClick={() => {
               // Same tour content, different presenter. With Stabilo off the
               // classic one is the only option, and it never stopped existing.
-              if (stabilo.enabled) openStabilo("tour");
-              else startTour();
+              if (stabilo.enabled) showStabilo("tour");
+              else showClassicTour();
             }}
           >
             <IconCompass />

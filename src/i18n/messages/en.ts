@@ -223,6 +223,8 @@ export const en: Messages = {
   "stabilo.skipQuiz": "Skip this quiz",
   "stabilo.gauge": "Stabilo's patience",
   "stabilo.namePlaceholder": "Type your name here",
+  "stabilo.categoryTip": "A new category? One or two words is plenty. You can rename it later in Settings.",
+  "stabilo.categoryTipAction": "Use the block name",
   "settings.stabilo": "Stabilo",
   "settings.stabilo.hint":
     "The tour guide and the presence that shows up through the day. You can switch her off anytime.",
@@ -295,6 +297,10 @@ export const en: Messages = {
   "settings.categoryPattern": "Line pattern",
   "settings.categoryTarget": "Weekly target (minutes)",
   "settings.newCategory": "New category",
+  "settings.categoryNamePlaceholder": "For example: Lectures, Rest, Tutoring",
+  "settings.categoryCreate": "Save category",
+  "settings.categoryTargetHint":
+    "The weekly target starts at 5 hours. You can change it later in the Categories panel.",
   "settings.newBlock": "New block",
   "settings.blockTitle": "Block name",
   "settings.blockCategory": "Category",

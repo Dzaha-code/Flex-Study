@@ -226,6 +226,8 @@ export const id = {
   "stabilo.skipQuiz": "Lewati kuis ini",
   "stabilo.gauge": "Kesabaran Stabilo",
   "stabilo.namePlaceholder": "Tulis namamu di sini",
+  "stabilo.categoryTip": "Kategori baru? Cukup satu dua kata. Nanti masih bisa diubah di Atur.",
+  "stabilo.categoryTipAction": "Ambil dari nama blok",
   "settings.stabilo": "Stabilo",
   "settings.stabilo.hint":
     "Pemandu tur dan penunggu yang muncul di momen harian. Bisa dimatikan kapan saja.",
@@ -299,6 +301,10 @@ export const id = {
   "settings.categoryPattern": "Pola garis",
   "settings.categoryTarget": "Target mingguan (menit)",
   "settings.newCategory": "Kategori baru",
+  "settings.categoryNamePlaceholder": "Misalnya: Kuliah, Istirahat, Les",
+  "settings.categoryCreate": "Simpan kategori",
+  "settings.categoryTargetHint":
+    "Target mingguan awalnya 5 jam. Bisa diubah nanti di panel Kategori.",
   "settings.newBlock": "Blok baru",
   "settings.blockTitle": "Nama blok",
   "settings.blockCategory": "Kategori",

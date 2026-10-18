@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/dialog";
-import { NumberInput, SelectField, TextInput, TimeInput } from "@/components/ui/field";
+import { NumberInput, TextInput, TimeInput } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/surface";
 import { useAppStore, type BlockTemplateDraft } from "@/data/store";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { CategoryPicker } from "./category-picker";
 
 const DAY_INDEXES = [1, 2, 3, 4, 5, 6, 0];
 
@@ -72,7 +73,6 @@ export function BlockTemplateForm({
   /** Extra context for the caller's situation, e.g. editing from the timeline. */
   hint?: string;
 }) {
-  const categories = useAppStore((state) => state.categories);
   const saveBlockTemplate = useAppStore((state) => state.saveBlockTemplate);
   const { t } = useI18n();
 
@@ -130,12 +130,12 @@ export function BlockTemplateForm({
         onChange={(event) => setTitle(event.target.value)}
       />
 
-      <SelectField
+      <CategoryPicker
         label={t("settings.blockCategory")}
         value={categoryId}
+        titleHint={title}
         error={categoryId === "" ? t("a11y.required") : undefined}
-        options={categories.map((category) => ({ value: category.id, label: category.name }))}
-        onChange={(event) => setCategoryId(event.target.value)}
+        onChange={setCategoryId}
       />
 
       <NumberInput

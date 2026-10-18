@@ -6,6 +6,70 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.1 — 18 Oktober 2026
+
+Rilis ini membereskan hal yang paling mengganggu di 0.5.0: dua pemandu yang muncul
+bersamaan, dan karakter yang berpindah-pindah tempat. Sekalian, bagian yang
+sebelumnya terasa kosong — musik dan suara saat berbicara — sekarang terisi.
+
+### Yang diperbaiki
+
+- **Tur klasik dan Stabilo tidak pernah lagi tampil bersamaan.** Sebelumnya
+  keduanya punya status sendiri dan sama-sama terbuka otomatis: layar jadi dua
+  kali lebih gelap, ada dua sorotan, dan menekan Enter memajukan kedua kartu.
+  Sekarang ada satu pintu masuk (`guide-coordinator.ts`): meminta Stabilo menutup
+  tur klasik, meminta tur klasik menutup Stabilo. Selama Stabilo aktif, tur klasik
+  tidak dimulai otomatis sama sekali.
+- **Posisi karakter tidak berubah-ubah lagi.** Dialog selalu di bawah-tengah dan
+  Stabilo selalu di slot kanan panggung yang sama, rata bawah dengan kotak dialog.
+  Sebelumnya kotak berpindah atas/bawah mengikuti target, jadi karakternya
+  terlihat melompat dan kadang berdiri di tengah layar.
+- **Kartu tidak lagi menimpa yang sedang dijelaskan.** Sorotan menggeser target ke
+  bagian jendela yang tidak tertutup panggung, bukan menaruhnya di tengah viewport.
+  Tur klasik (versi cadangan) juga tidak lagi mendarat di tengah panel lebar.
+- **Tidak ada kedipan antar-layar.** Overlay tidak lagi dilepas saat target sedang
+  diukur, jadi perpindahan halaman tidak memperlihatkan halaman kosong sekejap.
+- **Menyelesaikan tur Stabilo menandai tur selesai.** Kalau nanti karakternya
+  dimatikan, tur 14 langkah tidak muncul lagi seolah belum pernah dilihat.
+
+### Yang baru
+
+- **Musik latar dan suara ketikan.** Lapisan ambience (pad pelan dan melodi kotak
+  musik) disintesis langsung dengan Web Audio, bukan berkas loop, ditambah bunyi
+  halus tiap tiga karakter saat dialog ditulis. Ikut aturan Suara: *Tanpa suara*,
+  *Pelan*, atau *Normal*.
+- **Kategori baru langsung dari form blok.** Tombol **Kategori baru** di samping
+  pilihan kategori membuka nama dan lambang di tempat; kategori langsung tersimpan
+  dan terpilih. Saat panel itu terbuka, Stabilo muncul kecil di dalam form — tanpa
+  scrim, tanpa menutupi isian — dan bisa mengisikan nama dari judul blok.
+- **"Blok baru" tidak lagi terkunci** ketika daftar kategori kosong, karena
+  kategorinya bisa dibuat dari form itu sendiri.
+
+### Pemasangan
+
+| Berkas | Ukuran | Untuk siapa |
+|---|---|---|
+| `FlexStudy_0.5.1_x64-setup.exe` | 2.615.823 B (2,49 MiB) | **Disarankan.** Terpasang per pengguna, tidak butuh hak admin |
+| `FlexStudy_0.5.1_x64_en-US.msi` | 3.141.632 B (3,00 MiB) | Terpasang mesin-luas di `Program Files`, butuh admin |
+
+```text
+0D098566062DA11A107A5DC57F949F35A2052476004F880DC4F6E5A58C988812  FlexStudy_0.5.1_x64-setup.exe
+E67304A82CB9BE99FAE450B671B30CAF4AB365F384922C2C4214B11BD3F1286E  FlexStudy_0.5.1_x64_en-US.msi
+```
+
+### Yang perlu diketahui
+
+- **Installer belum ditandatangani.** SmartScreen akan memperingatkan; pilih
+  *More info → Run anyway*.
+- **Musik dan suara belum pernah didengar manusia.** Nada, tempo, dan campurannya
+  disusun dari perhitungan. Kalau terasa terlalu ramai atau terlalu pelan, semua
+  penyetelannya ada di satu berkas: `src/features/stabilo/ambience.ts`.
+- **Posisi dan ukuran panggung juga belum dilihat di layar sungguhan.** Tata
+  letaknya dihitung dari ukuran aset (kanvas persegi 1670×1670), bukan dari
+  tangkapan layar.
+
+---
+
 ## 0.5.0 — 18 Oktober 2026
 
 Rilis ini menambahkan **Stabilo**: pemandu tur yang benar-benar berbicara, dengan

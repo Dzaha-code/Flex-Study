@@ -61,7 +61,7 @@ export const TOUR_EN: DialogueScript = {
       id: "t01",
       route: "/",
       target: "nav",
-      text: "This is the menu. You'll open {{today}} most.",
+      text: "The menu. You'll open {{today}} most mornings.",
       next: "t02",
     },
     t02: {
@@ -103,7 +103,7 @@ export const TOUR_EN: DialogueScript = {
       id: "t03",
       route: "/",
       target: "progress",
-      text: "This line is today's progress.",
+      text: "This line fills in as blocks finish.",
       next: "t04",
     },
     t04: {
@@ -146,7 +146,7 @@ export const TOUR_EN: DialogueScript = {
       route: "/week",
       target: "week-targets",
       accent: true,
-      text: "In {{week}}, you can see your targets.",
+      text: "{{week}} is where the targets live.",
       next: "q3",
     },
     q3: {
@@ -171,7 +171,7 @@ export const TOUR_EN: DialogueScript = {
       id: "t06",
       route: "/journal",
       target: "journal-entry",
-      text: "In {{journal}}, two sentences are enough.",
+      text: "Two sentences in {{journal}} are enough at night.",
       next: "t07",
     },
     t07: {

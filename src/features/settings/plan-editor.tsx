@@ -312,11 +312,10 @@ export function BlockListEditor({ dense = false }: { dense?: boolean }) {
       ) : null}
 
       <div>
-        <Button
-          variant="secondary"
-          disabled={categories.length === 0}
-          onClick={() => setDraft(blankDraft())}
-        >
+        {/* Never disabled on an empty category list: the form can create the
+            first category itself, which is faster than sending the user to the
+            panel above and back. */}
+        <Button variant="secondary" onClick={() => setDraft(blankDraft())}>
           <IconPlus />
           {t("settings.newBlock")}
         </Button>

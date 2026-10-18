@@ -71,6 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const contentWidth = useAppStore((state) => state.settings.contentWidth);
   const tourCompleted = useAppStore((state) => state.settings.tourCompleted);
+  const stabiloEnabled = useAppStore((state) => state.stabilo.enabled);
   const updateSettings = useAppStore((state) => state.updateSettings);
 
   const fullscreen = useSyncExternalStore(subscribeFullscreen, isFullscreen, notFullscreen);
@@ -83,15 +84,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     document.title = current ? `${t(current.labelKey)} · ${t("app.name")}` : t("app.name");
   }, [pathname, t]);
 
-  // The tour introduces the Today screen, so it only starts there, once, and
-  // only after onboarding has already given the user something to look at.
+  /**
+   * The tour introduces the Today screen, so it only starts there, once, and
+   * only after onboarding has already given the user something to look at.
+   *
+   * It also never starts while the character is enabled: she is the presenter
+   * of this tour, and letting both open was the collision — two scrims, two
+   * spotlights, and Enter advancing both cards at once. When she is switched
+   * off, or her artwork fails to load, this is the fallback and runs as before.
+   */
   useEffect(() => {
-    if (tourCompleted || autoStarted.current) return;
+    if (tourCompleted || autoStarted.current || stabiloEnabled) return;
     if (pathname !== "/") return;
     autoStarted.current = true;
     const timer = window.setTimeout(startTour, 700);
     return () => window.clearTimeout(timer);
-  }, [tourCompleted, pathname]);
+  }, [tourCompleted, stabiloEnabled, pathname]);
 
   function cycleWidth() {
     const next = WIDTH_ORDER[(WIDTH_ORDER.indexOf(contentWidth) + 1) % WIDTH_ORDER.length];

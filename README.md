@@ -10,18 +10,20 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.5.0_x64-setup.exe](installers/FlexStudy_0.5.0_x64-setup.exe) — sekitar 2,5 MB
+### [FlexStudy_0.5.1_x64-setup.exe](installers/FlexStudy_0.5.1_x64-setup.exe) — sekitar 2,5 MB
 
-Versi **0.5.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi **0.5.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
-Yang baru di 0.5.0: **Stabilo**, pemandu tur yang berbicara. Pada pemasangan baru, urutannya kini: pilih bahasa → animasi pembuka → Stabilo memperkenalkan diri → pilih template → **tur interaktif** di layar Hari ini. Tur itu memakai sorotan yang sama dengan tur klasik, tapi setiap penjelasan diberi pilihan jujur *Paham / Belum paham*, dan tiga kuis pendek bergaya "Eh, tunggu dulu!". Tiga jawaban salah beruntun membawanya ke fase kesal — getar, glitch, vinyet — lalu ia mengalah, memberi petunjuk, dan tidak pernah menahan kamu. Kamu bisa melewati tur kapan saja tanpa dimarahi, dan mematikan Stabilo sepenuhnya di **Atur → Stabilo**; tur klasik tetap ada.
+Yang diperbaiki di 0.5.1: **dua tur tidak lagi muncul bersamaan.** Sebelumnya tur klasik dan Stabilo berjalan sendiri-sendiri — layar jadi dua kali lebih gelap, ada dua sorotan, dan Enter memajukan kedua kartu. Sekarang meminta yang satu menutup yang lain. Posisi Stabilo juga tetap: dialog selalu di bawah-tengah dan karakternya di slot kanan panggung yang sama, tidak lagi melompat atau berdiri di tengah layar; sorotan menggeser target ke area yang tidak tertutup dialog. Ditambah **musik latar dan suara ketikan** (mengikuti setelan Suara), serta **kategori baru langsung dari form blok** — dengan Stabilo kecil yang muncul di dalam form, tanpa menutupi isian.
+
+Yang baru di 0.5.0 tetap ada: **Stabilo**, pemandu tur yang berbicara, dengan pilihan jujur *Paham / Belum paham*, tiga kuis pendek, temperamen yang mengalah sendiri, dan panel **Atur → Stabilo**. Tur klasik tetap tersedia sebagai cadangan saat karakternya dimatikan.
 
 Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favorit di jurnal, halaman Rekap, gerak pada timer, dan animasi pembuka yang bisa diatur.
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.5.0_x64-setup.exe` — sekitar 2,5 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.5.0_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.5.1_x64-setup.exe` — sekitar 2,5 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.5.1_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -134,7 +136,7 @@ installers/     installer siap pakai untuk Windows
 
 ## Aplikasi desktop
 
-Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya hanya **1,62 MB**.
+Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya **2,49 MB** — dan itu sudah termasuk karakter, asetnya, serta suaranya.
 
 Yang perlu diketahui:
 
@@ -169,7 +171,7 @@ Satu hal yang sengaja berbeda dari sisa aplikasi: kanvasnya **selalu gelap** dan
 
 Aplikasi ini menjelaskan dirinya sendiri, lewat dua jalur supaya orang bisa memilih cara belajar yang cocok.
 
-- **Tur interaktif.** Empat belas langkah yang menyorot elemen aslinya di enam layar — Hari ini, Minggu, **Rekap**, Jurnal, Atur, dan Panduan — bukan gambar mockup. Tur berpindah halaman sendiri, dan tiap langkah menampilkan chip nama layarnya supaya jelas kapan berpindah (langkah Rekap memakai chip *Rekap*, bukan nama tab, karena layar itu memang bukan tab keenam). Muncul otomatis sekali setelah onboarding selesai, bisa diputar ulang dari halaman Panduan maupun dari Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tombol Lanjut dan Kembali, panah kiri–kanan di keyboard, Esc untuk keluar.
+- **Tur interaktif, dua penyaji — tidak pernah bersamaan.** Dengan Stabilo menyala (bawaan), tur dibawakan karakternya: delapan perhentian pendek di Hari ini, Pekan, Jurnal, Atur, dan Panduan, masing-masing menyorot elemen aslinya, bukan gambar mockup. Dengan Stabilo dimatikan — atau asetnya gagal dimuat — tur klasik empat belas langkah mengambil alih; teksnya lebih panjang dan hanya versi itu yang menyentuh **Rekap**, layar yang bukan tab keenam. Keduanya berpindah halaman sendiri, bisa diputar ulang dari Panduan maupun Atur, dan mengembalikanmu ke layar tempat kamu memulainya. Tur klasik memakai tombol Lanjut/Kembali, panah kiri–kanan, dan Esc; Stabilo memakai Enter/Spasi, klik, dan Esc yang tidak pernah memarahi.
 - **Halaman Panduan** (`/guide`). Versi tertulisnya: mulai cepat, penjelasan tiap layar, delapan tips, dan arti setiap lambang status.
 
 Tiga hal kecil yang sengaja diputuskan:
@@ -326,7 +328,7 @@ Khusus aplikasi desktop:
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 161 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 161 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang. Sejak 0.5.1 ada yang perlu ditambahkan ke daftar itu: **panggung Stabilo yang tetap** (slot karakter di kanan, jarak ke kartu dialog, sorotan yang menggeser target alih-alih menutupinya), **campuran musik latar dan bunyi ketikan**, serta **kategori baru di dalam form blok** — semuanya dihitung, belum ditonton dan belum didengar.
 
 ---
 
