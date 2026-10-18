@@ -27,6 +27,7 @@ import { interpolate, nameParam } from "./engine/text";
 import { TYPE_MS, TYPE_MS_SLOW, speak, speakInstant, type Mouth } from "./engine/typewriter";
 import { STABILO_PLACEHOLDER } from "./flags";
 import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
+import { systemPrefersReducedMotion } from "@/lib/motion";
 import { closeTour } from "@/features/tour/tour-store";
 import { REACTIONS, scriptFor, wrongLine, type Flow, type TourContext } from "./script";
 import { closeStabilo, useStabiloHost } from "./stabilo-store";
@@ -38,9 +39,14 @@ const SCROLL_SETTLE_MS = 320;
 const POLL_INTERVAL_MS = 80;
 const POLL_ATTEMPTS = 25;
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/**
+ * The typewriter is the one piece of motion the stylesheets cannot turn off, so
+ * it has to ask the same question they do — including the explicit override,
+ * or a machine that reports `reduce` would still get letter-by-letter typing
+ * while the sprite stood perfectly still.
+ */
+function motionIsReduced(forceMotion: boolean): boolean {
+  return systemPrefersReducedMotion() && !forceMotion;
 }
 
 function normalisePath(path: string): string {
@@ -367,7 +373,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
       onFrame: setMouth,
     };
 
-    const run = prefersReducedMotion()
+    const run = motionIsReduced(prefs.forceMotion)
       ? speakInstant(text, options)
       : speak(text, { ...options, ms: node?.slow ? TYPE_MS_SLOW : TYPE_MS });
 
@@ -377,7 +383,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
     });
 
     return () => controller.abort();
-  }, [lineKey, text, node?.slow]);
+  }, [lineKey, text, node?.slow, prefs.forceMotion]);
 
   const finishLine = useCallback(() => {
     abortRef.current?.abort();

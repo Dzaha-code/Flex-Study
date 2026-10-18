@@ -14,6 +14,7 @@ import {
   subscribeFullscreen,
 } from "@/lib/desktop";
 import { cn } from "@/lib/utils";
+import { resolveContentWidth, useWindowMaximised } from "@/lib/viewport";
 import {
   IconBook,
   IconCalendar,
@@ -43,6 +44,11 @@ const NAV_ITEMS: NavItem[] = [
 /**
  * How much of a wide window the column may use. `wide` is the default because a
  * maximised laptop screen left most of the right half empty before.
+ *
+ * A maximised window skips the preference entirely and uses `full`: a window
+ * that already fills the screen should not leave a band of dead space on the
+ * right, and making the user flip this control after every maximise is the
+ * manual step this is meant to remove.
  */
 const WIDTH_CLASS: Record<ContentWidth, string> = {
   comfortable: "max-w-6xl",
@@ -75,6 +81,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const updateSettings = useAppStore((state) => state.updateSettings);
 
   const fullscreen = useSyncExternalStore(subscribeFullscreen, isFullscreen, notFullscreen);
+  const maximised = useWindowMaximised();
+  const effectiveWidth = resolveContentWidth(contentWidth, maximised);
   const autoStarted = useRef(false);
 
   // The tab title follows the interface language rather than being frozen at
@@ -121,7 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div
         className={cn(
           "mx-auto flex w-full flex-1 flex-col lg:flex-row lg:gap-8 lg:px-6",
-          WIDTH_CLASS[contentWidth],
+          WIDTH_CLASS[effectiveWidth],
         )}
       >
         <nav
@@ -170,11 +178,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               out of the phone tab bar rather than replacing a nav item. */}
           <div data-print-hide className="mt-auto hidden flex-col gap-1 px-2 pb-6 pt-4 lg:flex">
             <p className="px-3 pb-1 text-caption font-medium text-mute">{t("layout.view")}</p>
-            <button type="button" onClick={cycleWidth} className={controlClass}>
+            {/* While the window fills the screen the column is already full, so
+                cycling here would change a preference the user cannot see take
+                effect. It stays readable and stops taking taps instead. */}
+            <button
+              type="button"
+              onClick={cycleWidth}
+              disabled={maximised}
+              title={maximised ? t("layout.widthAutoHint") : undefined}
+              className={cn(controlClass, maximised && "cursor-default opacity-60 hover:bg-transparent")}
+            >
               <IconWidth width={18} height={18} />
               <span className="flex flex-col items-start">
                 <span>{t("layout.width")}</span>
-                <span className="text-caption text-mute">{t(WIDTH_LABEL[contentWidth])}</span>
+                <span className="text-caption text-mute">
+                  {maximised ? t("layout.widthAuto") : t(WIDTH_LABEL[contentWidth])}
+                </span>
               </span>
             </button>
             <button

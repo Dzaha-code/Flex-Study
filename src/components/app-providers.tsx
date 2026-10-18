@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
+import { applyMotionAttribute } from "@/lib/motion";
 import { applyThemeAttribute, resolveTheme, systemPrefersDark } from "@/lib/preferences";
 import { ToastProvider } from "./ui/toast";
 
@@ -37,11 +38,27 @@ function DocumentLangSync() {
   return null;
 }
 
+/**
+ * The motion override lives on `<html>` so both stylesheets can read it: the
+ * global guard in globals.css and Stabilo's own in stabilo.css. Removed rather
+ * than set to a falsy value, so an old build's DOM cannot leave a stale flag.
+ */
+function MotionSync() {
+  const forceMotion = useAppStore((state) => state.stabilo.forceMotion);
+
+  useEffect(() => {
+    applyMotionAttribute(forceMotion);
+  }, [forceMotion]);
+
+  return null;
+}
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <ThemeSync />
       <DocumentLangSync />
+      <MotionSync />
       {children}
     </ToastProvider>
   );

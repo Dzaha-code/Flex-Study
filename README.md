@@ -10,11 +10,13 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.5.4_x64-setup.exe](installers/FlexStudy_0.5.4_x64-setup.exe) — sekitar 2,6 MB
+### [FlexStudy_0.5.5_x64-setup.exe](installers/FlexStudy_0.5.5_x64-setup.exe) — sekitar 2,6 MB
 
-Versi **0.5.4**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi **0.5.5**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
-Yang baru di 0.5.4: **template benar-benar terpasang.** Rencana bawaan dulu hanya mengisi hari kerja, jadi menerapkannya pada Sabtu atau Minggu meninggalkan Hari ini kosong dan terlihat seperti gagal — sekarang setiap template punya satu blok akhir pekan, dan layar "sudah siap" menyebut jumlah blok yang benar-benar tersimpan. **Kamu juga bisa menyimpan rencanamu sendiri sebagai template** di *Atur → Template → Template buatanmu*: potret susunan blok yang bisa diterapkan ulang kapan saja, ikut dalam Ekspor/Impor JSON, dan dijelaskan satu perhentian tur baru. Ditambah **jam di header Hari ini** — 24 jam dengan detik, angka `tabular-nums`, dan berhenti menghitung saat jendela disembunyikan.
+Yang baru di 0.5.5: **Stabilo bisa dinyalakan sendiri di perangkat yang mematikan animasi.** Di sebagian laptop Windows melaporkan "kurangi gerak" tanpa pernah kamu pilih — animasi Windows dimatikan, profil daya "best performance", atau sesi Remote Desktop — sehingga semua gerakan berhenti dan frame-nya tidak pernah berganti. Sekarang **Atur → Stabilo** memberi tahu saat itu terjadi, dan menyediakan saklar **"Animasi tetap jalan"** yang bawaannya mati. Selain itu **lebar konten otomatis penuh saat jendela dimaksimalkan** (pilihanmu di Atur dipakai lagi begitu jendela diperkecil), dan aplikasi desktop dibuka maksimal.
+
+Yang baru di 0.5.4 tetap ada: **template benar-benar terpasang** — rencana bawaan dulu hanya mengisi hari kerja, jadi menerapkannya pada Sabtu atau Minggu meninggalkan Hari ini kosong dan terlihat seperti gagal; sekarang setiap template punya satu blok akhir pekan. **Kamu juga bisa menyimpan rencanamu sendiri sebagai template** di *Atur → Template → Template buatanmu*, ditambah **jam di header Hari ini** yang berhenti menghitung saat jendela disembunyikan.
 
 Yang diperbaiki di 0.5.3 tetap ada: tur menyambut sendiri setelah "Buka Hari ini" dan menjelaskan belasan perhentian, percakapan yang bergerak, kedipan mata, dan bahasa bawaan Inggris. Yang diperbaiki di 0.5.2 dan 0.5.1 juga tetap: tur membaca keadaan hari, wajah dan getaran saat salah menjawab, satu tur pada satu waktu, panggung karakter yang tetap, musik latar, serta kategori baru langsung dari form blok.
 
@@ -24,8 +26,8 @@ Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favor
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.5.4_x64-setup.exe` — sekitar 2,6 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.5.4_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| Disarankan | `FlexStudy_0.5.5_x64-setup.exe` — sekitar 2,6 MB. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.5.5_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
 | Sistem | Windows 64-bit |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |

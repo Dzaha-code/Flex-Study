@@ -242,7 +242,14 @@ export const en: Messages = {
   "settings.stabilo.intensity.full": "Full horror",
   "settings.stabilo.fx": "Tremble & glitch effects",
   "settings.stabilo.fxHint":
-    "Trembling, glitch and sudden movement. Always off when the system asks for reduced motion.",
+    "Trembling, glitch and sudden movement. Off when the system asks for reduced motion — unless you turn hers back on below.",
+  "settings.stabilo.motion": "Keep the animation on",
+  "settings.stabilo.motionHint":
+    "Some machines ask for reduced motion without anyone choosing it — Windows animation effects off, a battery-saver profile, a remote session. Turn this on to keep seeing her move here.",
+  "settings.stabilo.motionBlocked":
+    "This machine is asking for reduced motion, so she is standing still. Turn the switch above on if you want the animation anyway.",
+  "settings.stabilo.motionForced":
+    "This machine asks for reduced motion, but you have turned her animation back on here. Switch it off above to follow the system again.",
   "settings.stabilo.sound": "Sound",
   "settings.stabilo.sound.off": "No sound",
   "settings.stabilo.sound.soft": "Soft",
@@ -401,6 +408,9 @@ export const en: Messages = {
   "layout.width.wide": "Wide",
   "layout.width.full": "Full",
   "layout.widthHint": "Comfortable keeps lines short and easy to read. Wide uses most of a laptop screen. Full uses the whole window, for when you want the timeline as wide as it can be.",
+  "layout.widthAuto": "Full · automatic",
+  "layout.widthAutoHint": "The window fills the screen, so the column is full on its own.",
+  "layout.widthMaximised": "The window is maximised, so the width is automatically full. Your choice above comes back when the window is restored.",
   "layout.fullscreen": "Fullscreen",
   "layout.exitFullscreen": "Exit fullscreen",
 

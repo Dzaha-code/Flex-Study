@@ -6,6 +6,61 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.5 — 18 Oktober 2026
+
+Stabilo bisa dinyalakan sendiri di perangkat yang mematikan animasi, dan lebar konten
+mengikuti jendela tanpa perlu diatur manual lagi.
+
+### Yang diperbaiki
+
+- **"Stabilo beku di laptop lain" akhirnya punya penjelasan.** Bukan build yang rusak:
+  Windows di mesin itu melaporkan *kurangi gerak* (`prefers-reduced-motion`) tanpa
+  pernah kamu pilih — biasanya karena *Animation effects* dimatikan, profil daya
+  disetel "best performance", atau sesi berjalan lewat Remote Desktop. Aplikasi
+  menuruti: seluruh animasi CSS berhenti dan mesin ketik diganti teks yang muncul
+  sekaligus, jadi frame-nya tidak pernah berganti. Itu juga sebabnya hanya animasi
+  pembuka yang masih terasa — ia memakai jalur JavaScript, bukan CSS.
+- **Sekarang aplikasi mengatakannya.** Panel **Atur → Stabilo** menampilkan satu baris
+  penjelasan hanya ketika sistem benar-benar meminta gerak dikurangi, jadi tidak ada
+  lagi teka-teki "kenapa di sini diam".
+
+### Yang baru
+
+- **Saklar "Animasi tetap jalan".** Di panel yang sama, tepat di bawah efek getar.
+  Bawaannya mati, jadi preferensi sistem tetap menang untuk semua orang; menyalakannya
+  adalah pilihan sadar, hanya berlaku di perangkat itu, dan bisa dimatikan lagi kapan
+  saja. Yang ikut hidup: napas, kedipan, getaran fase, sentakan saat salah menjawab,
+  animasi kartu, dan mengetik per huruf.
+- **Lebar konten otomatis penuh saat jendela dimaksimalkan.** Tidak ada lagi klik
+  tombol lebar setiap kali jendela dibuka penuh. Pilihan lebar di Atur tetap tersimpan
+  dan dipakai lagi begitu jendela diperkecil — mengubah ukuran jendela tidak mengedit
+  pengaturanmu. Tombol lebar di navigasi menampilkan "Penuh · otomatis" selama
+  maximize, dan berhenti menerima klik supaya tidak terlihat seperti tombol rusak.
+- **Aplikasi desktop dibuka maksimal**, bukan 1100×740 lagi.
+
+### Yang perlu diketahui
+
+- Ini **maximize**, bukan fullscreen eksklusif: title bar dan taskbar tetap ada.
+  Alasannya, fullscreen sejati tidak punya jalan keluar yang jelas di aplikasi desktop
+  dan tidak dibutuhkan untuk tujuan awalnya — lebar penuh. Tombol **Layar penuh** yang
+  lama tetap ada kalau kamu memang mau tanpa title bar.
+- Saklar animasi tidak mengubah animasi pembuka. Pembuka tetap mengikuti preferensi
+  sistem, karena ia bukan bagian dari Stabilo.
+
+### Pemasangan
+
+| Berkas | Ukuran | Untuk siapa |
+|---|---|---|
+| `FlexStudy_0.5.5_x64-setup.exe` | 2.620.692 B (2,50 MiB) | **Disarankan.** Terpasang per pengguna, tidak butuh hak admin |
+| `FlexStudy_0.5.5_x64_en-US.msi` | 3.145.728 B (3,00 MiB) | Terpasang mesin-luas di `Program Files`, butuh admin |
+
+```text
+02A37AFD33E9A946FB2E4940EA4CAE8EABA6C601363F747F0C7AFF5FA1C78776  FlexStudy_0.5.5_x64-setup.exe
+0E0FB1257B797138479408D332B26F8DD20E494BE3AA751A05A501CF8EC736B4  FlexStudy_0.5.5_x64_en-US.msi
+```
+
+---
+
 ## 0.5.4 — 18 Oktober 2026
 
 Template benar-benar terpasang dan terlihat, kamu bisa menyimpan rencanamu sendiri

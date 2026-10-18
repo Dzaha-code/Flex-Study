@@ -245,7 +245,14 @@ export const id = {
   "settings.stabilo.intensity.full": "Seram penuh",
   "settings.stabilo.fx": "Efek getar & glitch",
   "settings.stabilo.fxHint":
-    "Getar, glitch, dan gerakan mendadak. Selalu mati saat sistem meminta gerak dikurangi.",
+    "Getar, glitch, dan gerakan mendadak. Ikut mati saat sistem meminta gerak dikurangi, kecuali kamu menyalakan animasinya di bawah.",
+  "settings.stabilo.motion": "Animasi tetap jalan",
+  "settings.stabilo.motionHint":
+    "Sebagian perangkat meminta gerak dikurangi tanpa kamu pilih — animasi Windows dimatikan, mode hemat daya, atau sesi jarak jauh. Nyalakan ini kalau kamu tetap ingin melihat gerakan Stabilo di sini.",
+  "settings.stabilo.motionBlocked":
+    "Sistem di perangkat ini sedang meminta gerak dikurangi, jadi Stabilo diam. Nyalakan tombol di atas kalau kamu mau animasinya tetap jalan.",
+  "settings.stabilo.motionForced":
+    "Sistem meminta gerak dikurangi, tetapi kamu menyalakan animasinya di sini. Matikan tombol di atas untuk kembali mengikuti sistem.",
   "settings.stabilo.sound": "Suara",
   "settings.stabilo.sound.off": "Tanpa suara",
   "settings.stabilo.sound.soft": "Pelan",
@@ -407,6 +414,9 @@ export const id = {
   "layout.width.wide": "Lebar",
   "layout.width.full": "Penuh",
   "layout.widthHint": "Nyaman menjaga baris tetap pendek dan enak dibaca. Lebar memakai sebagian besar layar laptop. Penuh memakai seluruh jendela, berguna kalau kamu ingin linimasa selebar mungkin.",
+  "layout.widthAuto": "Penuh · otomatis",
+  "layout.widthAutoHint": "Jendela sedang memenuhi layar, jadi lebarnya penuh dengan sendirinya.",
+  "layout.widthMaximised": "Jendela sedang dimaksimalkan, jadi lebarnya otomatis penuh. Pilihan di atas dipakai lagi begitu jendela diperkecil.",
   "layout.fullscreen": "Layar penuh",
   "layout.exitFullscreen": "Keluar layar penuh",
 

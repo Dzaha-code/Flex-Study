@@ -452,6 +452,18 @@ Satu jalur penerapan: `applyStudyTemplate()` di dalam store dipakai `applyTempla
 
 **Jam header.** `features/today/header-clock.tsx` memiliki `setInterval` sendiri, berhenti saat `document.hidden`, merender `null` saat SSR (tidak ada hydration mismatch), dan tidak menyentuh store — jam bukan state aplikasi, dan menaruhnya di store akan merender ulang seluruh layar tiap detik.
 
+### 11.12 Rilis 0.5.5 — animasi yang bisa dinyalakan sendiri, dan lebar yang mengikuti jendela
+
+**Kenapa Stabilo beku di laptop lain.** Bukan build yang rusak: mesin itu melaporkan `prefers-reduced-motion: reduce`. Windows melaporkannya setiap kali *Animation effects* dimatikan, profil daya disetel "best performance", atau sesi berjalan lewat Remote Desktop — tanpa pengguna pernah memilih "kurangi gerak". Dampaknya berlapis: `globals.css` memaksa semua durasi animasi ke 0.001 ms, `stabilo.css` mematikan seluruh animasi Stabilo, dan `StabiloHost` mengganti mesin ketik dengan `speakInstant` sehingga frame mulut tidak pernah berganti. Animasi pembuka tetap terlihat karena ia memakai GSAP (JavaScript), bukan keyframes CSS — persis kombinasi yang membuat gejalanya terbaca "hanya pembuka yang bergerak".
+
+**Saklar eksplisit.** `StabiloPrefs.forceMotion` (bawaan `false`) dipetakan `MotionSync` di `app-providers.tsx` menjadi `data-motion="full"` pada `<html>`. Kedua penjaga reduce — global di `globals.css` dan milik Stabilo di `stabilo.css` — sekarang memakai `:root:not([data-motion="full"])`, jadi atribut itu satu-satunya jalan keluar dan hanya bisa dipasang dari Atur. `motionIsReduced()` di `StabiloHost` memakai flag yang sama untuk mesin ketik; tanpa itu, mengetik akan tetap jalan sementara sprite berdiri diam. Panel **Atur → Stabilo** menampilkan status hanya ketika sistem benar-benar meminta gerak dikurangi, supaya kontrolnya tidak pernah bertentangan dengan yang terlihat di layar.
+
+**Lebar mengikuti jendela.** `src/lib/viewport.ts`: `fillsScreen()` membandingkan viewport dengan `screen.availWidth/availHeight` memakai toleransi 24 px (lebar) dan 64 px (tinggi) — area klien tidak pernah selebar work area karena title bar ~31 px dan scrollbar ~15 px, dan DPI pecahan membulatkan keduanya. `resolveContentWidth(preference, maximised)` mengembalikan `full` saat jendela memenuhi layar dan preferensi tersimpan saat jendela dipulihkan; tidak ada yang ditulis ke database, karena mengubah ukuran jendela bukan mengedit pengaturan. Tombol lebar di navigasi menampilkan `layout.widthAuto` dan berhenti menerima klik selama maximize (menekannya hanya akan mengubah preferensi yang efeknya tidak terlihat). Jendela desktop sekarang dibuka `maximized: true` di `tauri.conf.json`.
+
+**Kenapa maximize, bukan fullscreen eksklusif.** Fullscreen sejati menyembunyikan title bar dan taskbar, tidak punya jalan keluar yang jelas di aplikasi desktop, dan tidak dibutuhkan untuk tujuan awalnya (lebar penuh). Tombol layar penuh yang lama tetap ada untuk siapa pun yang memang menginginkannya.
+
+**Uji.** `tests/motion.test.ts`: toleransi `fillsScreen`, `resolveContentWidth`, `forceMotion` bawaan mati, dan baris `StabiloPrefs` lama (tanpa field itu) tetap terbaca.
+
 ---
 
 ## 12. Pekerjaan terbuka (belum dikerjakan, sudah diketahui)

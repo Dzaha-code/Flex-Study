@@ -4,7 +4,8 @@
  *
  * Everything here is opt-out twice: the `fx` preference removes it, and the
  * global `prefers-reduced-motion` block in globals.css removes the motion even
- * when the preference is on.
+ * when the preference is on — unless the user has explicitly turned motion back
+ * on for this app (`data-motion="full"` in Settings → Stabilo).
  */
 
 .stabilo-vignette {
@@ -248,26 +249,26 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stabilo-char,
-  .stabilo-banner,
-  .stabilo-idle,
-  .stabilo-recoil,
-  .stabilo-tremble-soft,
-  .stabilo-tremble-hard,
-  .stabilo-card-in,
-  .stabilo-sprite-in,
-  .stabilo-option-in,
-  .stabilo-pop-in,
-  .stabilo-caret,
-  .stabilo-speaking-dot {
+  :root:not([data-motion="full"]) .stabilo-char,
+  :root:not([data-motion="full"]) .stabilo-banner,
+  :root:not([data-motion="full"]) .stabilo-idle,
+  :root:not([data-motion="full"]) .stabilo-recoil,
+  :root:not([data-motion="full"]) .stabilo-tremble-soft,
+  :root:not([data-motion="full"]) .stabilo-tremble-hard,
+  :root:not([data-motion="full"]) .stabilo-card-in,
+  :root:not([data-motion="full"]) .stabilo-sprite-in,
+  :root:not([data-motion="full"]) .stabilo-option-in,
+  :root:not([data-motion="full"]) .stabilo-pop-in,
+  :root:not([data-motion="full"]) .stabilo-caret,
+  :root:not([data-motion="full"]) .stabilo-speaking-dot {
     animation: none !important;
   }
 
-  .stabilo-sparkle {
+  :root:not([data-motion="full"]) .stabilo-sparkle {
     display: none;
   }
 
-  .stabilo-vignette {
+  :root:not([data-motion="full"]) .stabilo-vignette {
     transition: none;
   }
 }

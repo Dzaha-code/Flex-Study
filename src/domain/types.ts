@@ -221,8 +221,16 @@ export type StabiloIntensity = "sweet" | "spooky" | "full";
 export interface StabiloPrefs {
   enabled: boolean;
   intensity: StabiloIntensity;
-  /** Trembling, glitch and sudden movement. Reduced motion always wins. */
+  /** Trembling, glitch and sudden movement. */
   fx: boolean;
+  /**
+   * Keeps her motion even when the system asks for reduced motion.
+   *
+   * Off by default: the OS preference is the honest default, and a machine
+   * that reports `reduce` by accident should not be overridden behind the
+   * user's back. This is only ever set from Settings.
+   */
+  forceMotion: boolean;
   /** Off by default: nothing makes noise until the user asks for it. */
   sound: "off" | "soft" | "normal";
   nickname: string;
@@ -240,6 +248,7 @@ export const DEFAULT_STABILO_PREFS: StabiloPrefs = {
   enabled: true,
   intensity: "spooky",
   fx: true,
+  forceMotion: false,
   sound: "normal",
   nickname: "",
   introSeen: false,

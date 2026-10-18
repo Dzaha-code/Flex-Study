@@ -211,11 +211,16 @@
     color: var(--hl-ink);
   }
 
-  /* Motion answers an action; it never decorates an entry (DESIGN.md §6). */
+  /* Motion answers an action; it never decorates an entry (DESIGN.md §6).
+   *
+   * The `:root:not([data-motion="full"])` guard is the one escape hatch: it is
+   * set only from Settings → Stabilo by someone who has read that the system is
+   * asking for less motion and wants hers anyway. Everything else keeps
+   * following the OS preference, which is the honest default. */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    ::before,
-    ::after {
+    :root:not([data-motion="full"]) *,
+    :root:not([data-motion="full"]) ::before,
+    :root:not([data-motion="full"]) ::after {
       animation-duration: 0.001ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;

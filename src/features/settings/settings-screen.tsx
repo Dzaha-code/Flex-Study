@@ -38,6 +38,8 @@ import { offeredIntensities, type StabiloPrefs } from "@/features/stabilo/prefs"
 import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
+import { useReducedMotion } from "@/lib/motion";
+import { useWindowMaximised } from "@/lib/viewport";
 import { ensureNotificationPermission } from "@/lib/desktop";
 import { pickLocalized, TEMPLATES } from "@/templates";
 import { BlockListEditor, CategoriesEditor } from "./plan-editor";
@@ -64,6 +66,14 @@ export function SettingsScreen() {
 
   const { t, locale } = useI18n();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  /**
+   * Live, because the answer explains why she may be standing still: this is
+   * the system's preference, not a broken build. On a machine where animation
+   * effects were switched off (or a "best performance" profile is on), it
+   * reads `true` without the user ever having asked for it.
+   */
+  const reducesMotion = useReducedMotion();
+  const maximised = useWindowMaximised();
 
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
@@ -173,6 +183,11 @@ export function SettingsScreen() {
               ]}
             />
             <p className="measure text-caption text-mute">{t("layout.widthHint")}</p>
+            {/* Said only when it is actually happening, so the control never
+                contradicts what is on screen. */}
+            {maximised ? (
+              <p className="measure text-caption text-mute">{t("layout.widthMaximised")}</p>
+            ) : null}
           </div>
 
           <SegmentedControl
@@ -251,6 +266,26 @@ export function SettingsScreen() {
             checked={stabilo.fx}
             onChange={(next) => void updateStabilo({ fx: next })}
           />
+
+          {/* The answer to "why is she frozen on this laptop". The system asked
+              for reduced motion — sometimes without anyone choosing it — and
+              this is the only place that can say so and the only way to
+              override it. Off by default, so the OS preference still wins. */}
+          <div className="flex flex-col gap-1.5">
+            <SwitchRow
+              label={t("settings.stabilo.motion")}
+              hint={t("settings.stabilo.motionHint")}
+              checked={stabilo.forceMotion}
+              onChange={(next) => void updateStabilo({ forceMotion: next })}
+            />
+            {reducesMotion ? (
+              <p className="measure text-caption text-ink-muted">
+                {stabilo.forceMotion
+                  ? t("settings.stabilo.motionForced")
+                  : t("settings.stabilo.motionBlocked")}
+              </p>
+            ) : null}
+          </div>
 
           <SegmentedControl
             legend={t("settings.stabilo.sound")}
