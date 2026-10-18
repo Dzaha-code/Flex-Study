@@ -40,6 +40,23 @@ Cara memasang:
 
 Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi juga hanya boleh terbuka satu jendela pada satu waktu.
 
+### Perangkat ARM (Windows on ARM)
+
+Installer di atas dibuat untuk x64. Di Windows 11 ARM — Snapdragon X, Copilot+ PC — ia tetap terpasang dan berjalan lewat emulasi x64, termasuk WebView2-nya. Aplikasinya kecil, jadi selisihnya tidak besar, tetapi emulasi tetap memakan lebih banyak CPU dan baterai daripada build native.
+
+Untuk build native ARM64, di mesin Windows yang sudah punya Rust:
+
+    npm run build:windows-arm64
+
+Prasyaratnya, sekali saja:
+
+1. `rustup target add aarch64-pc-windows-msvc`
+2. Visual Studio Build Tools dengan komponen **MSVC v143 — VS 2022 C++ ARM64 build tools** dan **Windows SDK**
+
+Skrip di atas memeriksa keduanya lebih dulu dan berhenti dengan pesan yang jelas kalau belum siap, bukan error linker yang tidak menjelaskan apa pun. Hasilnya ada di `src-tauri\target\aarch64-pc-windows-msvc\release\bundle\` sebagai `FlexStudy_<versi>_arm64-setup.exe` dan `..._arm64_en-US.msi`.
+
+macOS Apple Silicon dan Linux ARM64 juga didukung Tauri, tetapi keduanya tidak bisa di-build dari Windows ini: masing-masing butuh mesinnya sendiri, dan Tauri memang tidak menyediakan cross-compile ke macOS.
+
 ### Memperbarui
 
 Belum ada pembaruan otomatis di dalam aplikasi, jadi memperbarui berarti memasang installer yang lebih baru di atas yang lama. **Tidak perlu menghapus pemasangan lama lebih dulu.**

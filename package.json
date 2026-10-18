@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:desktop": "node scripts/build-desktop.mjs",
+    "build:windows-arm64": "node scripts/build-arm64.mjs",
     "fonts:fetch": "node scripts/fetch-fonts.mjs",
     "tauri": "tauri",
     "start": "next start",
