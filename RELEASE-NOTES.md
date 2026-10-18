@@ -6,6 +6,56 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.2 — 18 Oktober 2026
+
+Tur sekarang muncul sendiri, tahu apakah hari ini sudah punya blok, dan Stabilo
+benar-benar bereaksi saat kamu salah menjawab.
+
+### Yang diperbaiki
+
+- **Tur muncul otomatis lagi.** Syaratnya dulu meminta perkenalan sudah dilihat
+  *dan* onboarding selesai. Profil yang di-upgrade dari 0.4.x sudah menyelesaikan
+  onboarding tetapi belum pernah melihat perkenalan, jadi kedua cabang auto-open
+  tidak terpenuhi dan tur hanya bisa dibuka manual. Sekarang cukup onboarding
+  selesai dan tur belum pernah dituntaskan.
+- **Sorotan ada di langkah pertama.** Langkah "blok pertamamu" menyorot kartu fokus
+  yang hanya dirender kalau sudah ada blok; tanpa blok, tidak ada elemen untuk
+  disorot dan layar hanya menggelap. Tur sekarang membaca keadaan: kalau hari ini
+  kosong, ia menyorot tombol **Buat blok pertama** dan kuisnya menanyakan tombol
+  itu — bukan tombol Mulai fokus yang belum ada.
+- **Ekspresi berubah saat salah menjawab.** Di mode *Manis*, tangga fase memang
+  sengaja beku, dan itu membuat jawaban salah tampak tidak bereaksi sama sekali.
+  Sekarang wajahnya tetap berubah satu langkah setelah salah kedua, tanpa pernah
+  masuk frame yang menyeramkan. Di mode *Seram ringan* wajah mengikuti fase
+  seperti sebelumnya, dan ada sentakan singkat pada **setiap** jawaban salah.
+- **Getaran di fase 2 dan 3.** Selama Stabilo kesal, gambarnya ikut bergetar —
+  lebih kuat dan lebih cepat di fase 3. Mengikuti preferensi *Efek getar & glitch*
+  dan `prefers-reduced-motion`.
+
+### Pemasangan
+
+| Berkas | Ukuran | Untuk siapa |
+|---|---|---|
+| `FlexStudy_0.5.2_x64-setup.exe` | 2.615.776 B (2,49 MiB) | **Disarankan.** Terpasang per pengguna, tidak butuh hak admin |
+| `FlexStudy_0.5.2_x64_en-US.msi` | 3.141.632 B (3,00 MiB) | Terpasang mesin-luas di `Program Files`, butuh admin |
+
+```text
+A6B821C279A34085D8D0D7FE88FFEDBE129BEEF2E2E6A93E9DD9B6DE5FA6A401  FlexStudy_0.5.2_x64-setup.exe
+9730D0294DFC7DBB5B9C09EC89126C3F97893F982E121FA8FC17ECE4A8A66AE9  FlexStudy_0.5.2_x64_en-US.msi
+```
+
+### Yang perlu diketahui
+
+- **Profil yang sudah pernah menuntaskan tur tidak akan melihatnya lagi secara
+  otomatis** — itu memang disengaja. Untuk memutarnya lagi: **Atur → Stabilo →
+  Putar tur interaktif**, atau **Atur ulang kemajuan**.
+- **Installer belum ditandatangani**; SmartScreen akan memperingatkan.
+- Perubahan wajah antar-fase halus (perbedaannya di lengkung mulut), jadi getaran
+  dan sentakan adalah penanda yang sebenarnya — keduanya belum pernah dilihat
+  berjalan di layar sungguhan.
+
+---
+
 ## 0.5.1 — 18 Oktober 2026
 
 Rilis ini membereskan hal yang paling mengganggu di 0.5.0: dua pemandu yang muncul

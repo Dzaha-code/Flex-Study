@@ -198,3 +198,53 @@ export const TOUR_ID: DialogueScript = {
     },
   },
 };
+
+/**
+ * The same walkthrough for a day with no blocks yet.
+ *
+ * The tour used to describe a focus card that only exists once a block does, so
+ * on a fresh install the first real step had nothing to point at — no ring, and
+ * a line about a button the user could not see. Only three nodes differ; the
+ * rest of the route is shared, so the two variants cannot drift apart.
+ */
+export const TOUR_ID_EMPTY: DialogueScript = {
+  ...TOUR_ID,
+  nodes: {
+    ...TOUR_ID.nodes,
+    t02: {
+      id: "t02",
+      route: "/",
+      target: "first-block",
+      text: "Hari ini masih kosong. Mulai dari tombol ini, ya.",
+      ask: "understood",
+      onUnsure: "t02b",
+      next: "q1",
+    },
+    t02b: {
+      id: "t02b",
+      route: "/",
+      target: "first-block",
+      slow: true,
+      text: "Lihat tombol ini. Satu blok dulu, jangan banyak-banyak.",
+      next: "q1",
+    },
+    q1: {
+      id: "q1",
+      route: "/",
+      target: "first-block",
+      text: "Eh, tunggu dulu!",
+      fx: ["pause"],
+      quiz: {
+        id: "quiz-first",
+        kind: "choice",
+        prompt: "Mau bikin blok pertama, tekan yang mana?",
+        options: [
+          { label: "Buat blok pertama", correct: true },
+          { label: "Buka template" },
+          { label: "Hari ini berantakan" },
+        ],
+      },
+      next: "t03",
+    },
+  },
+};

@@ -102,6 +102,19 @@ export function hintAvailable(state: DialogueState): boolean {
   return state.hinted;
 }
 
+/**
+ * Which face to draw.
+ *
+ * It is not always `state.phase`: in `sweet` the ladder is deliberately frozen,
+ * and freezing the drawing with it made a wrong answer look like nothing had
+ * happened. Sweet therefore still changes her face — once, after the second
+ * miss — and never climbs into the genuinely unsettling frames.
+ */
+export function visualPhaseFor(state: DialogueState, intensity: Intensity): Phase {
+  if (intensity === "sweet") return (state.wrongRun >= 2 ? 1 : 0) as Phase;
+  return state.phase;
+}
+
 export function correctOption(quiz: Quiz): number {
   return quiz.options.findIndex((option) => option.correct === true);
 }

@@ -175,7 +175,9 @@ function TodayContent({ date }: { date: string }) {
           title={t("today.empty.title")}
           body={t("today.empty.body")}
           action={
-            <Button onClick={() => setAddOpen(true)}>
+            // Its own target: with no blocks there is no focus card to point
+            // at, and the tour adapts to exactly this state.
+            <Button data-tour="first-block" onClick={() => setAddOpen(true)}>
               <IconPlus />
               {t("today.empty.addBlock")}
             </Button>

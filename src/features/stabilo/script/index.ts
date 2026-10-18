@@ -1,16 +1,31 @@
 import type { Lang } from "../engine/types";
 import type { DialogueScript } from "../engine/types";
-import { INTRO_EN, TOUR_EN } from "./en";
-import { INTRO_ID, TOUR_ID } from "./id";
+import { INTRO_EN, TOUR_EN, TOUR_EN_EMPTY } from "./en";
+import { INTRO_ID, TOUR_ID, TOUR_ID_EMPTY } from "./id";
 
 export type Flow = "intro" | "tour";
+
+/**
+ * What the app looks like right now, so the tour can describe the screen the
+ * user actually has. Without this she talked about a "first block" that did not
+ * exist yet, and the spotlight had no element to land on.
+ */
+export interface TourContext {
+  hasBlocks: boolean;
+}
 
 const SCRIPTS: Record<Lang, Record<Flow, DialogueScript>> = {
   id: { intro: INTRO_ID, tour: TOUR_ID },
   en: { intro: INTRO_EN, tour: TOUR_EN },
 };
 
-export function scriptFor(flow: Flow, lang: Lang): DialogueScript {
+const EMPTY_DAY: Record<Lang, DialogueScript> = {
+  id: TOUR_ID_EMPTY,
+  en: TOUR_EN_EMPTY,
+};
+
+export function scriptFor(flow: Flow, lang: Lang, context?: TourContext): DialogueScript {
+  if (flow === "tour" && context?.hasBlocks === false) return EMPTY_DAY[lang];
   return SCRIPTS[lang][flow];
 }
 

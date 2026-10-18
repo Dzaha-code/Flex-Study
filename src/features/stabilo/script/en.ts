@@ -195,3 +195,46 @@ export const TOUR_EN: DialogueScript = {
     },
   },
 };
+
+/** The no-blocks variant; see the note on TOUR_ID_EMPTY. */
+export const TOUR_EN_EMPTY: DialogueScript = {
+  ...TOUR_EN,
+  nodes: {
+    ...TOUR_EN.nodes,
+    t02: {
+      id: "t02",
+      route: "/",
+      target: "first-block",
+      text: "Today is still empty. Start with this button.",
+      ask: "understood",
+      onUnsure: "t02b",
+      next: "q1",
+    },
+    t02b: {
+      id: "t02b",
+      route: "/",
+      target: "first-block",
+      slow: true,
+      text: "This button. One block first, not five.",
+      next: "q1",
+    },
+    q1: {
+      id: "q1",
+      route: "/",
+      target: "first-block",
+      text: "Wait a second!",
+      fx: ["pause"],
+      quiz: {
+        id: "quiz-first",
+        kind: "choice",
+        prompt: "To make your first block, which one do you press?",
+        options: [
+          { label: "Create the first block", correct: true },
+          { label: "Open templates" },
+          { label: "Today fell apart" },
+        ],
+      },
+      next: "t03",
+    },
+  },
+};

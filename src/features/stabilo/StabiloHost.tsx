@@ -5,8 +5,10 @@ import "./stabilo.css";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "@/data/store";
+import { todayISO } from "@/domain";
 import { useIntroHolding } from "@/features/intro/intro-status";
 import { useI18n } from "@/i18n";
+import { cn } from "@/lib/utils";
 import { startAmbience, stopAmbience, voiceBlip } from "./ambience";
 import { prefetchPhaseSprites, probeCoreSprites, type SpriteKey } from "./assets";
 import { playClip } from "./audio";
@@ -17,6 +19,7 @@ import {
   judge,
   nodeAt,
   startDialogue,
+  visualPhaseFor,
   type DialogueState,
 } from "./engine/dialogue";
 import type { EffectId } from "./engine/types";
@@ -25,7 +28,7 @@ import { TYPE_MS, TYPE_MS_SLOW, speak, speakInstant, type Mouth } from "./engine
 import { STABILO_PLACEHOLDER } from "./flags";
 import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
 import { closeTour } from "@/features/tour/tour-store";
-import { REACTIONS, scriptFor, wrongLine, type Flow } from "./script";
+import { REACTIONS, scriptFor, wrongLine, type Flow, type TourContext } from "./script";
 import { closeStabilo, useStabiloHost } from "./stabilo-store";
 import { DialogueBox } from "./ui/DialogueBox";
 import { Sprite } from "./ui/Sprite";
@@ -142,7 +145,13 @@ export function StabiloHost() {
       showStabilo("intro");
       return;
     }
-    if (onboardingCompleted && prefs.introSeen && !prefs.tourDone) {
+    /**
+     * The tour only needs onboarding to be finished, not the introduction to
+     * have been seen. Requiring `introSeen` meant that a profile upgraded from
+     * 0.4.x — onboarding done, no character yet — fell through both branches and
+     * never saw a tour unless it was started by hand.
+     */
+    if (onboardingCompleted && !prefs.tourDone) {
       autoOpened.current = true;
       showStabilo("tour");
     }
@@ -161,7 +170,17 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const updateStabilo = useAppStore((state) => state.updateStabilo);
   const updateSettings = useAppStore((state) => state.updateSettings);
 
-  const script = useMemo(() => scriptFor(flow, locale), [flow, locale]);
+  /**
+   * Read once, when the session opens. The tour is a script, not a live view —
+   * deciding this halfway through would rewrite a line the user is reading.
+   */
+  const [tourContext] = useState<TourContext>(() => ({
+    hasBlocks: useAppStore
+      .getState()
+      .instances.some((instance) => instance.date === todayISO(Date.now())),
+  }));
+
+  const script = useMemo(() => scriptFor(flow, locale, tourContext), [flow, locale, tourContext]);
   const reactions = REACTIONS[locale];
 
   const [state, setState] = useState<DialogueState>(() => {
@@ -454,7 +473,21 @@ function StabiloSession({ flow }: { flow: Flow }) {
    */
   if (!node) return null;
 
-  const sprite: SpriteKey = PHASE_SPRITE[state.phase] as SpriteKey;
+  const visualPhase = visualPhaseFor(state, prefs.intensity);
+  const sprite: SpriteKey = PHASE_SPRITE[visualPhase] as SpriteKey;
+  /** A one-shot flinch on every wrong answer, in both temperaments. */
+  const recoil = feedback !== null && state.wrongRun > 0;
+  /**
+   * The ladder is supposed to be visible, not just readable in the gauge. From
+   * ph2 she keeps trembling; ph3 trembles harder and faster.
+   */
+  const trembleClass =
+    prefs.fx && state.phase >= 2
+      ? state.phase === 3
+        ? "stabilo-tremble-hard"
+        : "stabilo-tremble-soft"
+      : null;
+
   const phaseFx: EffectId[] =
     state.phase > 0 ? [`tremble${state.phase}` as EffectId, "vignette"] : [];
   const fx: EffectId[] = [...(prefs.fx ? (node.fx ?? []) : []), ...(prefs.fx ? phaseFx : [])];
@@ -567,13 +600,20 @@ function StabiloSession({ flow }: { flow: Flow }) {
               1670×1670 canvas, so a tall, narrow slot would let the image spill
               sideways over the dialogue card. */}
           <div className="pointer-events-none hidden w-[170px] shrink-0 sm:block lg:w-[215px]">
-            <div className="stabilo-idle h-[170px] w-full lg:h-[215px]">
-              <Sprite
-                sprite={sprite}
-                mouth={mouth}
-                placeholder={STABILO_PLACEHOLDER}
-                onMissing={() => finish()}
-              />
+            {/* Keyed by the wrong-answer count so the flinch replays on every
+                miss; a plain class would only animate the first time. */}
+            <div
+              key={`${sprite}-${state.nodeId}-${state.wrongRun}`}
+              className={cn("h-[170px] w-full lg:h-[215px]", recoil && "stabilo-recoil")}
+            >
+              <div className={cn("h-full w-full", trembleClass ?? "stabilo-idle")}>
+                <Sprite
+                  sprite={sprite}
+                  mouth={mouth}
+                  placeholder={STABILO_PLACEHOLDER}
+                  onMissing={() => finish()}
+                />
+              </div>
             </div>
           </div>
         </div>

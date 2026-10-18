@@ -414,6 +414,18 @@ Aslinya hanya `stabilo_flat.png` yang diekspor dengan transparansi; sepuluh sisa
 
 **Kategori di dalam form blok.** `features/plan/category-picker.tsx` menambahkan pembuatan kategori langsung dari form blok (nama + lambang, target awal 5 jam), dan `saveCategory` sekarang mengembalikan id supaya kategori baru langsung terpilih. Saat panel itu dibuka, `StabiloAside` tampil di dalam sheet — bentuk kecil tanpa scrim, bukan dialog penuh — dengan tautan "Ambil dari nama blok". `BlockListEditor` tidak lagi menonaktifkan "Blok baru" ketika daftar kategori kosong.
 
+### 11.9 Rilis 0.5.2 — tur yang tahu keadaan layar
+
+**Kenapa tur tidak muncul sendiri.** Syaratnya dulu `onboardingCompleted && introSeen && !tourDone`. Profil yang di-upgrade dari 0.4.x sudah `onboardingCompleted` tetapi belum pernah melihat perkenalan, jadi `introSeen` tetap `false` — dan kedua cabang auto-open tidak terpenuhi. Tur hanya bisa dibuka manual. Sekarang cabang tur cukup `onboardingCompleted && !tourDone`; perkenalan tetap hanya untuk pemasangan baru.
+
+**Tur membaca keadaan, bukan mengasumsikan.** `scriptFor()` menerima `TourContext { hasBlocks }` dan memilih `TOUR_*_EMPTY` bila hari ini belum punya blok. Hanya tiga simpul yang berbeda (`t02`, `t02b`, `q1`): targetnya `[data-tour="first-block"]` — tombol **Buat blok pertama** di empty state, yang sebelumnya tidak punya penanda — dan kuisnya menanyakan tombol itu, bukan tombol Mulai fokus yang belum ada. Sebelumnya langkah pertama menyorot `[data-tour="focus"]` yang hanya dirender `FocusCard`; tanpa blok, sorotan tidak punya elemen dan layar hanya jadi gelap.
+
+**Ekspresi.** `visualPhaseFor()` di `engine/dialogue.ts` memisahkan wajah dari tangga fase. Di `sweet` tangga memang sengaja beku, dan itu membuat jawaban salah tampak tidak bereaksi sama sekali; sekarang wajahnya tetap berubah satu langkah setelah salah kedua, tanpa pernah masuk frame yang menyeramkan. Di `spooky` wajah mengikuti `state.phase` seperti sebelumnya.
+
+**Getaran.** `stabilo-recoil` adalah sentakan satu kali pada setiap jawaban salah (berlaku di kedua temperamen, karena animasi kelas hanya jalan sekali per mount, wadah sprite di-*key* dengan `wrongRun`). `stabilo-tremble-soft` / `stabilo-tremble-hard` menahan getaran selama fase 2 / 3. Semuanya dimatikan `prefers-reduced-motion` dan preferensi `fx`.
+
+**Catatan aset.** Perbedaan `flat` → `ph1` → `ph3` ada di lengkung mulut, sangat halus pada tinggi 170–215 px. Karena itu getaran dan sentakan bukan hiasan: itulah yang membuat perubahan fase terbaca.
+
 ---
 
 ## 12. Pekerjaan terbuka (belum dikerjakan, sudah diketahui)

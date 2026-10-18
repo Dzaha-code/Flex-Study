@@ -1,16 +1,18 @@
 ﻿import { describe, expect, it } from "vitest";
 import {
   GAUGE_FOR_PHASE,
+  PHASE_SPRITE,
   advance,
   correctOption,
   judge,
   startDialogue,
   validateScript,
+  visualPhaseFor,
 } from "@/features/stabilo/engine/dialogue";
 import { interpolate, nameParam } from "@/features/stabilo/engine/text";
 import { lipFrame, pauseFor } from "@/features/stabilo/engine/typewriter";
-import { INTRO_EN, TOUR_EN } from "@/features/stabilo/script/en";
-import { INTRO_ID, TOUR_ID } from "@/features/stabilo/script/id";
+import { INTRO_EN, TOUR_EN, TOUR_EN_EMPTY } from "@/features/stabilo/script/en";
+import { INTRO_ID, TOUR_ID, TOUR_ID_EMPTY } from "@/features/stabilo/script/id";
 import type { DialogueState } from "@/features/stabilo/engine/dialogue";
 import type { DialogueScript } from "@/features/stabilo/engine/types";
 
@@ -27,6 +29,8 @@ const SCRIPTS: Array<[string, DialogueScript]> = [
   ["intro.en", INTRO_EN],
   ["tour.id", TOUR_ID],
   ["tour.en", TOUR_EN],
+  ["tour.id.empty", TOUR_ID_EMPTY],
+  ["tour.en.empty", TOUR_EN_EMPTY],
 ];
 
 /** Targets that actually carry `data-tour` in the app. */
@@ -50,6 +54,7 @@ const TOUR_TARGETS = new Set([
   "guide-replay",
   "guide-quick",
   "guide-glossary",
+  "first-block",
 ]);
 
 describe("stabilo scripts", () => {
@@ -60,6 +65,7 @@ describe("stabilo scripts", () => {
   it("uses the same node ids in both languages", () => {
     expect(Object.keys(INTRO_ID.nodes).sort()).toEqual(Object.keys(INTRO_EN.nodes).sort());
     expect(Object.keys(TOUR_ID.nodes).sort()).toEqual(Object.keys(TOUR_EN.nodes).sort());
+    expect(Object.keys(TOUR_ID_EMPTY.nodes).sort()).toEqual(Object.keys(TOUR_EN_EMPTY.nodes).sort());
   });
 
   it("only points at attributes that exist in the app", () => {
@@ -215,6 +221,23 @@ describe("interpolation", () => {
   it("builds a greeting that survives an empty name", () => {
     expect(nameParam("Rani")).toBe(", Rani");
     expect(nameParam("   ")).toBe("");
+  });
+});
+
+describe("expression", () => {
+  it("follows the ladder in spooky mode", () => {
+    const base = startDialogue(TOUR_ID);
+    expect(visualPhaseFor({ ...base, phase: 0 }, "spooky")).toBe(0);
+    expect(visualPhaseFor({ ...base, phase: 2 }, "spooky")).toBe(2);
+    expect(visualPhaseFor({ ...base, phase: 3 }, "spooky")).toBe(3);
+  });
+
+  it("still reacts in sweet mode, but never climbs past the first step", () => {
+    const base = startDialogue(TOUR_ID);
+    expect(visualPhaseFor({ ...base, wrongRun: 0 }, "sweet")).toBe(0);
+    expect(visualPhaseFor({ ...base, wrongRun: 1 }, "sweet")).toBe(0);
+    expect(visualPhaseFor({ ...base, wrongRun: 2 }, "sweet")).toBe(1);
+    expect(visualPhaseFor({ ...base, wrongRun: 9 }, "sweet")).toBe(1);
   });
 });
 
