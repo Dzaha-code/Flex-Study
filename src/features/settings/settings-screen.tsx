@@ -25,6 +25,7 @@ import {
 } from "@/data/workspace-io";
 import Link from "next/link";
 import type {
+  AnimationPreference,
   ContentWidth,
   IntroPreference,
   Locale,
@@ -32,7 +33,8 @@ import type {
   ThemePreference,
   WeekStart,
 } from "@/domain/types";
-import { INTRO_FORCE_KEY } from "@/features/intro/intro-mode";
+import { INTRO_FORCE_KEY, INTRO_SEEN_KEY } from "@/features/intro/intro-mode";
+import { introDebugEnabled, setIntroDebug } from "@/features/intro/intro-log";
 import { STABILO_FULL_HORROR } from "@/features/stabilo/flags";
 import { offeredIntensities, type StabiloPrefs } from "@/features/stabilo/prefs";
 import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
@@ -74,6 +76,7 @@ export function SettingsScreen() {
    */
   const reducesMotion = useReducedMotion();
   const maximised = useWindowMaximised();
+  const [introDebug, setIntroDebugState] = useState(introDebugEnabled);
 
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
@@ -102,6 +105,20 @@ export function SettingsScreen() {
       /* Storage blocked: the reload is still harmless. */
     }
     window.location.reload();
+  }
+
+  /**
+   * Forgets that the intro was seen, without touching a single block: a tester
+   * should never have to reset the whole app to watch the opening again.
+   */
+  function resetIntro() {
+    try {
+      localStorage.removeItem(INTRO_SEEN_KEY);
+      localStorage.removeItem(INTRO_FORCE_KEY);
+    } catch {
+      /* Storage blocked: there is nothing to forget. */
+    }
+    toastManager.add({ title: t("settings.resetIntroDone"), timeout: 3_000 });
   }
 
   /** Validate first, then show what the file holds before replacing anything. */
@@ -166,8 +183,47 @@ export function SettingsScreen() {
                 <IconPlay size={16} />
                 {t("settings.replayIntro")}
               </Button>
+              <Button size="sm" variant="ghost" onClick={resetIntro}>
+                {t("settings.resetIntro")}
+              </Button>
               <span className="text-label text-mute">{t("settings.replayIntroHint")}</span>
             </div>
+
+            {/* The diagnosis switch. Off by default; it records what the next
+                launch actually did, so an affected machine can report facts
+                instead of "it stopped". */}
+            <SwitchRow
+              label={t("settings.introDebug")}
+              hint={t("settings.introDebugHint")}
+              checked={introDebug}
+              onChange={(next) => {
+                setIntroDebug(next);
+                setIntroDebugState(next);
+              }}
+            />
+          </div>
+
+          {/* One motion control for the whole app. The intro, Stabilo, and every
+              transition read the same answer, which is why this lives here and
+              not as a switch in each feature's panel. */}
+          <div className="flex flex-col gap-1.5">
+            <SegmentedControl
+              legend={t("settings.animation")}
+              name="animation"
+              value={settings.animation}
+              onChange={(next) =>
+                void updateSettings({ animation: next as AnimationPreference })
+              }
+              options={[
+                { value: "system", label: t("settings.animation.system") },
+                { value: "full", label: t("settings.animation.full") },
+                { value: "reduced", label: t("settings.animation.reduced") },
+              ]}
+            />
+            <p className="measure text-caption text-mute">{t("settings.animationHint")}</p>
+            {reducesMotion ? (
+              <p className="measure text-caption text-mute">{t("settings.animationSystemReduce")}</p>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -242,6 +298,9 @@ export function SettingsScreen() {
       <Panel data-tour="settings-stabilo">
         <PanelHeader title={t("settings.stabilo")} description={t("settings.stabilo.hint")} />
         <div className="flex flex-col gap-4">
+          {/* 3.4: say plainly what she is now, so nobody waits for a companion
+              that only exists in the roadmap. */}
+          <p className="measure text-caption text-ink-muted">{t("settings.stabilo.role")}</p>
           <SwitchRow
             label={t("settings.stabilo.enabled")}
             hint={t("settings.stabilo.enabledHint")}
@@ -267,24 +326,18 @@ export function SettingsScreen() {
             onChange={(next) => void updateStabilo({ fx: next })}
           />
 
-          {/* The answer to "why is she frozen on this laptop". The system asked
-              for reduced motion — sometimes without anyone choosing it — and
-              this is the only place that can say so and the only way to
-              override it. Off by default, so the OS preference still wins. */}
-          <div className="flex flex-col gap-1.5">
-            <SwitchRow
-              label={t("settings.stabilo.motion")}
-              hint={t("settings.stabilo.motionHint")}
-              checked={stabilo.forceMotion}
-              onChange={(next) => void updateStabilo({ forceMotion: next })}
-            />
-            {reducesMotion ? (
-              <p className="measure text-caption text-ink-muted">
-                {stabilo.forceMotion
-                  ? t("settings.stabilo.motionForced")
-                  : t("settings.stabilo.motionBlocked")}
-              </p>
-            ) : null}
+          {/* Motion is one decision, so it has one control: Tampilan → Animasi.
+              This panel only explains what that means for her, and says when the
+              system is the reason she is still — the question that started it. */}
+          <div className="flex flex-col gap-1">
+            <p className="text-label font-medium text-ink-muted">
+              {t("settings.stabilo.motion")}
+            </p>
+            <p className="measure text-caption text-ink-muted">
+              {reducesMotion
+                ? t("settings.stabilo.motionBlocked")
+                : t("settings.stabilo.motionHint")}
+            </p>
           </div>
 
           <SegmentedControl

@@ -2,6 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ButtonHTMLAttributes } from "react";
+import { rippleFromPointer } from "@/lib/ink";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,7 +10,9 @@ import { cn } from "@/lib/utils";
  * carried by radius and surface, never by a rainbow of accents.
  */
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-control border font-medium transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-55",
+  // `ink-ripple-host` (globals.css): the press ripple is clipped to the button
+  // and anchored to it — no wrapper elements, no layout change.
+  "ink-ripple-host inline-flex items-center justify-center gap-2 rounded-control border font-medium transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-55",
   {
     variants: {
       variant: {
@@ -44,12 +47,21 @@ export function Button({
   size,
   block,
   type = "button",
+  onPointerDown,
   ...props
 }: ButtonProps) {
   return (
     <button
       type={type}
       className={cn(buttonVariants({ variant, size, block }), className)}
+      // Riak (DESIGN.md v3 §4): lime on the one primary, wash elsewhere.
+      // Spread last, so a caller's own `data-ink-ripple="off"` wins — the
+      // focus card's start button already has its own lime spread (§6).
+      data-ink-ripple={(variant ?? "primary") === "primary" ? "primary" : undefined}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        rippleFromPointer(event);
+      }}
       {...props}
     />
   );
@@ -61,12 +73,23 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   variant?: VariantProps<typeof buttonVariants>["variant"];
 }
 
-export function IconButton({ label, className, variant = "ghost", ...props }: IconButtonProps) {
+export function IconButton({
+  label,
+  className,
+  variant = "ghost",
+  onPointerDown,
+  ...props
+}: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
+      data-ink-ripple={variant === "primary" ? "primary" : undefined}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        rippleFromPointer(event);
+      }}
       className={cn(
         buttonVariants({ variant, size: "md" }),
         // 44 × 44 minimum touch target. Nothing else overrides this.

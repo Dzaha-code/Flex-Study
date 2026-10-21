@@ -166,6 +166,34 @@ describe("workspace backup", () => {
     expect(result.workspace.reflections[0].favorite).toBe(false);
   });
 
+  it("imports a block note written before noteUpdatedAt existed", () => {
+    const workspace = makeWorkspace();
+    workspace.instances[0].note = "Dua bab selesai.";
+    // Exactly what an export from the previous release carries: the text,
+    // without the stamp that later versions add next to it.
+    const legacy = { ...workspace.instances[0] };
+    delete legacy.noteUpdatedAt;
+
+    const result = parseWorkspaceImport(wrap({ ...workspace, instances: [legacy] }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.workspace.instances[0].note).toBe("Dua bab selesai.");
+    expect(result.workspace.instances[0].noteUpdatedAt).toBeUndefined();
+  });
+
+  it("keeps noteUpdatedAt through a round trip", () => {
+    const workspace = makeWorkspace();
+    workspace.instances[0].note = "Rencana cadangan.";
+    workspace.instances[0].noteUpdatedAt = "2026-10-14T09:05:00.000Z";
+
+    const result = parseWorkspaceImport(serializeWorkspace(workspace, Date.now()));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.workspace.instances[0].noteUpdatedAt).toBe("2026-10-14T09:05:00.000Z");
+  });
+
   it("rejects text that is not JSON", () => {
     const result = parseWorkspaceImport("{ not json");
     expect(result.ok).toBe(false);

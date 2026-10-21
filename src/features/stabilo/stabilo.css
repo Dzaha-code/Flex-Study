@@ -272,3 +272,29 @@
     transition: none;
   }
 }
+
+/* The explicit "kurangi" from Settings, which has to work on a machine whose
+ * system never asked. Same list as above, deliberately: if one gains a class,
+ * the other must too, or the two ways of asking for less motion disagree. */
+:root[data-motion="reduced"] .stabilo-char,
+:root[data-motion="reduced"] .stabilo-banner,
+:root[data-motion="reduced"] .stabilo-idle,
+:root[data-motion="reduced"] .stabilo-recoil,
+:root[data-motion="reduced"] .stabilo-tremble-soft,
+:root[data-motion="reduced"] .stabilo-tremble-hard,
+:root[data-motion="reduced"] .stabilo-card-in,
+:root[data-motion="reduced"] .stabilo-sprite-in,
+:root[data-motion="reduced"] .stabilo-option-in,
+:root[data-motion="reduced"] .stabilo-pop-in,
+:root[data-motion="reduced"] .stabilo-caret,
+:root[data-motion="reduced"] .stabilo-speaking-dot {
+  animation: none !important;
+}
+
+:root[data-motion="reduced"] .stabilo-sparkle {
+  display: none;
+}
+
+:root[data-motion="reduced"] .stabilo-vignette {
+  transition: none;
+}

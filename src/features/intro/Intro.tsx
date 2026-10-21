@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { COPY, type IntroLang } from "./copy";
+import { readMirroredAnimation } from "@/lib/preferences";
+import { resolveReducedMotion, systemPrefersReducedMotion } from "@/lib/motion";
+import {
+  introDebugEnabled,
+  introLog,
+  logIntro,
+  resetIntroLog,
+  subscribeIntroDebug,
+} from "./intro-log";
 import "./intro.css";
 
 /* -------------------------------------------------------------------------
@@ -63,6 +72,9 @@ const ARCS = buildArcs();
 /** Never wait for a font forever; a timeout is better than a stuck screen. */
 const FONT_TIMEOUT_MS = 800;
 
+/** Nothing changes the answer after boot, so there is nothing to subscribe to. */
+const subscribeNothing = () => () => {};
+
 function fontsReady(): Promise<unknown> {
   const ready = document.fonts ? document.fonts.ready : Promise.resolve();
   return Promise.race([ready, new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT_MS))]);
@@ -79,7 +91,23 @@ interface IntroProps {
 
 export function Intro({ active, onDone, appRef, lang }: IntroProps) {
   const root = useRef<HTMLDivElement>(null);
+  /** Set inside the timeline closure; the skip button lives outside it. */
+  const skipRef = useRef<((source: string) => void) | null>(null);
   const copy = COPY[lang];
+
+  /**
+   * The same three-way decision the stylesheets read from `<html>`, resolved
+   * from the boot mirror. `useSyncExternalStore` is what keeps this honest
+   * without state-in-an-effect: the server snapshot is `false` and the client
+   * one is the real answer, so there is no hydration mismatch, no cascading
+   * render, and the value is already settled before the gate says `active`.
+   */
+  const reduced = useSyncExternalStore(
+    subscribeNothing,
+    () =>
+      resolveReducedMotion(readMirroredAnimation() ?? "system", systemPrefersReducedMotion()),
+    () => false,
+  );
 
   useEffect(() => {
     if (!active) return;
@@ -88,14 +116,24 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
     let context: { revert: () => void } | undefined;
     let detach: (() => void) | undefined;
 
+    logIntro("start", `reduce=${reduced}`);
+    resetIntroLog();
+
     void (async () => {
       // GSAP is imported dynamically: a normal launch never downloads it.
       const [module] = await Promise.all([import("gsap"), fontsReady()]);
       const { gsap } = module;
+      logIntro("chunk+fonts");
 
       const rootEl = root.current;
       const app = appRef.current;
-      if (dead || !rootEl || !app) return;
+      if (dead || !rootEl || !app) {
+        // The detail matters: "cleaned up" is React StrictMode's double effect
+        // or an unmount while GSAP loaded — normal. "No root or app element"
+        // means the intro genuinely had nothing to animate.
+        logIntro("abort", dead ? "cleaned up while GSAP loaded" : "no root or app element");
+        return;
+      }
 
       context = gsap.context(() => {
         const q = gsap.utils.selector(rootEl);
@@ -103,7 +141,6 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
         const ring = q(".ring")[0];
         const dot = q(".dot")[0] as HTMLElement;
         const lime = q(".lime")[0] as HTMLElement;
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
         // Set the initial state through GSAP so every property it will animate
         // is under GSAP's control from the first frame.
@@ -129,7 +166,8 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
         const fullStopX = slot.left + slot.width / 2 - cx;
 
         // ---- Reduced motion: a static lockup, then a plain fade (§9) ----
-        if (reduce) {
+        if (reduced) {
+          logIntro("branch:static", "reduced motion — nothing moves by design");
           gsap.set(arcs, { opacity: 0 });
           gsap.set(q(".ch"), { yPercent: 0 });
           gsap.set(q(".ln > span"), { yPercent: 0 });
@@ -142,6 +180,8 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
           gsap.to(app, { opacity: 1, duration: 0.35, delay: 1.2, onComplete: onDone });
           return;
         }
+
+        logIntro("branch:full");
 
         // ---- The reveal: two circles. The stabilo leads, the app follows
         // 0.09 s later, so the lime reads as a thin ring at the edge (§5).
@@ -168,6 +208,7 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
           onComplete: () => {
             finished = true;
             app.style.clipPath = "";
+            logIntro("done");
             onDone();
           },
         });
@@ -238,11 +279,20 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
             "exit+=0.09",
           );
 
-        /** Any pointer or key skips to the reveal, never to a half-drawn state. */
-        const skip = () => {
+        /**
+         * Skipping is a decision, so it only answers deliberate controls: the
+         * visible button, Esc, Space or Enter.
+         *
+         * A `pointerdown` anywhere on the backdrop used to skip as well, which
+         * meant clicking the window to focus it (or a stray tap) cut the opening
+         * off at whatever frame it had reached — indistinguishable from the
+         * animation "stopping suddenly".
+         */
+        const skip = (source: string) => {
           if (finished || scrubbing) return;
           const exitAt = timeline.labels.exit ?? 0;
           if (timeline.time() >= exitAt - 0.2) return;
+          logIntro("skip", source);
           scrubbing = true;
           timeline.tweenTo("exit", {
             duration: 0.45,
@@ -252,19 +302,34 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
         };
 
         const onKey = (event: KeyboardEvent) => {
-          if (event.key === "Escape" || event.key === " " || event.key === "Enter") skip();
+          if (event.key === "Escape" || event.key === " " || event.key === "Enter") {
+            skip(`key:${event.key}`);
+          }
         };
 
-        rootEl.addEventListener("pointerdown", skip);
+        skipRef.current = skip;
         window.addEventListener("keydown", onKey);
         detach = () => {
-          rootEl.removeEventListener("pointerdown", skip);
+          skipRef.current = null;
           window.removeEventListener("keydown", onKey);
         };
       }, rootEl);
     })()
-      .catch(() => {
-        // If GSAP cannot load or the setup throws, never hold the user (§9).
+      .catch((error: unknown) => {
+        /**
+         * Never swallowed. A catch that only calls `onDone` turns every failure
+         * into the same symptom — the intro stopping at an arbitrary frame —
+         * with nothing left to tell the causes apart. The app is revealed fully
+         * instead of being left half-masked.
+         */
+        const message = error instanceof Error ? error.message : String(error);
+        logIntro("error", message);
+        console.error("[flexstudy] intro failed", error);
+        const app = appRef.current;
+        if (app) {
+          app.style.clipPath = "";
+          app.style.opacity = "";
+        }
         if (!dead) onDone();
       });
 
@@ -273,7 +338,7 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
       detach?.();
       context?.revert();
     };
-  }, [active, appRef, onDone]);
+  }, [active, appRef, onDone, reduced]);
 
   return (
     <div ref={root} className="intro" role="dialog" aria-modal="true" aria-label={copy.dialog}>
@@ -326,10 +391,47 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
 
       <i className="dot" aria-hidden="true" />
       <p className="ft">{copy.note}</p>
-      <button type="button" className="skip">
+      {/* The still branch explains itself, so it cannot read as a broken build. */}
+      {reduced ? <p className="intro-reduced">{copy.reduced}</p> : null}
+      <button type="button" className="skip" onClick={() => skipRef.current?.("button")}>
         {copy.skip}
       </button>
       <div className="lime" aria-hidden="true" />
+      <IntroDebug />
     </div>
+  );
+}
+
+/**
+ * The diagnosis log, on screen, only when `fs.intro.debug` or `?introDebug=1` is
+ * set. It polls because the timeline writes from inside a GSAP closure, and a
+ * tick is cheaper than threading state through it — the release build has no
+ * devtools, so this is the only way to read the log on the affected machine.
+ */
+function IntroDebug() {
+  // The flag is read through a store hook, never as state set inside an effect:
+  // the server snapshot is always `false`, so the prerendered HTML cannot know
+  // about a query param or localStorage, and a client-side `true` would mismatch
+  // hydration — the exact class of bug this log exists to catch.
+  const enabled = useSyncExternalStore(subscribeIntroDebug, introDebugEnabled, () => false);
+  const [entries, setEntries] = useState(introLog);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const timer = setInterval(() => setEntries(introLog()), 400);
+    return () => clearInterval(timer);
+  }, [enabled]);
+
+  if (!enabled) return null;
+
+  return (
+    <pre className="intro-debug" aria-hidden="true">
+      {entries
+        .map(
+          (entry) =>
+            `+${Math.round(entry.at)} ${entry.event}${entry.detail ? ` — ${entry.detail}` : ""}`,
+        )
+        .join("\n")}
+    </pre>
   );
 }

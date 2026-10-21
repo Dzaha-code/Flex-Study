@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { EffectId } from "../engine/types";
+import { controlsFor } from "./controls";
 import { Gauge } from "./Gauge";
 
 const GLITCH_GLYPHS = ["▒", "░", "?", "#"];
@@ -98,6 +99,18 @@ export interface DialogueBoxProps {
     skip: string;
     skipQuiz: string;
     next: string;
+    /** The corner close button, and the confirmation it opens. */
+    close: string;
+    exitTitle: string;
+    exitYes: string;
+    exitNo: string;
+    /** "Pick one" — the pen asking for an answer instead of leaving it silent. */
+    pickOne: string;
+    confused: string;
+    confusedBody: string;
+    /** The keyboard line, so the controls are never only discoverable by luck. */
+    keys: string;
+    nudge: string;
   };
 }
 
@@ -132,6 +145,16 @@ export function DialogueBox({
 }: DialogueBoxProps) {
   const visible = text.slice(0, typed);
   const glitched = useGlitched(visible, done && fx.includes("glitch"));
+
+  /** Two-step exit: closing the tour by accident is worse than one extra tap. */
+  const [confirmExit, setConfirmExit] = useState(false);
+  const [confused, setConfused] = useState(false);
+  /**
+   * Which line was on screen when the reader went quiet. Storing the text rather
+   * than a boolean means a new line resets the nudge with no state write in an
+   * effect, and a nudge can never land on a line it was not about.
+   */
+  const [idleFor, setIdleFor] = useState<string | null>(null);
   const amplitude = fx.includes("tremble3")
     ? 3
     : fx.includes("tremble2")
@@ -141,6 +164,32 @@ export function DialogueBox({
         : 0;
 
   const interactive = done && !feedback;
+
+  /**
+   * What this node must show, decided in one tested place. The unit test walks
+   * every node of every script through this same function, so "no dead ends" is
+   * a property of what renders here, not of a parallel model of it.
+   */
+  const controls = controlsFor({
+    quiz: Boolean(quiz),
+    ask,
+    nameInput: Boolean(nameInput),
+    intensityPick: Boolean(intensityPick),
+  });
+
+  /**
+   * Ten seconds of silence on a node that is waiting for an answer gets one
+   * quiet reminder. Not a new line, not a louder one — the patience ladder is
+   * untouched, because being slow is not a mistake.
+   */
+  useEffect(() => {
+    if (!interactive) return;
+    const timer = window.setTimeout(() => setIdleFor(text), 10_000);
+    return () => window.clearTimeout(timer);
+  }, [interactive, text]);
+
+  const awaitingAnswer = Boolean(quiz || ask || nameInput || intensityPick);
+  const nudging = interactive && awaitingAnswer && idleFor === text;
 
   return (
     <div
@@ -160,16 +209,46 @@ export function DialogueBox({
           {done ? null : <span className="stabilo-speaking-dot" aria-hidden="true" />}
           {gauge !== null ? <Gauge value={gauge} label={gaugeLabel} /> : null}
         </div>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSkip();
-          }}
-          className="text-caption text-ink-muted underline hover:text-ink"
-        >
-          {labels.skip}
-        </button>
+        {/* One place to leave, and it asks first: the reviewer's "no Oke/Close"
+            was partly this — the way out existed but read as a stray word. */}
+        {confirmExit ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-caption text-ink-muted">{labels.exitTitle}</span>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSkip();
+              }}
+              className="rounded-ctl border border-line-strong px-2 py-1 text-caption text-ink"
+            >
+              {labels.exitYes}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setConfirmExit(false);
+              }}
+              className="rounded-ctl px-2 py-1 text-caption text-ink-muted hover:text-ink"
+            >
+              {labels.exitNo}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            aria-label={labels.close}
+            onClick={(event) => {
+              event.stopPropagation();
+              setConfirmExit(true);
+            }}
+            className="flex items-center gap-1 rounded-ctl px-1.5 py-1 text-caption text-ink-muted hover:text-ink"
+          >
+            <span aria-hidden="true">✕</span>
+            {labels.close}
+          </button>
+        )}
       </div>
 
       {banner ? (
@@ -195,9 +274,11 @@ export function DialogueBox({
         </p>
       ) : null}
 
-      {quiz ? (
+      {quiz && controls.options ? (
         <div className="flex flex-col gap-2">
           {quiz.prompt ? <p className="text-meta text-ink-muted">{quiz.prompt}</p> : null}
+          {/* A question that does not say it wants an answer reads as broken. */}
+          <p className="text-caption text-ink-muted">{confused ? labels.confusedBody : labels.pickOne}</p>
           <ul className="flex flex-col gap-1.5">
             {quiz.options.map((option, index) => (
               <li
@@ -231,20 +312,34 @@ export function DialogueBox({
         </div>
       ) : null}
 
-      {quiz?.hinted ? (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSkipQuiz();
-          }}
-          className="self-start text-caption text-ink-muted underline hover:text-ink"
-        >
-          {labels.skipQuiz}
-        </button>
+      {/* Always offered, not only after the engine decides to hint: a quiz whose
+          only exit appears after two wrong answers has no exit. */}
+      {quiz && controls.options ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setConfused((value) => !value);
+            }}
+            className="text-caption text-ink-muted underline hover:text-ink"
+          >
+            {labels.confused}
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSkipQuiz();
+            }}
+            className="text-caption text-ink-muted underline hover:text-ink"
+          >
+            {labels.skipQuiz}
+          </button>
+        </div>
       ) : null}
 
-      {ask && !quiz && !feedback ? (
+      {controls.ask && !feedback ? (
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -327,7 +422,7 @@ export function DialogueBox({
         </div>
       ) : null}
 
-      {!quiz && !ask && !nameInput && !intensityPick ? (
+      {controls.next ? (
         <button
           type="button"
           disabled={!interactive}
@@ -338,8 +433,17 @@ export function DialogueBox({
           className="self-end h-9 rounded-control border border-line-strong px-3 text-caption text-ink-muted hover:text-ink disabled:opacity-40"
         >
           {labels.next}
+          <span aria-hidden="true" className="ml-1 text-[10px]">
+            ▼
+          </span>
         </button>
       ) : null}
+
+      {nudging ? <p className="text-caption text-ink-muted">{labels.nudge}</p> : null}
+
+      {/* Spelled out rather than hidden behind the card: the click target and
+          the keys do the same thing, and saying so costs one line. */}
+      {done ? <p className="text-caption text-ink-muted/80">{labels.keys}</p> : null}
     </div>
   );
 }

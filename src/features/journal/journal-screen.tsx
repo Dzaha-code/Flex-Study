@@ -4,23 +4,36 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { Sheet } from "@/components/ui/dialog";
-import { TextInput } from "@/components/ui/field";
+import { SelectField, TextInput } from "@/components/ui/field";
 import { IconCaretDown, IconDownload, IconPlus, IconStar, IconStarFilled } from "@/components/ui/icons";
-import { Chip, EmptyState, Panel, PanelHeader, SegmentedControl } from "@/components/ui/surface";
+import {
+  CategoryTag,
+  Chip,
+  EmptyState,
+  Panel,
+  PanelHeader,
+  SegmentedControl,
+} from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import {
   archiveByYearMonth,
   countWords,
+  groupNotesByYearMonth,
   hasContent,
   LEARNING_SLOTS,
   normalizeLearnings,
+  noteMatches,
+  notePreview,
   promptIdForDate,
   reflectionMatches,
   reflectionPreview,
   todayISO,
 } from "@/domain";
-import type { Reflection } from "@/domain/types";
+import type { BlockInstance, Reflection } from "@/domain/types";
+import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
+import { NoteDetailSheet } from "@/features/today/note-detail-sheet";
+import { NoteSheet } from "@/features/today/timeline";
 import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile } from "@/lib/download";
 import { renderMarkdown } from "@/lib/markdown";
@@ -232,18 +245,213 @@ function JournalDetailSheet({
 
 type HistoryFilter = "all" | "favorite";
 
+/** Which of the screen's two readings is on show. */
+type JournalTab = "entries" | "notes";
+
+/**
+ * Block notes, readable without reopening a single timer.
+ *
+ * The reviewer's ask was precise: notes written during focus had no home, so
+ * reading one back meant opening the block it belonged to — which only works
+ * for today. This is that home, with the same two-level archive as the journal
+ * above it (year → month, newest first), so one reading pattern is learned once.
+ */
+function NotesPanel({ onOpen }: { onOpen: (instance: BlockInstance) => void }) {
+  const instances = useAppStore((state) => state.instances);
+  const categories = useAppStore((state) => state.categories);
+  const { t, formatDateLong, formatMinutes, formatMonthName } = useI18n();
+
+  const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("all");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const visible = useMemo(
+    () =>
+      instances.filter(
+        (instance) =>
+          (categoryId === "all" || instance.categoryId === categoryId) &&
+          noteMatches(instance, query),
+      ),
+    [instances, categoryId, query],
+  );
+
+  // Ordering is the archive's own rule, and blank notes never reach the list.
+  const archive = useMemo(() => groupNotesByYearMonth(visible), [visible]);
+  const total = archive.reduce((sum, year) => sum + year.entryCount, 0);
+
+  // Same collapse rules as the journal history: while searching nothing may
+  // stay shut, the newest year opens on its newest month, the rest start closed.
+  const searching = query.trim() !== "" || categoryId !== "all";
+  const isYearCollapsed = (year: string, index: number) =>
+    searching ? false : (collapsed[year] ?? index > 0);
+  const isMonthCollapsed = (month: string, index: number, yearIndex: number) =>
+    searching ? false : (collapsed[month] ?? !(yearIndex === 0 && index === 0));
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <TextInput
+            label={t("journal.notes.searchLabel")}
+            type="search"
+            placeholder={t("journal.notes.searchPlaceholder")}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <SelectField
+          label={t("journal.notes.categoryLabel")}
+          value={categoryId}
+          options={[
+            { value: "all", label: t("journal.notes.categoryAll") },
+            ...categories.map((category) => ({ value: category.id, label: category.name })),
+          ]}
+          onChange={(event) => setCategoryId(event.target.value)}
+          className="sm:max-w-[14rem]"
+        />
+      </div>
+
+      {total === 0 ? (
+        // Two emptinesses, told apart like everywhere else: nothing was ever
+        // written, or this search simply found nothing.
+        <p className="text-meta text-ink-muted">
+          {searching ? t("journal.notes.searchEmpty") : t("journal.notes.empty")}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {archive.map((year, yearIndex) => {
+            const yearOpen = !isYearCollapsed(year.year, yearIndex);
+            return (
+              <section key={year.year} className="flex flex-col">
+                <h3 className="flex">
+                  <button
+                    type="button"
+                    aria-expanded={yearOpen}
+                    onClick={() =>
+                      setCollapsed((previous) => ({ ...previous, [year.year]: yearOpen }))
+                    }
+                    className="flex w-full items-center justify-between gap-2 rounded-ctl border-b border-line px-1 py-2 text-left hover:bg-accent-surface/40"
+                  >
+                    <span className="text-body font-semibold tabular-nums">{year.year}</span>
+                    <span className="flex items-center gap-2 text-label text-ink-muted">
+                      {t("journal.entryCount", { count: year.entryCount })}
+                      <IconCaretDown
+                        size={14}
+                        className={cn(
+                          "transition-transform duration-200 motion-reduce:transition-none",
+                          yearOpen ? "rotate-180" : "rotate-0",
+                        )}
+                      />
+                    </span>
+                  </button>
+                </h3>
+
+                {yearOpen ? (
+                  <div className="flex flex-col gap-3 pt-3">
+                    {year.months.map((month, monthIndex) => {
+                      const monthOpen = !isMonthCollapsed(month.month, monthIndex, yearIndex);
+                      return (
+                        <section key={month.month} className="flex flex-col">
+                          <h4 className="flex">
+                            <button
+                              type="button"
+                              aria-expanded={monthOpen}
+                              onClick={() =>
+                                setCollapsed((previous) => ({
+                                  ...previous,
+                                  [month.month]: monthOpen,
+                                }))
+                              }
+                              className="flex w-full items-center justify-between gap-2 rounded-ctl px-1 py-1.5 text-left hover:bg-accent-surface/40"
+                            >
+                              <span className="text-label font-semibold uppercase tracking-wide text-ink-muted">
+                                {formatMonthName(month.month)}
+                              </span>
+                              <span className="flex items-center gap-2 text-label text-ink-muted">
+                                {t("journal.entryCount", { count: month.entries.length })}
+                                <IconCaretDown
+                                  size={14}
+                                  className={cn(
+                                    "transition-transform duration-200 motion-reduce:transition-none",
+                                    monthOpen ? "rotate-180" : "rotate-0",
+                                  )}
+                                />
+                              </span>
+                            </button>
+                          </h4>
+
+                          {monthOpen ? (
+                            <ul className="flex flex-col divide-y divide-line">
+                              {month.entries.map((instance) => {
+                                const category = categories.find(
+                                  (candidate) => candidate.id === instance.categoryId,
+                                );
+                                return (
+                                  <li key={instance.id}>
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpen(instance)}
+                                      aria-label={t("journal.notes.open", { title: instance.title })}
+                                      className="flex w-full flex-col gap-1 py-3 text-left hover:bg-accent-surface/40"
+                                    >
+                                      <span className="flex min-w-0 items-center gap-2">
+                                        <span className="truncate text-body">{instance.title}</span>
+                                        {category ? (
+                                          <CategoryTag
+                                            name={category.name}
+                                            icon={category.icon}
+                                            className="shrink-0"
+                                          />
+                                        ) : null}
+                                      </span>
+                                      <span className="flex flex-wrap items-baseline gap-x-2 text-label text-ink-muted">
+                                        <span>{formatDateLong(instance.date)}</span>
+                                        <span>{formatMinutes(instance.durationMin)}</span>
+                                      </span>
+                                      {/* Two lines, not one: a note is read for
+                                          its content, and one truncated line
+                                          rarely says enough to be worth opening. */}
+                                      <span className="line-clamp-2 text-meta text-ink-muted">
+                                        {notePreview(instance.note)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : null}
+                        </section>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JournalScreen() {
   const reflections = useAppStore((state) => state.reflections);
   const deleteReflection = useAppStore((state) => state.deleteReflection);
   const setReflectionFavorite = useAppStore((state) => state.setReflectionFavorite);
   const { t, formatDateLong, formatMonthName } = useI18n();
 
+  const [tab, setTab] = useState<JournalTab>("entries");
   const [today] = useState(() => todayISO(Date.now()));
   const [selected, setSelected] = useState(today);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<HistoryFilter>("all");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // The three sheets the notes tab can open. Never two at once: each swap
+  // closes one before opening the next.
+  const [noteDetailTarget, setNoteDetailTarget] = useState<BlockInstance | null>(null);
+  const [noteEditTarget, setNoteEditTarget] = useState<BlockInstance | null>(null);
+  const [blockTarget, setBlockTarget] = useState<BlockInstance | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   // Bumped to rebuild the editor from scratch after its entry is deleted —
   // without it the editor would still hold the old text and save it straight
@@ -312,13 +520,31 @@ export function JournalScreen() {
               : t("journal.empty.body")}
           </p>
         </div>
-        <Button variant="secondary" disabled={reflections.length === 0} onClick={handleExport}>
-          <IconDownload />
-          {t("journal.exportMarkdown")}
-        </Button>
+        {/* Exporting means exporting the journal; it has nothing to say about
+            block notes, so it only exists on the tab it belongs to. */}
+        {tab === "entries" ? (
+          <Button variant="secondary" disabled={reflections.length === 0} onClick={handleExport}>
+            <IconDownload />
+            {t("journal.exportMarkdown")}
+          </Button>
+        ) : null}
       </header>
 
-      <Panel data-tour="journal-entry">
+      {/* Two readings of one screen, so notes get a home without a sixth item
+          in the main navigation. */}
+      <SegmentedControl
+        legend={t("journal.tabLabel")}
+        name="journal-tab"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "entries", label: t("journal.title") },
+          { value: "notes", label: t("journal.tab.notes") },
+        ]}
+      />
+
+      {tab === "entries" ? (
+        <Panel data-tour="journal-entry">
         <PanelHeader
           title={selected === today ? t("journal.todayEntry") : formatDateLong(selected)}
           description={t("journal.bodyPlaceholder")}
@@ -337,9 +563,11 @@ export function JournalScreen() {
           existing={existing}
           promptId={promptId}
         />
-      </Panel>
+        </Panel>
+      ) : null}
 
-      <Panel data-tour="journal-history">
+      {tab === "entries" ? (
+        <Panel data-tour="journal-history">
         <PanelHeader title={t("journal.history")} />
 
         {reflections.length === 0 ? (
@@ -534,7 +762,15 @@ export function JournalScreen() {
             )}
           </div>
         )}
-      </Panel>
+        </Panel>
+      ) : null}
+
+      {tab === "notes" ? (
+        <Panel data-tour="journal-notes">
+          <PanelHeader title={t("journal.tab.notes")} />
+          <NotesPanel onOpen={setNoteDetailTarget} />
+        </Panel>
+      ) : null}
 
       <JournalDetailSheet
         reflection={detail}
@@ -560,6 +796,29 @@ export function JournalScreen() {
         tone="danger"
         onConfirm={handleConfirmDelete}
       />
+
+      {/* A note is read here, edited in the same sheet the timeline uses, and
+          its block opens behind its own — swapped, never stacked. */}
+      {noteDetailTarget ? (
+        <NoteDetailSheet
+          instance={noteDetailTarget}
+          onClose={() => setNoteDetailTarget(null)}
+          onEdit={(instance) => {
+            setNoteDetailTarget(null);
+            setNoteEditTarget(instance);
+          }}
+          onOpenBlock={(instance) => {
+            setNoteDetailTarget(null);
+            setBlockTarget(instance);
+          }}
+        />
+      ) : null}
+      {noteEditTarget ? (
+        <NoteSheet instance={noteEditTarget} onClose={() => setNoteEditTarget(null)} />
+      ) : null}
+      {blockTarget ? (
+        <EditBlockSheet instance={blockTarget} onClose={() => setBlockTarget(null)} />
+      ) : null}
     </div>
   );
 }

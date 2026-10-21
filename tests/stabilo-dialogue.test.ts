@@ -10,6 +10,7 @@ import {
 } from "@/features/stabilo/engine/dialogue";
 import { interpolate, nameParam } from "@/features/stabilo/engine/text";
 import { lipFrame, pauseFor } from "@/features/stabilo/engine/typewriter";
+import { controlsFor, hasForwardControl } from "@/features/stabilo/ui/controls";
 import { INTRO_EN, TOUR_EN, TOUR_EN_EMPTY } from "@/features/stabilo/script/en";
 import { INTRO_ID, TOUR_ID, TOUR_ID_EMPTY } from "@/features/stabilo/script/id";
 import type { DialogueState } from "@/features/stabilo/engine/dialogue";
@@ -256,3 +257,47 @@ describe("lip flap", () => {
     expect(pauseFor("k")).toBe(0);
   });
 });
+
+/**
+ * No node may be a dead end.
+ *
+ * The reviewer's report was a question on screen with no visible "Oke" or
+ * "Close". This walks all six scripts and fails if any node would render without
+ * a named way forward, so the property is checked against the real content
+ * rather than one hand-picked node.
+ */
+describe("dialogue controls", () => {
+  it("offers a forward control on every node of every script", () => {
+    const dead: string[] = [];
+
+    for (const [name, script] of SCRIPTS) {
+      for (const node of Object.values(script.nodes)) {
+        const controls = controlsFor({
+          quiz: Boolean(node.quiz),
+          ask: Boolean(node.ask),
+          nameInput: Boolean(node.input),
+          intensityPick: Boolean(node.pick),
+        });
+        if (!hasForwardControl(controls)) dead.push(`${name}:${node.id}`);
+      }
+    }
+
+    expect(dead).toEqual([]);
+  });
+
+  it("always offers a way out, even on a node with nothing else", () => {
+    expect(controlsFor({}).exit).toBe(true);
+  });
+
+  /** The escape used to appear only after a hint — that is how a quiz trapped someone. */
+  it("keeps the quiz escape visible before any hint", () => {
+    expect(controlsFor({ quiz: true }).skipQuiz).toBe(true);
+  });
+
+  it("never asks for both a plain next and a quiz at once", () => {
+    const controls = controlsFor({ quiz: true });
+    expect(controls.next).toBe(false);
+    expect(controls.options).toBe(true);
+  });
+});
+

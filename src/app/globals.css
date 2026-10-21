@@ -123,6 +123,33 @@
   --danger: #b3261e; /* verified 5.99:1 on --bg */
   --shadow-float: 0 8px 24px rgb(0 0 0 / 0.18);
   color-scheme: light;
+
+  /* Motion — DESIGN.md v3 §2.3. Durations live as variables because WAAPI
+     reads them through getComputedStyle; both reduced-motion guards below zero
+     the tokens alongside the transition durations so JS and CSS agree. */
+  --t-instant: 90ms; /* press, check */
+  --t-fast: 160ms; /* hover, focus, toggle */
+  --t-base: 240ms; /* sheet, dialog, ripple */
+  --t-slow: 360ms; /* block shift, tube */
+  --t-sig: 520ms; /* navigation transition (max) */
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* enter, land (expo-out) */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1); /* changing place */
+  --ease-squash: cubic-bezier(0.34, 1.56, 0.64, 1); /* small rebound on land */
+  --ease-spring: linear(
+    0,
+    0.35 8%,
+    0.78 18%,
+    1.06 30%,
+    0.98 44%,
+    1.01 58%,
+    1
+  ); /* example spring — regenerate before shipping if the feel changes */
+
+  /* Ink wash: the one derived colour — ripples on non-primary surfaces.
+     Stabilo at 1.2:1 on paper cannot carry meaning alone, so liquid shapes
+     lean on the ink border (§2.2); this is feedback, not a shape. */
+  --ink-wash: color-mix(in oklab, var(--hl) 38%, transparent);
 }
 
 /* System preference, unless the user explicitly chose light. */
@@ -213,10 +240,12 @@
 
   /* Motion answers an action; it never decorates an entry (DESIGN.md §6).
    *
-   * The `:root:not([data-motion="full"])` guard is the one escape hatch: it is
-   * set only from Settings → Stabilo by someone who has read that the system is
-   * asking for less motion and wants hers anyway. Everything else keeps
-   * following the OS preference, which is the honest default. */
+   * Two guards, one question. `data-motion` is written from Settings → Tampilan:
+   *   - "full"    overrides the OS, because someone who turned Windows animation
+   *               effects off for speed did not ask for a still app;
+   *   - "reduced" applies it even on a machine that never asked;
+   *   - absent    leaves the media query as the only judge, which is the default.
+   * Both rules say the same thing, so a change to one must reach the other. */
   @media (prefers-reduced-motion: reduce) {
     :root:not([data-motion="full"]) *,
     :root:not([data-motion="full"]) ::before,
@@ -225,6 +254,14 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
     }
+  }
+
+  :root[data-motion="reduced"] *,
+  :root[data-motion="reduced"] ::before,
+  :root[data-motion="reduced"] ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
 
@@ -361,4 +398,111 @@
   background: var(--ink);
   color: var(--bg);
   animation: focus-complete-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* ---------------------------------------------------------------------------
+ * DESIGN.md v3 §2.3 — the motion tokens must answer the same reduced-motion
+ * question as everything else. The !important rules above clamp every computed
+ * animation/transition duration, but WAAPI reads `--t-*` through
+ * getComputedStyle and needs a literal 0ms so it can skip the animation
+ * entirely instead of playing a 0.001ms ghost. Both guards, same wording.
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --t-instant: 0ms;
+    --t-fast: 0ms;
+    --t-base: 0ms;
+    --t-slow: 0ms;
+    --t-sig: 0ms;
+  }
+}
+
+:root[data-motion="reduced"] {
+  --t-instant: 0ms;
+  --t-fast: 0ms;
+  --t-base: 0ms;
+  --t-slow: 0ms;
+  --t-sig: 0ms;
+}
+
+/* ---------------------------------------------------------------------------
+ * DESIGN.md v3 §4 — Ink primitives, Phase 1: Riak (ripple) and Isi (fill).
+ * Anything triggered by a class change is a CSS animation, so the global
+ * guard above handles reduced motion for free. WAAPI (src/lib/ink/merge.ts)
+ * is reserved for geometry that must be computed — the two-phase Lebur
+ * indicator — where the guard has to be read by JS instead.
+ * ------------------------------------------------------------------------- */
+
+.ink-ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+
+.ink-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--ink-wash);
+  pointer-events: none;
+  opacity: 0;
+  animation: ink-ripple var(--t-base) var(--ease-out) forwards;
+}
+
+/* The primary button is already ink-filled; its one lime is the press answer.
+   (Secondary and ghost surfaces get the wash instead — one colour, two faces.) */
+[data-ink-ripple="primary"] .ink-ripple {
+  background: var(--hl);
+}
+
+@keyframes ink-ripple {
+  from {
+    opacity: 0.6;
+    transform: scale(0.12);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Isi: the timeline dot fills from its centre once, when the status flips. */
+@keyframes ink-fill-dot {
+  from {
+    transform: scale(0.2);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.ink-fill-dot {
+  animation: ink-fill-dot var(--t-fast) var(--ease-out) both;
+  transform-origin: center;
+}
+
+/* Isi: the sheet that crosses a row when it completes (§6, 280 ms), then
+   gets out of the way. One pass, never a loop, never while idle. */
+@keyframes ink-sweep {
+  0% {
+    opacity: 0.85;
+    transform: scaleX(0);
+  }
+  60% {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+.ink-sweep {
+  position: absolute;
+  inset: 0;
+  background: var(--hl);
+  border: 1.5px solid var(--ink);
+  border-radius: inherit;
+  transform-origin: left center;
+  pointer-events: none;
+  animation: ink-sweep 280ms var(--ease-out) both;
 }

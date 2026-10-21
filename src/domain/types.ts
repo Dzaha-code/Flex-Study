@@ -127,6 +127,12 @@ export interface BlockInstance extends Entity {
   /** Epoch ms when the running timer started; `null` when not running. */
   startedAt: number | null;
   note: string;
+  /**
+   * When the note text last changed. Optional: rows written before this field
+   * existed still load, and a note that has never been edited simply has no
+   * value to show.
+   */
+  noteUpdatedAt?: string;
   /** Set when this instance arrived from another day. */
   movedFrom: ISODate | null;
   /** Set when this instance left for another day. */
@@ -187,11 +193,29 @@ export interface ShiftEvent extends Entity {
  */
 export type ContentWidth = "comfortable" | "wide" | "full";
 
+/**
+ * Three answers to one question: should this device animate?
+ *
+ * `system` is the default and never guesses; the two explicit values exist
+ * because the system signal is often an accident of a performance setting.
+ */
+export type AnimationPreference = "system" | "full" | "reduced";
+
 export interface Settings {
   locale: Locale;
   theme: ThemePreference;
   /** When the opening animation plays. Mirrored to `localStorage` for boot. */
   intro: IntroPreference;
+  /**
+   * How motion is decided across the whole app.
+   *
+   * `system` follows `prefers-reduced-motion`, which is the honest default —
+   * a machine that asks for less motion should get it. But Windows reports
+   * `reduce` for reasons nobody chose (animation effects off, a "best
+   * performance" profile, Remote Desktop), and someone who turned those off for
+   * speed did not ask for a still app. `full` and `reduced` let them say so.
+   */
+  animation: AnimationPreference;
   weekStart: WeekStart;
   remindersEnabled: boolean;
   /** Clock time at which a day's timeline begins for blocks without a start. */
@@ -310,6 +334,9 @@ export const DEFAULT_SETTINGS: Settings = {
   // available in Settings, and old backups without the field still import as
   // `once` because the schema default did not change.
   intro: "always",
+  // Following the system is the only default that cannot be wrong about
+  // someone's needs; the explicit values are opt-in, not pre-chosen.
+  animation: "system",
   weekStart: 1,
   remindersEnabled: false,
   dayStart: "08:00",
