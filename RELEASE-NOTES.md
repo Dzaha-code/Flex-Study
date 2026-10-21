@@ -6,6 +6,58 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.6 — 21 Oktober 2026
+
+Catatan bisa ditulis dan dibaca di tengah sesi, setiap baris tur punya jalan keluar
+yang terlihat, dan animasi pembuka kini bisa menjelaskan dirinya sendiri ketika
+berhenti.
+
+### Yang diperbaiki
+
+- **Animasi pembuka tidak lagi "tiba-tiba berhenti" karena klik acak.** Dulu
+  menekan di mana pun pada layar pembuka — termasuk sekadar mengklik jendela untuk
+  memfokuskannya — melewati animasi di frame yang belum selesai, sehingga sulit
+  dibedakan dari animasi yang macet. Sekarang hanya tombol Lewati, Esc, Spasi, atau
+  Enter yang melewati, dan kegagalan animasi tidak lagi diam: aplikasi tersingkap
+  utuh alih-alih tertinggal setengah termask, dengan alasannya tercatat.
+- **Crash "Invalid time value" saat membuka rincian catatan.** Lembar rincian
+  menerima cap waktu lengkap (`2026-10-21T07:09…`) alih-alih hari kalender
+  (`2026-10-21`), sehingga tanggalnya `NaN` dan layarnya melempar exception.
+
+### Yang baru
+
+- **Catatan saat timer berjalan (masukan penguji, diterima).** Editor catatan punya
+  tombol **Simpan** — selain Ctrl+Enter — dengan konfirmasi "Tersimpan 20:27" pada
+  region status. Ikon catatan di baris Hari ini **membaca dulu**: catatan yang sudah
+  ada membuka lembar rincian (judul, tanggal, durasi, "Diperbarui", teks, serta
+  Ubah/Salin/**Buka blok**), yang belum ada langsung membuka editor. Jurnal mendapat
+  segmen **Catatan blok** — grup tahun→bulan, pencarian isi, saringan kategori.
+- **Setiap baris tur Stabilo punya jalan keluar yang terlihat.** "Lanjut ▼" dan
+  "✕ Tutup tur" dua langkah di setiap simpul, plus pengingat lembut setelah 10
+  detik diam — tidak ada lagi dialog tanpa tombol Oke/Tutup.
+- **Log diagnosis animasi pembuka, di layar.** Saklar debug di Atur (atau
+  `?introDebug=1`) menampilkan `+1645 chunk+fonts`, `branch:full/reduced`, `skip`,
+  dan `done` selama animasi berjalan — satu-satunya cara membaca gejala di mesin
+  yang terdampak tanpa devtools, karena jendela rilis tidak membawanya.
+- **Bahasa gerak Tinta — Fase 1 (DESIGN.md v3).** Token durasi/easing (`--t-fast`
+  dst.) yang ikut nol saat gerak dikurangi; modul `src/lib/ink/` dengan tiga
+  primitif: **Riak** (sapuan sentuh di semua tombol, lime di tombol utama),
+  **Lebur** (indikator segmen mencair — tepi depan 160 ms, tepi belakang menyusul
+  60 ms kemudian), dan **Isi** (sapuan sekali saat blok selesai, isian saklar).
+  Semua tunduk pada pilihan *Animasi* di Atur; di bawah *reduced motion* tidak ada
+  satu pun yang dijalankan — bukan dipercepat.
+- **`framer-motion` dan `motion` dihapus dari dependensi.** Keduanya tidak pernah
+  diimpor; tersisa satu mesin animasi (GSAP, dimuat malas untuk animasi pembuka).
+
+### Berkas
+
+| Berkas | Ukuran | SHA-256 |
+|---|---|---|
+| `FlexStudy_0.5.6_x64-setup.exe` | 2.632.216 byte (2,51 MiB) | `fff2240583cafb5e639aa4ef94cd6c9b3e751a446cb90010732283d387c0259e` |
+| `FlexStudy_0.5.6_x64_en-US.msi` | 3.158.016 byte (3,01 MiB) | `394deced0facf8ad933c6bdacf3684eeb2e9e5a2823e42e69f2498a50b26cc71` |
+
+---
+
 ## 0.5.5 — 18 Oktober 2026
 
 Stabilo bisa dinyalakan sendiri di perangkat yang mematikan animasi, dan lebar konten

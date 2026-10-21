@@ -18,6 +18,11 @@ export interface IntroCopy {
   /** Line 2, after the highlighted words. */
   l2b: string;
   note: string;
+  /**
+   * Shown in place of the note when the animation is deliberately static, so a
+   * still opening reads as a setting instead of a broken build.
+   */
+  reduced: string;
   skip: string;
   /** Accessible name for the dialog. */
   dialog: string;
@@ -32,6 +37,7 @@ export const COPY: Record<IntroLang, IntroCopy> = {
     hl: "kembali lagi",
     l2b: ".",
     note: "Tanpa akun · Datamu tetap di perangkatmu",
+    reduced: "Animasi dikurangi karena pengaturan sistem. Bisa diubah di Atur → Tampilan.",
     skip: "Lewati",
     dialog: "Pengantar FlexStudy",
     wordmark: "FlexStudy",
@@ -42,6 +48,7 @@ export const COPY: Record<IntroLang, IntroCopy> = {
     hl: "coming back",
     l2b: ".",
     note: "No account · Your data stays on your device",
+    reduced: "Animation reduced by your system settings. Change it in Settings → Appearance.",
     skip: "Skip",
     dialog: "Introducing FlexStudy",
     wordmark: "FlexStudy",

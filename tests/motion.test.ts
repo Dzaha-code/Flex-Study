@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_STABILO_PREFS } from "@/domain/types";
-import { StabiloPrefsSchema } from "@/data/schema";
+import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
+import { SettingsSchema, StabiloPrefsSchema } from "@/data/schema";
+import { resolveReducedMotion } from "@/lib/motion";
 import { fillsScreen, resolveContentWidth, type WindowMetrics } from "@/lib/viewport";
 
 const metrics = (
@@ -45,6 +46,45 @@ describe("resolveContentWidth", () => {
   });
 });
 
+describe("resolveReducedMotion", () => {
+  /**
+   * The three-way answer this whole change exists for: a machine reporting
+   * `reduce` because Windows animation effects were turned off for speed is not
+   * the same as someone who needs less motion, and only an explicit choice may
+   * tell them apart.
+   */
+  it("follows the system when the preference says so", () => {
+    expect(resolveReducedMotion("system", true)).toBe(true);
+    expect(resolveReducedMotion("system", false)).toBe(false);
+  });
+
+  it("overrides a system that asked for less motion", () => {
+    expect(resolveReducedMotion("full", true)).toBe(false);
+  });
+
+  it("reduces even when the system never asked", () => {
+    expect(resolveReducedMotion("reduced", false)).toBe(true);
+  });
+});
+
+describe("Settings.animation", () => {
+  it("ships as `system`, never pre-choosing for the user", () => {
+    expect(DEFAULT_SETTINGS.animation).toBe("system");
+  });
+
+  /** A workspace exported before the preference existed must still import. */
+  it("defaults to `system` for an export that predates it", () => {
+    const legacy: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+    delete legacy.animation;
+    expect(SettingsSchema.parse(legacy).animation).toBe("system");
+  });
+});
+
+/**
+ * 0.5.5's Stabilo-only override. Superseded by `Settings.animation`, but the
+ * field stays in the schema so a 0.5.5 export still imports and `hydrate` can
+ * promote it instead of silently standing her still again.
+ */
 describe("StabiloPrefs.forceMotion", () => {
   it("is off for a fresh install, so the system preference still wins", () => {
     expect(DEFAULT_STABILO_PREFS.forceMotion).toBe(false);

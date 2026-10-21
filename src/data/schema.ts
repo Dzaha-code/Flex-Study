@@ -98,6 +98,9 @@ export const BlockInstanceSchema = z.object({
   actualSeconds: z.number().int().min(0),
   startedAt: z.number().int().nullable(),
   note: z.string().max(20_000),
+  // Optional rather than defaulted: an export made before this field existed
+  // must keep importing, and "never edited" is a real state, not a timestamp.
+  noteUpdatedAt: timestampSchema.optional(),
   movedFrom: isoDateSchema.nullable(),
   movedTo: isoDateSchema.nullable(),
 });
@@ -140,6 +143,9 @@ export const SettingsSchema = z.object({
   locale: z.enum(["id", "en"]),
   theme: z.enum(["system", "light", "dark"]),
   intro: z.enum(["once", "always", "off"]).default("once"),
+  // Defaulted, so a workspace exported before this preference existed imports
+  // as "follow the system" rather than failing validation.
+  animation: z.enum(["system", "full", "reduced"]).default("system"),
   weekStart: z.union([z.literal(0), z.literal(1)]),
   remindersEnabled: z.boolean(),
   dayStart: clockTimeSchema,

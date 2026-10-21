@@ -1,8 +1,10 @@
 "use client";
 
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { HTMLAttributes, ReactNode } from "react";
 import type { BlockStatus, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
+import { commitMerge, playMerge, type MergeRect } from "@/lib/ink";
 import { cn } from "@/lib/utils";
 import { CategoryGlyph, IconArrowRight, IconCheck, IconClock, IconPlay, IconSkip } from "./icons";
 
@@ -157,7 +159,15 @@ export interface SegmentedOption<T extends string> {
   label: string;
 }
 
-/** Native radios: keyboard support and screen readers come for free. */
+/**
+ * Native radios: keyboard support and screen readers come for free.
+ *
+ * Lebur (DESIGN.md v3 §6.2): a box under the options stretches toward the new
+ * selection — leading edge first, trailing edge 60 ms behind — then parks.
+ * The active label keeps its own `bg-ink`, so its text is readable at every
+ * frame; the travelling box is the liquid tail underneath, and at rest the two
+ * are the same colour, so the control looks exactly as it did without motion.
+ */
 export function SegmentedControl<T extends string>({
   legend,
   name,
@@ -171,19 +181,72 @@ export function SegmentedControl<T extends string>({
   value: T;
   onChange: (next: T) => void;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const activeRef = useRef<HTMLLabelElement>(null);
+  const frameRef = useRef<MergeRect | null>(null);
+
+  /**
+   * Measure the active option and let Lebur carry the indicator over.
+   * The indicator's style is written imperatively (commitMerge/playMerge own
+   * left/right/width) — React rewriting `width` mid-flight would over-constrain
+   * the box and silently kill the trailing-edge animation.
+   */
+  const syncIndicator = useCallback(() => {
+    const box = listRef.current;
+    const indicator = indicatorRef.current;
+    const active = activeRef.current;
+    if (!box || !indicator || !active) return;
+    const next: MergeRect = {
+      left: active.offsetLeft - box.clientLeft,
+      width: active.offsetWidth,
+    };
+    const previous = frameRef.current;
+    frameRef.current = next;
+    if (!previous) commitMerge(indicator, next);
+    else playMerge(indicator, previous, next, box.clientWidth);
+  }, []);
+
+  // After every commit: a value change re-render runs this before paint, so
+  // the first measure never shows an unstyled indicator for a frame.
+  useLayoutEffect(() => {
+    syncIndicator();
+  });
+
+  // Local fonts still arrive after first paint; watching the active label
+  // catches every re-measure (font swap, wrap, viewport) without polling.
+  // No rectangle moved → no animation — same values short-circuit inside.
+  useEffect(() => {
+    const active = activeRef.current;
+    if (!active || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => syncIndicator());
+    observer.observe(active);
+    // Re-observed every render so the target is always the current option.
+    return () => observer.disconnect();
+  });
+
   return (
     <fieldset className="flex flex-col gap-1.5 border-0 p-0">
       <legend className="mb-1 text-caption font-medium text-mute">{legend}</legend>
-      <div className="inline-flex w-full flex-wrap gap-1 rounded-ctl border border-line-strong bg-raised p-1 sm:w-auto">
+      <div
+        ref={listRef}
+        className="relative inline-flex w-full flex-wrap gap-1 rounded-ctl border border-line-strong bg-raised p-1 sm:w-auto"
+      >
+        <span
+          ref={indicatorRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1 bottom-1 z-0 rounded-[6px] bg-ink"
+        />
         {options.map((option) => {
           const id = `${name}-${option.value}`;
           const active = option.value === value;
           return (
             <label
               key={option.value}
+              ref={active ? activeRef : undefined}
               htmlFor={id}
               className={cn(
-                "flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-[6px] px-3 text-ui transition-colors sm:flex-none",
+                "relative z-10 flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-[6px] px-3 text-ui transition-colors sm:flex-none",
                 active ? "bg-ink font-medium text-bg" : "text-mute hover:text-ink",
               )}
             >
@@ -237,16 +300,32 @@ export function SwitchRow({
         <span
           aria-hidden="true"
           className={cn(
-            "h-6 w-11 rounded-full border transition-colors",
-            checked ? "border-ink bg-ink" : "border-line-strong bg-raised",
+            // Isi (DESIGN.md v3 §6): the fill sweeps across the track while the
+            // border settles — palette unchanged (ink fill, as before), only
+            // the arrival is liquid now. Track stays --raised underneath so
+            // the sweep has something to cross.
+            "relative h-6 w-11 overflow-hidden rounded-full border bg-raised transition-colors",
+            "[transition-duration:var(--t-fast)] [transition-timing-function:var(--ease-out)]",
+            checked ? "border-ink" : "border-line-strong",
             "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink",
             "peer-disabled:opacity-45",
           )}
-        />
+        >
+          <span
+            className={cn(
+              "absolute inset-0 origin-left bg-ink transition-transform",
+              "[transition-duration:var(--t-fast)] [transition-timing-function:var(--ease-out)]",
+              checked && "scale-x-100",
+            )}
+          />
+        </span>
         <span
           aria-hidden="true"
+          // Lebur: the knob rides the same 160 ms with a squash-and-rebound
+          // landing (§2.3 --ease-squash) — stretch along the travel, settle.
           className={cn(
             "absolute left-1 top-1/2 size-4 -translate-y-1/2 rounded-full transition-transform",
+            "[transition-duration:var(--t-fast)] [transform-timing-function:var(--ease-squash)]",
             checked ? "translate-x-5 bg-bg" : "bg-mute",
           )}
         />

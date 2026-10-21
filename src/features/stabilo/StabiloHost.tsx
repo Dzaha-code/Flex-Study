@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "@/data/store";
 import { todayISO } from "@/domain";
+import type { AnimationPreference } from "@/domain/types";
 import { useIntroHolding } from "@/features/intro/intro-status";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,7 @@ import { interpolate, nameParam } from "./engine/text";
 import { TYPE_MS, TYPE_MS_SLOW, speak, speakInstant, type Mouth } from "./engine/typewriter";
 import { STABILO_PLACEHOLDER } from "./flags";
 import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator";
-import { systemPrefersReducedMotion } from "@/lib/motion";
+import { resolveReducedMotion, systemPrefersReducedMotion } from "@/lib/motion";
 import { closeTour } from "@/features/tour/tour-store";
 import { REACTIONS, scriptFor, wrongLine, type Flow, type TourContext } from "./script";
 import { closeStabilo, useStabiloHost } from "./stabilo-store";
@@ -45,8 +46,8 @@ const POLL_ATTEMPTS = 25;
  * or a machine that reports `reduce` would still get letter-by-letter typing
  * while the sprite stood perfectly still.
  */
-function motionIsReduced(forceMotion: boolean): boolean {
-  return systemPrefersReducedMotion() && !forceMotion;
+function motionIsReduced(animation: AnimationPreference): boolean {
+  return resolveReducedMotion(animation, systemPrefersReducedMotion());
 }
 
 function normalisePath(path: string): string {
@@ -187,6 +188,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const pathname = usePathname();
   const { t, locale } = useI18n();
   const prefs = useAppStore((state) => state.stabilo);
+  const animation = useAppStore((state) => state.settings.animation);
   const updateStabilo = useAppStore((state) => state.updateStabilo);
   const updateSettings = useAppStore((state) => state.updateSettings);
 
@@ -373,7 +375,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
       onFrame: setMouth,
     };
 
-    const run = motionIsReduced(prefs.forceMotion)
+    const run = motionIsReduced(animation)
       ? speakInstant(text, options)
       : speak(text, { ...options, ms: node?.slow ? TYPE_MS_SLOW : TYPE_MS });
 
@@ -383,7 +385,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
     });
 
     return () => controller.abort();
-  }, [lineKey, text, node?.slow, prefs.forceMotion]);
+  }, [lineKey, text, node?.slow, animation]);
 
   const finishLine = useCallback(() => {
     abortRef.current?.abort();
@@ -410,7 +412,9 @@ function StabiloSession({ flow }: { flow: Flow }) {
     go();
   }, [done, feedback, finishLine, go, node?.ask, node?.input, node?.pick, node?.quiz]);
 
-  function answer(index: number) {
+  // Memoised because the keyboard listener depends on it: a fresh function each
+  // render would tear down and re-register the listener on every keystroke.
+  const answer = useCallback((index: number) => {
     if (!node?.quiz) return;
     const correct = node.quiz.options[index]?.correct === true;
     const result = judge(state, node.quiz, correct, prefs.intensity);
@@ -441,7 +445,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
     );
     advanceAfterFeedback.current = false;
     setState(result.state);
-  }
+  }, [node, prefs.intensity, reactions, state]);
 
   // Keyboard: Enter/Space advances, Escape leaves without any scolding.
   useEffect(() => {
@@ -453,11 +457,18 @@ function StabiloSession({ flow }: { flow: Flow }) {
         if (node?.quiz && done && !feedback) return;
         event.preventDefault();
         continueFromBox();
+      } else if (event.key >= "1" && event.key <= "3" && node?.quiz) {
+        // The card promises "1–3 pilih", so the keys have to exist.
+        if (!done || feedback) return;
+        const index = Number(event.key) - 1;
+        if (index >= node.quiz.options.length) return;
+        event.preventDefault();
+        answer(index);
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [continueFromBox, done, feedback, finish, node?.quiz]);
+  }, [answer, continueFromBox, done, feedback, finish, node?.quiz]);
 
   // Remember where the tour stopped, so a closed window does not restart it.
   useEffect(() => {
@@ -643,6 +654,15 @@ function StabiloSession({ flow }: { flow: Flow }) {
               skip: t("stabilo.skip"),
               skipQuiz: t("stabilo.skipQuiz"),
               next: t("stabilo.next"),
+              close: t("stabilo.close"),
+              exitTitle: t("stabilo.exitTitle"),
+              exitYes: t("stabilo.exitYes"),
+              exitNo: t("stabilo.exitNo"),
+              pickOne: t("stabilo.pickOne"),
+              confused: t("stabilo.confused"),
+              confusedBody: t("stabilo.confusedBody"),
+              keys: t("stabilo.keys"),
+              nudge: t("stabilo.nudge"),
             }}
             />
           </div>

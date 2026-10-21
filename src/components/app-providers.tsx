@@ -39,16 +39,18 @@ function DocumentLangSync() {
 }
 
 /**
- * The motion override lives on `<html>` so both stylesheets can read it: the
- * global guard in globals.css and Stabilo's own in stabilo.css. Removed rather
- * than set to a falsy value, so an old build's DOM cannot leave a stale flag.
+ * The motion preference lives on `<html>` so both stylesheets can read it: the
+ * global guard in globals.css and Stabilo's own in stabilo.css. `system` removes
+ * the attribute rather than writing a third value, so the media query stays the
+ * only thing in charge; the inline bootstrap script also sets it pre-paint, and
+ * this keeps it true after hydration and on every change.
  */
 function MotionSync() {
-  const forceMotion = useAppStore((state) => state.stabilo.forceMotion);
+  const animation = useAppStore((state) => state.settings.animation);
 
   useEffect(() => {
-    applyMotionAttribute(forceMotion);
-  }, [forceMotion]);
+    applyMotionAttribute(animation);
+  }, [animation]);
 
   return null;
 }

@@ -14,10 +14,13 @@ import {
   IconWarning,
 } from "@/components/ui/icons";
 import { CategoryTag, StatusBadge } from "@/components/ui/surface";
+import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import type { LaidOutBlock } from "@/domain/schedule";
+import { minuteOfDayFromEpoch } from "@/domain/time";
 import type { BlockInstance, Category } from "@/domain/types";
 import { useI18n } from "@/i18n";
+import { useJustChanged } from "@/lib/ink";
 import { hasMarkup, renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 import { Countdown, FocusTimer } from "./running-timer";
@@ -35,6 +38,40 @@ function Markers({ status, overlap }: { status: BlockInstance["status"]; overlap
     return <IconPlay width={12} height={12} className="text-accent" />;
   }
   return null;
+}
+
+/**
+ * Isi (DESIGN.md v3 §4 #5): the dot fills from its centre once, on the
+ * transition into done. A row that loads already-done stays still — nothing
+ * happened just then, and decorative motion on mount is exactly what §0
+ * forbids. The colours are untouched: this is status, and status keeps its
+ * palette (§2.2).
+ */
+function TimelineDot({ status }: { status: BlockInstance["status"] }) {
+  const justDone = useJustChanged(status === "done");
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "absolute -left-[5px] top-[1.15rem] size-[9px] rounded-full border",
+        status === "done" && "border-ok bg-ok",
+        status === "running" && "border-accent bg-accent",
+        status === "planned" && "border-line-strong bg-surface",
+        justDone && "ink-fill-dot",
+      )}
+    />
+  );
+}
+
+/**
+ * Isi for the whole row (§4 #5, §6 "Baris blok → selesai"): one lime sheet
+ * crosses the cell in 280 ms when this block is completed, then is removed
+ * from the DOM entirely — one pass, never a loop, never while idle.
+ */
+function RowSweep({ status }: { status: BlockInstance["status"] }) {
+  const justDone = useJustChanged(status === "done");
+  if (!justDone) return null;
+  return <span aria-hidden="true" className="ink-sweep" />;
 }
 
 /** The line the whole screen is built around: the clock on the left, the plan on the right. */
@@ -85,6 +122,9 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
             // (DESIGN.md §2 "satu sorotan per layar", §5). Rows use the text
             // variant, matching the reference prototype.
             variant={prominent ? "primary" : "ghost"}
+            // This button already owns the one lime spread of the screen
+            // (focus-ripple below) — Riak must not answer the same press twice.
+            data-ink-ripple={prominent ? "off" : undefined}
             onClick={() => {
               setRipple((count) => count + 1);
               void startBlock(instance.id);
@@ -183,12 +223,16 @@ function FocusCard({
 function CompactRow({
   instance,
   category,
-  onOpenNote,
+  onQuickNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
-  onOpenNote: (instance: BlockInstance) => void;
+  /**
+   * The row icon: reading first. A row that already carries a note opens it;
+   * one that does not still opens the editor, so writing is never a tap away.
+   */
+  onQuickNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
   const { t } = useI18n();
@@ -217,7 +261,7 @@ function CompactRow({
 
       <div className="flex items-center gap-1">
         <BlockActions instance={instance} prominent={false} />
-        <IconButton label={`${t("today.note")}: ${instance.title}`} onClick={() => onOpenNote(instance)}>
+        <IconButton label={`${t("today.note")}: ${instance.title}`} onClick={() => onQuickNote(instance)}>
           <IconNote />
         </IconButton>
         <IconButton
@@ -237,13 +281,17 @@ export function Timeline({
   focusId,
   categoryById,
   onOpenNote,
+  onQuickNote,
   onEditBlock,
 }: {
   blocks: LaidOutBlock[];
   nowMinute: number;
   focusId: string | null;
   categoryById: CategoryLookup;
+  /** The focus card's button: writing, straight into the editor. */
   onOpenNote: (instance: BlockInstance) => void;
+  /** A compact row's icon: reading a note that exists, writing one that does not. */
+  onQuickNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
   const { formatClockValue } = useI18n();
@@ -268,15 +316,8 @@ export function Timeline({
               </span>
 
               <div className="relative border-l border-line pb-2 pl-4 pt-3">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute -left-[5px] top-[1.15rem] size-[9px] rounded-full border",
-                    block.instance.status === "done" && "border-ok bg-ok",
-                    block.instance.status === "running" && "border-accent bg-accent",
-                    block.instance.status === "planned" && "border-line-strong bg-surface",
-                  )}
-                />
+                <RowSweep status={block.instance.status} />
+                <TimelineDot status={block.instance.status} />
                 <div className="flex flex-col gap-1">
                   {/* The "in focus" label lives inside FocusCard, which owns
                       the one highlight for this part of the screen. */}
@@ -295,7 +336,7 @@ export function Timeline({
                     <CompactRow
                       instance={block.instance}
                       category={categoryById.get(block.instance.categoryId)}
-                      onOpenNote={onOpenNote}
+                      onQuickNote={onQuickNote}
                       onEditBlock={onEditBlock}
                     />
                   )}
@@ -322,23 +363,52 @@ export function NoteSheet({
   onClose: () => void;
 }) {
   const setNote = useAppStore((state) => state.setNote);
+  const flushNotes = useAppStore((state) => state.flushNotes);
+  const pending = useAppStore((state) => state.notesPending[instance.id] === true);
   const stored = useAppStore((state) =>
     state.instances.find((candidate) => candidate.id === instance.id),
   );
   const current = stored ?? instance;
   const [value, setValue] = useState(current.note);
-  const { t } = useI18n();
+  const { t, formatClockValue } = useI18n();
+
+  /**
+   * Save now instead of waiting out the debounce. Autosave keeps working — the
+   * button is not the only way anything is written — it exists so that "did it
+   * save?" has an action and an answer attached to it.
+   */
+  function saveNow() {
+    void flushNotes();
+  }
+
+  /**
+   * Closing saves too. The toast is only honest when a write was actually
+   * waiting: a sheet closed after the debounce has nothing left to confirm.
+   */
+  function requestClose() {
+    const wasPending = pending;
+    void flushNotes().then((ok) => {
+      if (wasPending && ok) {
+        toastManager.add({ title: t("today.noteSavedToast"), timeout: 3_000 });
+      }
+    });
+    onClose();
+  }
+
+  // The last moment the text itself changed. Shown only after the write has
+  // landed, so the clock never claims a save that has not happened.
+  const savedAt = current.noteUpdatedAt ? Date.parse(current.noteUpdatedAt) : null;
 
   return (
     <Sheet
       open
       onOpenChange={(next) => {
-        if (!next) onClose();
+        if (!next) requestClose();
       }}
       title={t("today.note")}
       description={current.title}
       footer={
-        <Button onClick={onClose}>{t("common.close")}</Button>
+        <Button onClick={requestClose}>{t("common.close")}</Button>
       }
     >
       <label className="flex flex-col gap-1.5">
@@ -352,10 +422,36 @@ export function NoteSheet({
             setValue(event.target.value);
             setNote(instance.id, event.target.value);
           }}
+          onKeyDown={(event) => {
+            // Ctrl/Cmd + Enter, wherever the cursor is in the field.
+            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+              event.preventDefault();
+              saveNow();
+            }
+          }}
           className="min-h-32 w-full resize-y rounded-control border border-line-strong bg-surface-raised px-3 py-2 text-body text-ink placeholder:text-ink-muted focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-accent"
         />
         <span className="text-label text-ink-muted">{t("today.noteHint")}</span>
       </label>
+
+      {/* Certainty, not autosave theatre. The write keeps happening on its own,
+          but "did it save?" deserves a visible answer the moment it changes —
+          announced, so it is an answer for screen readers too. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span role="status" className="text-label text-ink-muted">
+          {pending
+            ? t("today.noteUnsaved")
+            : savedAt !== null
+              ? t("today.noteSaved", { time: formatClockValue(minuteOfDayFromEpoch(savedAt)) })
+              : ""}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-caption text-mute">{t("today.noteShortcutHint")}</span>
+          <Button size="sm" variant="secondary" onClick={saveNow}>
+            {t("today.noteSave")}
+          </Button>
+        </div>
+      </div>
 
       {hasMarkup(value) ? (
         <div className="rounded-panel border border-line bg-surface p-3 text-body text-ink">

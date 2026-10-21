@@ -7,5 +7,6 @@ export * from "./targets";
 export * from "./recap";
 export * from "./week";
 export * from "./reflection";
+export * from "./notes";
 export * from "./shift";
 export * from "./propagate";

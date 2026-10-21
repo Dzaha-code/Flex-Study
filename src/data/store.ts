@@ -113,6 +113,12 @@ export interface AppState {
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
   lastShiftEventId: string | null;
+  /**
+   * Notes whose text changed but whose write has not reached storage yet.
+   * A reactive mirror of the module-level dirty set, so "Belum disimpan" is
+   * answered from the store instead of guessed by the editor.
+   */
+  notesPending: Record<string, boolean>;
 
   hydrate: () => Promise<void>;
   dismissStorageNotice: () => void;
@@ -149,6 +155,12 @@ export interface AppState {
   resetBlock: (id: string) => Promise<void>;
   skipBlock: (id: string) => Promise<void>;
   setNote: (id: string, note: string) => void;
+  /**
+   * Waits until every pending note write has reached storage. The editor's
+   * Simpan button and a closing sheet call this for certainty; autosave keeps
+   * running on its own debounce either way.
+   */
+  flushNotes: () => Promise<boolean>;
 
   runShift: (plan: ShiftPlan) => Promise<ShiftEvent | null>;
   undoShiftEvent: (eventId: string) => Promise<void>;
@@ -180,14 +192,25 @@ function upsertById<T extends { id: string }>(rows: T[], next: T[]): T[] {
 const dirtyNoteIds = new Set<string>();
 let noteTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function flushNoteWrites(): Promise<void> {
-  if (dirtyNoteIds.size === 0) return;
+async function flushNoteWrites(): Promise<boolean> {
+  if (dirtyNoteIds.size === 0) return true;
   const ids = [...dirtyNoteIds];
   dirtyNoteIds.clear();
+  const pending = { ...useAppStore.getState().notesPending };
   const instances = useAppStore.getState().instances.filter((instance) => ids.includes(instance.id));
-  if (instances.length === 0) return;
-  const outcome = await persistInstances(instances);
-  if (!outcome.ok) useAppStore.setState({ storageNotice: outcome.reason });
+  if (instances.length > 0) {
+    const outcome = await persistInstances(instances);
+    if (!outcome.ok) {
+      // Still pending: the honest status for a write that did not land is
+      // "not saved", never a green light.
+      for (const id of ids) pending[id] = true;
+      useAppStore.setState({ storageNotice: outcome.reason, notesPending: pending });
+      return false;
+    }
+  }
+  for (const id of ids) pending[id] = false;
+  useAppStore.setState({ notesPending: pending });
+  return true;
 }
 
 export const useAppStore = create<AppState>()((set, get) => {
@@ -273,6 +296,7 @@ export const useAppStore = create<AppState>()((set, get) => {
     reflections: [],
     shiftEvents: [],
     lastShiftEventId: null,
+    notesPending: {},
 
     hydrate: async () => {
       if (!isStorageAvailable()) {
@@ -282,6 +306,24 @@ export const useAppStore = create<AppState>()((set, get) => {
       }
       try {
         const workspace = await loadWorkspace();
+        /**
+         * 0.5.5 shipped a Stabilo-only override; 0.5.6 replaced it with one
+         * app-wide preference. Promote whatever was chosen there, or an upgrade
+         * would quietly stand her still again on a machine the user had already
+         * fixed — the exact complaint that started this.
+         */
+        if (workspace.stabilo?.forceMotion) {
+          workspace.settings = {
+            ...workspace.settings,
+            animation:
+              workspace.settings.animation === "system"
+                ? "full"
+                : workspace.settings.animation,
+          };
+          workspace.stabilo = { ...workspace.stabilo, forceMotion: false };
+          guardWrite(await persistSettings(workspace.settings));
+          guardWrite(await persistStabilo(workspace.stabilo));
+        }
         set({ ...workspace, customTemplates: workspace.customTemplates ?? [], status: "ready" });
         mirrorPreferences(workspace.settings);
         const today = todayISO(Date.now());
@@ -676,18 +718,31 @@ export const useAppStore = create<AppState>()((set, get) => {
       const state = get();
       const target = state.instances.find((instance) => instance.id === id);
       if (!target) return;
+      const now = new Date();
       const next: BlockInstance = {
         ...target,
         note,
-        updatedAt: new Date().toISOString(),
+        noteUpdatedAt: now.toISOString(),
+        updatedAt: now.toISOString(),
       };
-      set({ instances: replaceInstance(state.instances, next) });
+      set({
+        instances: replaceInstance(state.instances, next),
+        notesPending: { ...get().notesPending, [id]: true },
+      });
 
       dirtyNoteIds.add(id);
       if (noteTimer) clearTimeout(noteTimer);
       noteTimer = setTimeout(() => {
         void flushNoteWrites();
       }, NOTE_DEBOUNCE_MS);
+    },
+
+    flushNotes: async () => {
+      if (noteTimer) {
+        clearTimeout(noteTimer);
+        noteTimer = null;
+      }
+      return flushNoteWrites();
     },
 
     runShift: async (plan) => {

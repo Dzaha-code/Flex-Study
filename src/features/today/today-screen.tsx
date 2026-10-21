@@ -21,6 +21,7 @@ import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { HeaderClock } from "./header-clock";
+import { NoteDetailSheet } from "./note-detail-sheet";
 import { ShiftSheet } from "./shift-sheet";
 import { TimerWatcher } from "./running-timer";
 import { AddBlockSheet, NoteSheet, Timeline, type CategoryLookup } from "./timeline";
@@ -96,7 +97,18 @@ function TodayContent({ date }: { date: string }) {
   const [shiftOpen, setShiftOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [noteTarget, setNoteTarget] = useState<BlockInstance | null>(null);
+  const [noteDetailTarget, setNoteDetailTarget] = useState<BlockInstance | null>(null);
   const [editTarget, setEditTarget] = useState<BlockInstance | null>(null);
+
+  /**
+   * The row icon reads before it writes: a block that already carries a note
+   * opens that note; one that does not opens the editor, so writing stays one
+   * tap away from anywhere.
+   */
+  function quickNote(instance: BlockInstance) {
+    if (instance.note.trim() !== "") setNoteDetailTarget(instance);
+    else setNoteTarget(instance);
+  }
 
   const todayBlocks = useMemo(
     () => instances.filter((instance) => instance.date === date),
@@ -212,6 +224,7 @@ function TodayContent({ date }: { date: string }) {
           focusId={focus?.instance.id ?? null}
           categoryById={categoryById}
           onOpenNote={setNoteTarget}
+          onQuickNote={quickNote}
           onEditBlock={setEditTarget}
         />
       )}
@@ -265,6 +278,22 @@ function TodayContent({ date }: { date: string }) {
       <ShiftSheet open={shiftOpen} onOpenChange={setShiftOpen} date={date} />
       {addOpen ? <AddBlockSheet date={date} onClose={() => setAddOpen(false)} /> : null}
       {noteTarget ? <NoteSheet instance={noteTarget} onClose={() => setNoteTarget(null)} /> : null}
+      {/* The detail sheet swaps, never stacks: one dialog at a time, or the two
+          fight over the same layer and the same focus trap. */}
+      {noteDetailTarget ? (
+        <NoteDetailSheet
+          instance={noteDetailTarget}
+          onClose={() => setNoteDetailTarget(null)}
+          onEdit={(instance) => {
+            setNoteDetailTarget(null);
+            setNoteTarget(instance);
+          }}
+          onOpenBlock={(instance) => {
+            setNoteDetailTarget(null);
+            setEditTarget(instance);
+          }}
+        />
+      ) : null}
       {editTarget ? (
         <EditBlockSheet instance={editTarget} onClose={() => setEditTarget(null)} />
       ) : null}
