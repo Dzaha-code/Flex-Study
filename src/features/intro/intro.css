@@ -176,6 +176,25 @@
   color: #7d837b;
 }
 
+/* The way out of a still opening: same quiet colour, underlined so it reads as
+   a destination rather than more of the sentence. */
+.intro-reduced-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.intro-reduced-link:hover {
+  color: #b9beb4;
+}
+
+.intro-reduced-link:focus-visible {
+  outline: 2px solid #d8ffb0;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 /* Diagnosis only: `fs.intro.debug` or `?introDebug=1`. Never in normal use. */
 .intro-debug {
   position: absolute;

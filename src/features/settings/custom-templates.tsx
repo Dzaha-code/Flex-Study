@@ -8,8 +8,10 @@ import { IconPlus } from "@/components/ui/icons";
 import { Chip } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
+import type { ISODate } from "@/domain/types";
 import { StabiloAside } from "@/features/stabilo/ui/StabiloAside";
 import { useI18n } from "@/i18n";
+import { TemplateSwitchSheet, useTemplateSwitchFeedback } from "./template-switch-sheet";
 
 /**
  * "Make a template" from the plan the user already built.
@@ -27,6 +29,7 @@ export function CustomTemplates() {
   const deleteCustomTemplate = useAppStore((state) => state.deleteCustomTemplate);
   const applyCustomTemplate = useAppStore((state) => state.applyCustomTemplate);
   const { t } = useI18n();
+  const raiseSwitchToast = useTemplateSwitchFeedback();
 
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -51,16 +54,17 @@ export function CustomTemplates() {
     }
   }
 
-  async function apply(id: string) {
+  /**
+   * Same start-day sheet as the catalog list: one confirmation, one preview,
+   * one undo, whatever kind of template is being applied (§3.5).
+   */
+  function confirmApply(startDate: ISODate) {
+    const id = pendingApply;
+    if (!id) return;
     setApplying(id);
-    try {
-      const ok = await applyCustomTemplate(id);
-      if (ok) {
-        toastManager.add({ title: t("settings.customTemplateApplied"), timeout: 3_000 });
-      }
-    } finally {
-      setApplying(null);
-    }
+    void raiseSwitchToast(() => applyCustomTemplate(id, { startDate })).finally(() =>
+      setApplying(null),
+    );
   }
 
   return (
@@ -157,21 +161,17 @@ export function CustomTemplates() {
         </ul>
       )}
 
-      {/* Applying replaces the plan, so it asks first — the same warning the
-          catalog templates show. */}
-      <ConfirmSheet
+      {/* Applying replaces part of the plan, so it says what, when, and how to
+          reverse it — the same sheet the catalog templates use. */}
+      <TemplateSwitchSheet
         open={pendingApply !== null}
         onOpenChange={(next) => {
           if (!next) setPendingApply(null);
         }}
-        title={t("settings.applyTemplate")}
-        description={t("settings.applyTemplateWarning")}
-        confirmLabel={t("settings.applyTemplate")}
-        onConfirm={() => {
-          const id = pendingApply;
-          setPendingApply(null);
-          if (id) void apply(id);
-        }}
+        templateName={
+          customTemplates.find((template) => template.id === pendingApply)?.name ?? ""
+        }
+        onConfirm={confirmApply}
       />
 
       <ConfirmSheet

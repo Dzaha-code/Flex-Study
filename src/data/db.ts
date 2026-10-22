@@ -5,6 +5,7 @@ import type {
   Category,
   Reflection,
   ShiftEvent,
+  TemplateSwitchEvent,
 } from "@/domain/types";
 
 export interface MetaRow {
@@ -25,6 +26,12 @@ export class FlexStudyDatabase extends Dexie {
   instances!: Table<BlockInstance, string>;
   reflections!: Table<Reflection, string>;
   shiftEvents!: Table<ShiftEvent, string>;
+  /**
+   * Added inside the existing version 1 rather than as a new version: a table
+   * with the same index shape as `shiftEvents` needs no backfill, and Dexie
+   * creates missing stores on upgrade without touching the rows already there.
+   */
+  switchEvents!: Table<TemplateSwitchEvent, string>;
   meta!: Table<MetaRow, string>;
 
   constructor() {
@@ -35,6 +42,7 @@ export class FlexStudyDatabase extends Dexie {
       instances: "id, date, status, categoryId, templateId",
       reflections: "id, date",
       shiftEvents: "id, date",
+      switchEvents: "id, date",
       meta: "key",
     });
   }

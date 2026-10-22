@@ -10,3 +10,4 @@ export * from "./reflection";
 export * from "./notes";
 export * from "./shift";
 export * from "./propagate";
+export * from "./template-switch";

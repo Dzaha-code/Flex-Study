@@ -261,7 +261,13 @@ function CompactRow({
 
       <div className="flex items-center gap-1">
         <BlockActions instance={instance} prominent={false} />
-        <IconButton label={`${t("today.note")}: ${instance.title}`} onClick={() => onQuickNote(instance)}>
+        {/* Reading first, and visible at a glance: a row that carries a note
+            lights its icon, so "which blocks have notes?" needs no scanning. */}
+        <IconButton
+          label={`${t("today.note")}: ${instance.title}`}
+          onClick={() => onQuickNote(instance)}
+          className={instance.note.trim() ? "text-accent" : undefined}
+        >
           <IconNote />
         </IconButton>
         <IconButton

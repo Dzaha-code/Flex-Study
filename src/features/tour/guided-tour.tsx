@@ -48,6 +48,8 @@ export const TOUR_STEPS: TourStep[] = [
   { route: "/journal", target: "journal-entry", screenKey: "nav.journal", titleKey: "tour.journalEntry.title", bodyKey: "tour.journalEntry.body" },
   { route: "/journal", target: "journal-history", screenKey: "nav.journal", titleKey: "tour.journalHistory.title", bodyKey: "tour.journalHistory.body" },
   { route: "/settings", target: "settings-appearance", screenKey: "nav.settings", titleKey: "tour.settingsAppearance.title", bodyKey: "tour.settingsAppearance.body" },
+  // 3.6d: name where templates live, in both of the places they actually are.
+  { route: "/settings", target: "settings-templates", screenKey: "nav.settings", titleKey: "tour.templates.title", bodyKey: "tour.templates.body" },
   { route: "/settings", target: "settings-data", screenKey: "nav.settings", titleKey: "tour.settingsData.title", bodyKey: "tour.settingsData.body" },
   { route: "/guide", target: "guide-quick", screenKey: "nav.guide", titleKey: "tour.guideQuick.title", bodyKey: "tour.guideQuick.body" },
 ];

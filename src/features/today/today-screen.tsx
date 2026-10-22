@@ -165,6 +165,15 @@ function TodayContent({ date }: { date: string }) {
           </div>
           <div className="flex items-center gap-2">
             <HeaderClock />
+            {/* 3.6d: the second door into templates — the tour names both this
+                and Atur → Template, and points at each marker in turn. */}
+            <Link
+              href="/settings"
+              data-tour="today-templates"
+              className="inline-flex h-11 items-center rounded-control border border-line-strong bg-surface-raised px-4 text-meta hover:bg-accent-surface"
+            >
+              {t("settings.templates")}
+            </Link>
             {/* Its own target, not part of `progress`: the tour points at this
                 button on its own step, and a shared target would highlight the
                 whole header twice. */}

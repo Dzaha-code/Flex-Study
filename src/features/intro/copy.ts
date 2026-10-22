@@ -23,6 +23,11 @@ export interface IntroCopy {
    * still opening reads as a setting instead of a broken build.
    */
   reduced: string;
+  /**
+   * The link that accompanies it: knowing *why* it is still should lead straight
+   * to the control (updateBrief.md §3.1, "tautan ke Atur").
+   */
+  reducedAction: string;
   skip: string;
   /** Accessible name for the dialog. */
   dialog: string;
@@ -37,7 +42,8 @@ export const COPY: Record<IntroLang, IntroCopy> = {
     hl: "kembali lagi",
     l2b: ".",
     note: "Tanpa akun · Datamu tetap di perangkatmu",
-    reduced: "Animasi dikurangi karena pengaturan sistem. Bisa diubah di Atur → Tampilan.",
+    reduced: "Animasi dikurangi karena pengaturan sistem.",
+    reducedAction: "Buka Atur → Tampilan",
     skip: "Lewati",
     dialog: "Pengantar FlexStudy",
     wordmark: "FlexStudy",
@@ -48,7 +54,8 @@ export const COPY: Record<IntroLang, IntroCopy> = {
     hl: "coming back",
     l2b: ".",
     note: "No account · Your data stays on your device",
-    reduced: "Animation reduced by your system settings. Change it in Settings → Appearance.",
+    reduced: "Animation reduced by your system settings.",
+    reducedAction: "Open Settings → Appearance",
     skip: "Skip",
     dialog: "Introducing FlexStudy",
     wordmark: "FlexStudy",

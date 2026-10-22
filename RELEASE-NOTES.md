@@ -6,6 +6,60 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.7 — 22 Oktober 2026
+
+Mengganti template kini benar-benar mengganti Hari ini — dengan pilihan tanggal mulai,
+pratinjau yang jujur, dan sepuluh detik untuk membatalkannya.
+
+### Yang diperbaiki
+
+- **Bug "ganti template tidak mengubah Hari ini".** Penyebabnya bukan tampilan yang
+  basi, melainkan aturan di `applyStudyTemplate`: syarat "pertahankan" mengecualikan
+  setiap blok yang bertanggal `<= hari ini` — artinya tepat blok hari ini — sementara
+  `ensureRange` hanya mengisi hari yang masih kosong. Blok hari ini sudah
+  termaterialisasi dari template lama, jadi berapa kali pun template diganti, isinya
+  tidak pernah bisa berubah. Hari ini sekarang masuk jendela penggantian seperti hari
+  lain, dan diagnosanya tercatat di `AI-HANDOFF.md` §11.13.
+- **Riwayat tidak lagi kehilangan kategorinya.** Kategori yang masih dipakai blok lama
+  kini diadopsi (dicocokkan nama + ikon + target) alih-alih dibuang, sehingga blok
+  lampau tidak lagi menunjuk id yang tidak ada — kesalahan yang membuat Rekap dan
+  Catatan blok kehilangan nama kategori setelah template diganti.
+
+### Yang baru
+
+- **Alur "Terapkan mulai".** Setiap penerapan — katalog maupun template simpanan —
+  melewati satu lembar yang sama: **Hari ini** (bawaan) · **Besok** · **Senin depan**.
+  Template sudah tidak bisa lagi mengganti jadwal tanpa kamu tahu kapan mulainya.
+- **Pratinjau yang tidak bisa berbohong.** Angka di lembar dihitung oleh fungsi yang
+  sama persis dengan yang dipakai saat menerapkan (`planTemplateSwitch`): *"3 blok
+  diganti · 2 blok tetap (1 selesai, 1 berjalan)"*. Yang kamu baca sebelum menekan
+  adalah daftar yang benar-benar dipakai.
+- **Urungkan 10 detik** di toast setelah menerapkan. Membatalkan mengembalikan baris
+  yang dihapus, menghapus baris baru, dan mengembalikan template serta kategori lama
+  sekaligus — bukan hanya sebagian.
+- **Aturan keselamatan data.** Hanya blok `planned` yang belum punya catatan, belum
+  punya waktu terukur, dan tidak dipindahkan dengan tangan yang boleh diganti. Blok
+  `running`, `done`, `skipped`, `deferred`, semua blok bercatatan, dan seluruh hari
+  lampau tidak pernah disentuh.
+- **Tombol Template di header Hari ini** — pintu kedua yang disebut tur Stabilo
+  (`data-tour="today-templates"`), bukan hanya Atur → Template.
+
+### Batas rilis ini
+
+Brief menaruh 3.5 di 0.5.6, tetapi 0.5.6 sudah terlanjur dirilis tanpa perbaikan ini,
+jadi ia keluar sebagai 0.5.7. Sisa item 0.5.7 di brief — **Galeri Template** (3.6a-b),
+**editor template lengkap** (3.6c), dan **langkah "Jam hari"** (3.7) — belum ada dan
+menyusul di rilis berikutnya.
+
+### Berkas
+
+| Berkas | Ukuran | SHA-256 |
+|---|---|---|
+| `FlexStudy_0.5.7_x64-setup.exe` | 2.634.700 byte (2,51 MiB) | `a29d8381aa10d186cbcf54e43d9cd75a7f381b5b7826ccb5078d4abea48f139e` |
+| `FlexStudy_0.5.7_x64_en-US.msi` | 3.162.112 byte (3,02 MiB) | `164e60baf33bddb01a9e9e2febabf26e2f7b242bce242054407f463884aed0f7` |
+
+---
+
 ## 0.5.6 — 21 Oktober 2026
 
 Catatan bisa ditulis dan dibaca di tengah sesi, setiap baris tur punya jalan keluar
