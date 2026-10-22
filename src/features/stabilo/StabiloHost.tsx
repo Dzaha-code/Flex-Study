@@ -251,6 +251,9 @@ function StabiloSession({ flow }: { flow: Flow }) {
       week: t("nav.week"),
       journal: t("nav.journal"),
       settings: t("nav.settings"),
+      // 3.6d: the panels are named with their real labels, so the line points
+      // at words that exist on screen.
+      templates: t("settings.templates"),
       guide: t("nav.guide"),
     }),
     [prefs.nickname, t],

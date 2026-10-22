@@ -6,10 +6,14 @@ import {
   applyShift as buildShiftApplication,
   createId,
   makeReflection,
+  makeTemplateSwitchEvent,
+  planTemplateSwitch,
   SCHEMA_VERSION,
   todayISO,
   undoShift,
+  undoTemplateSwitch,
   weekdayIndex,
+  withCreatedInstances,
 } from "@/domain";
 import type {
   BlockInstance,
@@ -17,10 +21,12 @@ import type {
   Category,
   CategorySymbol,
   CustomTemplate,
+  ISODate,
   Reflection,
   Settings,
   ShiftEvent,
   ShiftPlan,
+  TemplateSwitchEvent,
 } from "@/domain";
 import { buildFromTemplate, findTemplate, toStudyTemplate, type StudyTemplate } from "@/templates";
 import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
@@ -37,6 +43,7 @@ import {
   persistSettings,
   persistStabilo,
   persistShiftEvent,
+  persistSwitchEvent,
   persistTemplates,
   removeCategory as removeCategoryRow,
   removeInstances,
@@ -113,6 +120,10 @@ export interface AppState {
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
   lastShiftEventId: string | null;
+  /** The log of template applications, newest first. The undo record of §3.5. */
+  switchEvents: TemplateSwitchEvent[];
+  /** The switch waiting for its "Urungkan" toast, mirroring `lastShiftEventId`. */
+  lastTemplateSwitchEventId: string | null;
   /**
    * Notes whose text changed but whose write has not reached storage yet.
    * A reactive mirror of the module-level dirty set, so "Belum disimpan" is
@@ -140,12 +151,12 @@ export interface AppState {
    */
   applyTemplate: (
     templateId: string,
-    options?: { completeOnboarding?: boolean },
+    options?: { completeOnboarding?: boolean; startDate?: ISODate },
   ) => Promise<boolean>;
   /** Saved templates: snapshot the plan, re-apply it later. */
   saveCustomTemplate: (input: { name: string; description?: string }) => Promise<string | null>;
   deleteCustomTemplate: (id: string) => Promise<void>;
-  applyCustomTemplate: (id: string) => Promise<boolean>;
+  applyCustomTemplate: (id: string, options?: { startDate?: ISODate }) => Promise<boolean>;
 
   ensureRange: (from: string, to: string) => Promise<void>;
   addInstance: (draft: InstanceDraft) => Promise<void>;
@@ -165,6 +176,9 @@ export interface AppState {
   runShift: (plan: ShiftPlan) => Promise<ShiftEvent | null>;
   undoShiftEvent: (eventId: string) => Promise<void>;
   dismissShift: () => void;
+
+  undoTemplateSwitchEvent: (eventId: string) => Promise<void>;
+  dismissTemplateSwitch: () => void;
 
   saveReflection: (draft: ReflectionDraftInput) => Promise<void>;
   deleteReflection: (id: string) => Promise<void>;
@@ -222,33 +236,78 @@ export const useAppStore = create<AppState>()((set, get) => {
    * One apply path for both the shipped catalog and the user's saved templates;
    * the only difference is where the `StudyTemplate` came from.
    *
-   * History is kept — only untouched future blocks are dropped — and the active
-   * id is recorded so Settings can mark which plan is in force.
+   * 0.5.6 §3.5: what may be replaced is decided by `planTemplateSwitch` — only
+   * untouched `planned` blocks from the start day onward. The same plan is the
+   * preview the user confirms, and a `TemplateSwitchEvent` records what was
+   * removed (and what was created) so the whole application can be undone.
+   *
+   * The diagnosis behind the rewrite: the old keep-rule excluded every block
+   * dated `<= today`, and `ensureRange` only fills days that are empty — so
+   * today's already-materialised blocks could never change, no matter which
+   * template was picked. Today is now part of the window like any other day.
    */
   const applyStudyTemplate = async (
     template: StudyTemplate,
-    options?: { completeOnboarding?: boolean },
+    options?: { completeOnboarding?: boolean; startDate?: ISODate },
   ): Promise<void> => {
     const state = get();
     const now = Date.now();
     const today = todayISO(now);
+    // "Terapkan mulai": today unless a later day was chosen, and never a day
+    // in the past — an invalid value simply falls back to today.
+    const startDate =
+      options?.startDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(options.startDate) &&
+      options.startDate > today
+        ? options.startDate
+        : today;
 
-    const { categories, blockTemplates } = buildFromTemplate({
+    const built = buildFromTemplate({
       template,
       now,
       newId: createId,
       locale: state.settings.locale,
     });
 
+    const plan = planTemplateSwitch({ instances: state.instances, startDate });
+    const replacedIds = new Set(plan.replacedIds);
     const keptInstances = state.instances.filter(
-      (instance) =>
-        instance.date <= today ||
-        instance.status !== "planned" ||
-        instance.actualSeconds > 0 ||
-        instance.note.trim() !== "" ||
-        instance.movedFrom !== null,
+      (instance) => !replacedIds.has(instance.id),
     );
 
+    /**
+     * Categories that kept blocks still point at are adopted rather than
+     * rebuilt: history reads category names through those ids (recap, week,
+     * notes), so dropping them is how an applied template used to orphan its
+     * own past. An exact name+icon+target match reuses the row instead of
+     * stacking a duplicate per apply.
+     */
+    const reuse = new Map<string, string>();
+    const adopted: Category[] = [];
+    for (const category of built.categories) {
+      const match = state.categories.find(
+        (existing) =>
+          existing.name === category.name &&
+          existing.icon === category.icon &&
+          existing.weeklyTargetMinutes === category.weeklyTargetMinutes,
+      );
+      reuse.set(category.id, match ? match.id : category.id);
+      if (!match) adopted.push(category);
+    }
+    const blockTemplates = built.blockTemplates.map((blockTemplate) => ({
+      ...blockTemplate,
+      categoryId: reuse.get(blockTemplate.categoryId) ?? blockTemplate.categoryId,
+    }));
+    const keptCategoryIds = new Set(keptInstances.map((instance) => instance.categoryId));
+    // A reused id must survive the wipe too: the new blocks point at it even
+    // when no kept instance does.
+    for (const id of reuse.values()) keptCategoryIds.add(id);
+    const categories = [
+      ...state.categories.filter((category) => keptCategoryIds.has(category.id)),
+      ...adopted,
+    ];
+
+    const previousTemplateId = state.settings.activeTemplateId;
     const settings: Settings = {
       ...state.settings,
       activeTemplateId: template.templateId,
@@ -264,13 +323,44 @@ export const useAppStore = create<AppState>()((set, get) => {
       instances: keptInstances,
       reflections: state.reflections,
       shiftEvents: state.shiftEvents,
+      switchEvents: state.switchEvents,
       settings,
     };
 
     set({ ...workspace });
     mirrorPreferences(settings);
     guardWrite(await replaceAll(workspace));
+
+    const beforeIds = new Set(state.instances.map((instance) => instance.id));
     await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
+
+    // The undo record exists when something was replaced — or when the start
+    // day is in the future, because that window has to stay frozen to the old
+    // plan until the day arrives (see ensureRange).
+    if (plan.replacedIds.length > 0 || startDate > today) {
+      const createdIds = get()
+        .instances.filter((instance) => !beforeIds.has(instance.id))
+        .map((instance) => instance.id);
+      const stamp = Date.now();
+      const event = withCreatedInstances(
+        makeTemplateSwitchEvent({
+          plan,
+          previousTemplateId,
+          // The arrays captured before the wipe — the state undo returns to.
+          previousTemplates: state.templates,
+          previousCategories: state.categories,
+          now: stamp,
+          newId: createId,
+        }),
+        createdIds,
+        stamp,
+      );
+      set({
+        switchEvents: [event, ...get().switchEvents],
+        lastTemplateSwitchEventId: event.id,
+      });
+      guardWrite(await persistSwitchEvent(event));
+    }
   };
 
   const currentWorkspace = (state: AppState) => ({
@@ -278,11 +368,12 @@ export const useAppStore = create<AppState>()((set, get) => {
     templates: state.templates,
     instances: state.instances,
     reflections: state.reflections,
-      shiftEvents: state.shiftEvents,
-      settings: state.settings,
-      stabilo: state.stabilo,
-      customTemplates: state.customTemplates,
-    });
+    shiftEvents: state.shiftEvents,
+    switchEvents: state.switchEvents,
+    settings: state.settings,
+    stabilo: state.stabilo,
+    customTemplates: state.customTemplates,
+  });
 
   return {
     status: "loading",
@@ -296,6 +387,8 @@ export const useAppStore = create<AppState>()((set, get) => {
     reflections: [],
     shiftEvents: [],
     lastShiftEventId: null,
+    switchEvents: [],
+    lastTemplateSwitchEventId: null,
     notesPending: {},
 
     hydrate: async () => {
@@ -468,10 +561,10 @@ export const useAppStore = create<AppState>()((set, get) => {
       return true;
     },
 
-    applyCustomTemplate: async (id) => {
+    applyCustomTemplate: async (id, options) => {
       const saved = get().customTemplates.find((item) => item.id === id);
       if (!saved) return false;
-      await applyStudyTemplate(toStudyTemplate(saved));
+      await applyStudyTemplate(toStudyTemplate(saved), options);
       return true;
     },
 
@@ -528,16 +621,30 @@ export const useAppStore = create<AppState>()((set, get) => {
       const start = from > today ? from : today;
       if (start > to) return;
 
+      /**
+       * A template applied for a future day freezes the window before it
+       * (updateBrief.md §3.5): those days still belong to the previous plan.
+       * Without this, the new template's ids are missing from every early day
+       * and ensureRange would stack its blocks on top of the old plan's.
+       * The newest not-undone switch decides, and a start day already in the
+       * past freezes nothing.
+       */
+      const activeSwitch = state.switchEvents.find((event) => !event.undone);
+      const frozenUntil =
+        activeSwitch && activeSwitch.date > today ? activeSwitch.date : null;
+      const first = frozenUntil && start < frozenUntil ? frozenUntil : start;
+      if (first > to) return;
+
       const existing = new Set(
         state.instances
-          .filter((instance) => instance.date >= start && instance.date <= to)
+          .filter((instance) => instance.date >= first && instance.date <= to)
           .map((instance) => `${instance.date}|${instance.templateId ?? ""}`),
       );
 
       const stamp = new Date().toISOString();
       const created: BlockInstance[] = [];
 
-      for (let date = start; date <= to; date = addDays(date, 1)) {
+      for (let date = first; date <= to; date = addDays(date, 1)) {
         const weekday = weekdayIndex(date);
         for (const template of state.templates) {
           if (template.archived || !template.days.includes(weekday)) continue;
@@ -794,6 +901,60 @@ export const useAppStore = create<AppState>()((set, get) => {
 
     dismissShift: () => set({ lastShiftEventId: null }),
 
+    /**
+     * The mirror of `undoShiftEvent`, for template switches: put the removed
+     * rows back, delete what the switch created, and name the previous active
+     * template again — otherwise the timeline would be old while Settings kept
+     * pointing at the new plan.
+     *
+     * Written as one `replaceAll` rather than a handful of puts: the apply also
+     * replaced the template and category tables wholesale, so undo has to take
+     * them back wholesale too. Piecemeal writes would leave the new plan's rows
+     * sitting in IndexedDB next to the restored ones, invisible until the next
+     * reload resurrected them.
+     */
+    undoTemplateSwitchEvent: async (eventId) => {
+      const state = get();
+      const event = state.switchEvents.find((item) => item.id === eventId);
+      if (!event || event.undone) return;
+
+      const undo = undoTemplateSwitch(event);
+      const map = new Map(state.instances.map((instance) => [instance.id, instance]));
+      for (const instance of undo.upserts) map.set(instance.id, instance);
+      for (const id of undo.deletes) map.delete(id);
+
+      const settings: Settings = {
+        ...state.settings,
+        activeTemplateId: event.previousTemplateId,
+      };
+      const marked: TemplateSwitchEvent = {
+        ...event,
+        undone: true,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const workspace = {
+        categories: undo.categories,
+        templates: undo.templates,
+        instances: [...map.values()],
+        reflections: state.reflections,
+        shiftEvents: state.shiftEvents,
+        switchEvents: upsertById(state.switchEvents, [marked]),
+        settings,
+        stabilo: state.stabilo,
+        customTemplates: state.customTemplates,
+      };
+
+      set({
+        ...workspace,
+        lastTemplateSwitchEventId: null,
+      });
+      mirrorPreferences(settings);
+      guardWrite(await replaceAll(workspace));
+    },
+
+    dismissTemplateSwitch: () => set({ lastTemplateSwitchEventId: null }),
+
     saveReflection: async (draft) => {
       const state = get();
       const existing =
@@ -840,7 +1001,12 @@ export const useAppStore = create<AppState>()((set, get) => {
         // An older backup has no saved templates; importing it must not erase
         // the ones already on this device.
         customTemplates: parsed.workspace.customTemplates ?? get().customTemplates,
+        // Nor does it have a switch log. The table is left empty to match the
+        // replaced rows — events kept here would undo into instances that no
+        // longer exist.
+        switchEvents: parsed.workspace.switchEvents ?? [],
         lastShiftEventId: null,
+        lastTemplateSwitchEventId: null,
       });
       mirrorPreferences(parsed.workspace.settings);
 
@@ -862,7 +1028,9 @@ export const useAppStore = create<AppState>()((set, get) => {
         instances: [],
         reflections: [],
         shiftEvents: [],
+        switchEvents: [],
         lastShiftEventId: null,
+        lastTemplateSwitchEventId: null,
         settings: { ...DEFAULT_SETTINGS },
         stabilo: { ...DEFAULT_STABILO_PREFS },
         status: "ready",

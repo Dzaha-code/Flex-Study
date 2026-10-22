@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { TextInput, TimeInput } from "@/components/ui/field";
@@ -17,6 +17,7 @@ import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import { estimateUsage } from "@/data/repository";
 import { CustomTemplates } from "./custom-templates";
+import { TemplateSwitchSheet, useTemplateSwitchFeedback } from "./template-switch-sheet";
 import {
   countWorkspace,
   parseWorkspaceImport,
@@ -28,6 +29,7 @@ import type {
   AnimationPreference,
   ContentWidth,
   IntroPreference,
+  ISODate,
   Locale,
   StabiloIntensity,
   ThemePreference,
@@ -59,6 +61,7 @@ export function SettingsScreen() {
   const updateSettings = useAppStore((state) => state.updateSettings);
   const templates = useAppStore((state) => state.templates);
   const categories = useAppStore((state) => state.categories);
+  const customTemplates = useAppStore((state) => state.customTemplates);
   const exportWorkspace = useAppStore((state) => state.exportWorkspace);
   const importWorkspace = useAppStore((state) => state.importWorkspace);
   const resetEverything = useAppStore((state) => state.resetEverything);
@@ -67,6 +70,7 @@ export function SettingsScreen() {
   const updateStabilo = useAppStore((state) => state.updateStabilo);
 
   const { t, locale } = useI18n();
+  const raiseSwitchToast = useTemplateSwitchFeedback();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   /**
    * Live, because the answer explains why she may be standing still: this is
@@ -120,6 +124,32 @@ export function SettingsScreen() {
     }
     toastManager.add({ title: t("settings.resetIntroDone"), timeout: 3_000 });
   }
+
+  /**
+   * Every catalog application lands in the start-day sheet (§3.5): the id
+   * lives in this screen's state, the sheet owns the when and the preview.
+   */
+  function confirmCatalogTemplate(startDate: ISODate) {
+    const id = pendingTemplate;
+    if (!id) return;
+    void raiseSwitchToast(() => applyTemplate(id, { startDate }));
+  }
+
+  const pendingTemplateName = useMemo(() => {
+    if (!pendingTemplate) return "";
+    const catalog = TEMPLATES.find((entry) => entry.templateId === pendingTemplate);
+    if (catalog) return pickLocalized(catalog.name, locale);
+    return customTemplates.find((entry) => entry.id === pendingTemplate)?.name ?? "";
+  }, [pendingTemplate, customTemplates, locale]);
+
+  /** Which plan is in force right now, by whichever list it came from. */
+  const activeTemplateName = useMemo(() => {
+    const catalog = TEMPLATES.find(
+      (entry) => entry.templateId === settings.activeTemplateId,
+    );
+    if (catalog) return pickLocalized(catalog.name, locale);
+    return customTemplates.find((entry) => entry.id === settings.activeTemplateId)?.name ?? null;
+  }, [settings.activeTemplateId, customTemplates, locale]);
 
   /** Validate first, then show what the file holds before replacing anything. */
   async function handleImportFile(file: File) {
@@ -434,6 +464,12 @@ export function SettingsScreen() {
       {/* Its own target: the tour explains saved templates on this panel. */}
       <Panel data-tour="settings-templates">
         <PanelHeader title={t("settings.templates")} description={t("settings.templatesHint")} />
+        {/* The answer to "which plan am I on?" before the list of candidates. */}
+        {activeTemplateName ? (
+          <p className="mb-3 text-meta text-ink">
+            {t("settings.templates.activeLine", { name: activeTemplateName })}
+          </p>
+        ) : null}
         <ul className="flex flex-col divide-y divide-line">
           {TEMPLATES.map((template) => {
             const applied = settings.activeTemplateId === template.templateId;
@@ -556,17 +592,14 @@ export function SettingsScreen() {
         }}
       />
 
-      <ConfirmSheet
+      {/* §3.5: when it starts, what it changes, and how to take it back. */}
+      <TemplateSwitchSheet
         open={pendingTemplate !== null}
         onOpenChange={(next) => {
           if (!next) setPendingTemplate(null);
         }}
-        title={t("settings.applyTemplate")}
-        description={t("settings.applyTemplateWarning")}
-        confirmLabel={t("settings.applyTemplate")}
-        onConfirm={() => {
-          if (pendingTemplate) void applyTemplate(pendingTemplate);
-        }}
+        templateName={pendingTemplateName}
+        onConfirm={confirmCatalogTemplate}
       />
 
       <ConfirmSheet

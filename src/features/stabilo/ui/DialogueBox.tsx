@@ -279,7 +279,13 @@ export function DialogueBox({
           {quiz.prompt ? <p className="text-meta text-ink-muted">{quiz.prompt}</p> : null}
           {/* A question that does not say it wants an answer reads as broken. */}
           <p className="text-caption text-ink-muted">{confused ? labels.confusedBody : labels.pickOne}</p>
-          <ul className="flex flex-col gap-1.5">
+          {/* 3.3 #3: "waiting for you" — two soft swells, then stillness. */}
+          <ul
+            className={cn(
+              "flex flex-col gap-1.5",
+              interactive && "stabilo-await-pulse",
+            )}
+          >
             {quiz.options.map((option, index) => (
               <li
                 key={option.label}
@@ -340,7 +346,7 @@ export function DialogueBox({
       ) : null}
 
       {controls.ask && !feedback ? (
-        <div className="flex flex-wrap gap-2">
+        <div className={cn("flex flex-wrap gap-2", interactive && "stabilo-await-pulse")}>
           <button
             type="button"
             disabled={!interactive}
@@ -396,7 +402,7 @@ export function DialogueBox({
       ) : null}
 
       {intensityPick && !feedback ? (
-        <div className="flex flex-wrap gap-2">
+        <div className={cn("flex flex-wrap gap-2", interactive && "stabilo-await-pulse")}>
           <button
             type="button"
             disabled={!interactive}

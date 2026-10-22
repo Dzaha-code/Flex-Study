@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import Link from "next/link";
 import { COPY, type IntroLang } from "./copy";
 import { readMirroredAnimation } from "@/lib/preferences";
 import { resolveReducedMotion, systemPrefersReducedMotion } from "@/lib/motion";
@@ -391,8 +392,22 @@ export function Intro({ active, onDone, appRef, lang }: IntroProps) {
 
       <i className="dot" aria-hidden="true" />
       <p className="ft">{copy.note}</p>
-      {/* The still branch explains itself, so it cannot read as a broken build. */}
-      {reduced ? <p className="intro-reduced">{copy.reduced}</p> : null}
+      {/* The still branch explains itself, so it cannot read as a broken build.
+          The link goes *under* the overlay: the gate keeps the app mounted while
+          the skip scrub finishes, so routing here lands on Atur → Tampilan the
+          moment the reveal completes — no dead overlay, no extra tap. */}
+      {reduced ? (
+        <p className="intro-reduced">
+          {copy.reduced}{" "}
+          <Link
+            href="/settings"
+            className="intro-reduced-link"
+            onClick={() => skipRef.current?.("reduced-link")}
+          >
+            {copy.reducedAction}
+          </Link>
+        </p>
+      ) : null}
       <button type="button" className="skip" onClick={() => skipRef.current?.("button")}>
         {copy.skip}
       </button>

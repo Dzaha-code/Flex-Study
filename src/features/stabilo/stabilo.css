@@ -84,6 +84,26 @@
   animation: stabilo-breathe 4s ease-in-out infinite;
 }
 
+/*
+ * "Something is waiting for you" (updateBrief.md §3.3 #3): two soft swells on
+ * the controls when a line is ready for an answer, then done. Deliberately
+ * finite — an affordance while waiting, not a loop at rest, so §0's rule
+ * against perpetual motion still holds the moment the answer lands.
+ */
+.stabilo-await-pulse {
+  animation: stabilo-await-pulse 760ms var(--ease-out) 2 both;
+}
+
+@keyframes stabilo-await-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.012);
+  }
+}
+
 @keyframes stabilo-breathe {
   0%,
   100% {
@@ -260,7 +280,8 @@
   :root:not([data-motion="full"]) .stabilo-option-in,
   :root:not([data-motion="full"]) .stabilo-pop-in,
   :root:not([data-motion="full"]) .stabilo-caret,
-  :root:not([data-motion="full"]) .stabilo-speaking-dot {
+  :root:not([data-motion="full"]) .stabilo-speaking-dot,
+  :root:not([data-motion="full"]) .stabilo-await-pulse {
     animation: none !important;
   }
 
@@ -287,7 +308,8 @@
 :root[data-motion="reduced"] .stabilo-option-in,
 :root[data-motion="reduced"] .stabilo-pop-in,
 :root[data-motion="reduced"] .stabilo-caret,
-:root[data-motion="reduced"] .stabilo-speaking-dot {
+:root[data-motion="reduced"] .stabilo-speaking-dot,
+:root[data-motion="reduced"] .stabilo-await-pulse {
   animation: none !important;
 }
 

@@ -555,6 +555,28 @@ export const id = {
   "a11y.progress": "Progres hari ini: {{done}} dari {{total}} blok selesai.",
   "a11y.pattern": "Pola garis {{pattern}}",
   "a11y.required": "wajib diisi",
+
+  "settings.templates.activeLine": "Template aktif: {{name}}",
+
+  "switch.title": "Terapkan template",
+  "switch.startLabel": "Terapkan mulai",
+  "switch.today": "Hari ini",
+  "switch.tomorrow": "Besok",
+  "switch.nextMonday": "Senin depan",
+  "switch.previewReplaced": "{{count}} blok diganti",
+  "switch.previewKept": "{{count}} blok tetap",
+  "switch.previewNothing":
+    "Tidak ada blok yang bisa diganti; semua yang sudah ada tidak tersentuh.",
+  "switch.reasonDone": "{{count}} selesai",
+  "switch.reasonRunning": "{{count}} berjalan",
+  "switch.reasonNoted": "{{count}} bercatatan",
+  "switch.reasonMeasured": "{{count}} sudah dihitung",
+  "switch.reasonOther": "{{count}} lainnya",
+  "switch.applied": "Template diterapkan",
+
+  "tour.templates.title": "Mau ganti susunan harimu?",
+  "tour.templates.body":
+    "Template ada di Atur → Template, atau lewat tombol Template di header Hari ini. Ganti kapan saja — sebelum diterapkan, kamu lihat dulu berapa blok yang diganti dan berapa yang tetap.",
 } as const;
 
 export type MessageKey = keyof typeof id;

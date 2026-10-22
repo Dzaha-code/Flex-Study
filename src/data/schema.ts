@@ -9,6 +9,7 @@ import type {
   ShiftEvent,
   ShiftMove,
   StabiloPrefs,
+  TemplateSwitchEvent,
   Workspace,
 } from "@/domain/types";
 
@@ -139,6 +140,21 @@ export const ShiftEventSchema = z.object({
   undone: z.boolean(),
 });
 
+export const TemplateSwitchEventSchema = z.object({
+  ...entityShape,
+  date: isoDateSchema,
+  previousTemplateId: identifierSchema.nullable(),
+  replacedIds: z.array(identifierSchema),
+  restoreBefore: z.array(BlockInstanceSchema),
+  createdInstanceIds: z.array(identifierSchema),
+  // Required rather than defaulted: an event without the previous plan cannot
+  // undo, so a half-written record must fail validation instead of restoring
+  // rows that point at ids nothing holds.
+  previousTemplates: z.array(BlockTemplateSchema),
+  previousCategories: z.array(CategorySchema),
+  undone: z.boolean(),
+});
+
 export const SettingsSchema = z.object({
   locale: z.enum(["id", "en"]),
   theme: z.enum(["system", "light", "dark"]),
@@ -219,6 +235,9 @@ export const WorkspaceSchema = z.object({
   instances: z.array(BlockInstanceSchema),
   reflections: z.array(ReflectionSchema),
   shiftEvents: z.array(ShiftEventSchema),
+  // Optional like `customTemplates`: a backup made before template switches
+  // were recorded imports without them instead of failing validation.
+  switchEvents: z.array(TemplateSwitchEventSchema).optional(),
   settings: SettingsSchema,
   // Optional rather than defaulted: an older export without the key must keep
   // importing, and an absent field means "keep whatever this device has".
@@ -247,6 +266,9 @@ export const blockInstanceTypeCheck = (value: z.infer<typeof BlockInstanceSchema
 export const reflectionTypeCheck = (value: z.infer<typeof ReflectionSchema>): Reflection => value;
 export const shiftMoveTypeCheck = (value: z.infer<typeof ShiftMoveSchema>): ShiftMove => value;
 export const shiftEventTypeCheck = (value: z.infer<typeof ShiftEventSchema>): ShiftEvent => value;
+export const templateSwitchEventTypeCheck = (
+  value: z.infer<typeof TemplateSwitchEventSchema>,
+): TemplateSwitchEvent => value;
 export const settingsTypeCheck = (value: z.infer<typeof SettingsSchema>): Settings => value;
 export const stabiloPrefsTypeCheck = (
   value: z.infer<typeof StabiloPrefsSchema>,

@@ -219,6 +219,33 @@ export const TOUR_EN: DialogueScript = {
       route: "/settings",
       target: "settings-custom-templates",
       text: "Save your block layout as your own template, then reuse it anytime.",
+      next: "t07t",
+    },
+    // 3.6d: name both doors to the templates — the panel and the Today button —
+    // so nobody has to remember where they were hiding.
+    t07t: {
+      id: "t07t",
+      route: "/settings",
+      target: "settings-templates",
+      text: "New layout? Templates live in {{settings}} → {{templates}}, or the {{templates}} button on {{today}}.",
+      next: "q4",
+    },
+    q4: {
+      id: "q4",
+      route: "/settings",
+      target: "settings-templates",
+      text: "Wait a second!",
+      fx: ["pause"],
+      quiz: {
+        id: "quiz-templates",
+        kind: "choice",
+        prompt: "Try pointing: where do you change your template?",
+        options: [
+          { label: "{{settings}} → {{templates}}", correct: true },
+          { label: "{{week}}" },
+          { label: "{{journal}}" },
+        ],
+      },
       next: "t07b",
     },
     t07b: {

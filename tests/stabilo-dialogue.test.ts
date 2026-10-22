@@ -1,4 +1,6 @@
-﻿import { describe, expect, it } from "vitest";
+﻿import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import {
   GAUGE_FOR_PHASE,
   advance,
@@ -13,6 +15,8 @@ import { lipFrame, pauseFor } from "@/features/stabilo/engine/typewriter";
 import { controlsFor, hasForwardControl } from "@/features/stabilo/ui/controls";
 import { INTRO_EN, TOUR_EN, TOUR_EN_EMPTY } from "@/features/stabilo/script/en";
 import { INTRO_ID, TOUR_ID, TOUR_ID_EMPTY } from "@/features/stabilo/script/id";
+import { id as idMessages, type Messages } from "@/i18n/messages/id";
+import { en as enMessages } from "@/i18n/messages/en";
 import type { DialogueState } from "@/features/stabilo/engine/dialogue";
 import type { DialogueScript } from "@/features/stabilo/engine/types";
 
@@ -89,12 +93,43 @@ describe("stabilo scripts", () => {
     }
   });
 
-  it("keeps every line inside the two-line budget", () => {
-    for (const [, script] of SCRIPTS) {
+  it("keeps every rendered line inside the two-line budget", () => {
+    /**
+     * The budget is about what a reader sees, so it is measured *after* the
+     * `{{tokens}}` become the real UI labels — the same values the host puts in
+     * its params. A raw count would punish a line for spelling out four panel
+     * names it will never display, while a line whose labels are long would
+     * sail through unmeasured.
+     */
+    const params = (messages: Messages) => ({
+      name: ", Rani",
+      start: messages["common.start"],
+      finish: messages["tour.finish"],
+      skip: messages["common.skip"],
+      shift: messages["today.messy"],
+      today: messages["nav.today"],
+      week: messages["nav.week"],
+      journal: messages["nav.journal"],
+      settings: messages["nav.settings"],
+      templates: messages["settings.templates"],
+      guide: messages["nav.guide"],
+    });
+    const hostParams = { id: params(idMessages), en: params(enMessages) };
+
+    for (const [name, script] of SCRIPTS) {
       for (const node of Object.values(script.nodes)) {
-        expect(node.text.length).toBeLessThanOrEqual(90);
-        for (const variant of Object.values(node.mode ?? {})) {
-          expect(variant.length).toBeLessThanOrEqual(90);
+        const lines = [
+          node.text,
+          node.quiz?.prompt,
+          ...(node.quiz?.options.map((option) => option.label) ?? []),
+          ...Object.values(node.mode ?? {}),
+        ].filter((line): line is string => Boolean(line));
+        for (const line of lines) {
+          const rendered = interpolate(line, hostParams[script.lang]);
+          expect(rendered.length, `${name}:${node.id}`).toBeLessThanOrEqual(90);
+          // The host's params are the contract: nothing may reach the screen
+          // still wearing its braces (3.6d added `{{templates}}`).
+          expect(rendered, `${name}:${node.id}`).not.toContain("{{");
         }
       }
     }
@@ -298,6 +333,48 @@ describe("dialogue controls", () => {
     const controls = controlsFor({ quiz: true });
     expect(controls.next).toBe(false);
     expect(controls.options).toBe(true);
+  });
+});
+
+/**
+ * The markers are no longer a hand-typed set: they are read from the source,
+ * so a `data-tour` that was renamed or never written fails the same test that
+ * proves the tour can point at it (updateBrief.md §3.6d: "penanda baru hidup").
+ */
+describe("tour markers", () => {
+  function liveTourTargets(): Set<string> {
+    const found = new Set<string>();
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (/\.(ts|tsx)$/.test(entry.name)) {
+          const source = readFileSync(path, "utf8");
+          for (const match of source.matchAll(/data-tour="([^"]+)"/g)) found.add(match[1]);
+        }
+      }
+    };
+    walk(join(process.cwd(), "src"));
+    return found;
+  }
+
+  it("every script target points at a marker the app really renders", () => {
+    const live = liveTourTargets();
+    const missing: string[] = [];
+    for (const [name, script] of SCRIPTS) {
+      for (const node of Object.values(script.nodes)) {
+        if (node.target && !live.has(node.target)) {
+          missing.push(`${name}:${node.id} → ${node.target}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("names both doors to the templates (3.6d)", () => {
+    const live = liveTourTargets();
+    expect(live.has("settings-templates")).toBe(true);
+    expect(live.has("today-templates")).toBe(true);
   });
 });
 

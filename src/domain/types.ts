@@ -184,6 +184,35 @@ export interface ShiftEvent extends Entity {
 }
 
 /**
+ * An auditable record of applying a different template (updateBrief.md §3.5).
+ *
+ * Same contract as `ShiftEvent`: copies of every row that was removed, the ids
+ * of every row that was created, and an `undone` flag so the log survives its
+ * own reversal. `previousTemplateId` carries the active template before the
+ * switch, because an undo that restored the blocks but kept pointing at the
+ * new plan would be half a lie.
+ */
+export interface TemplateSwitchEvent extends Entity {
+  /** The first day the new plan took over. */
+  date: ISODate;
+  /** `null` when no template was active before (a first apply). */
+  previousTemplateId: string | null;
+  replacedIds: string[];
+  restoreBefore: BlockInstance[];
+  createdInstanceIds: string[];
+  /**
+   * The plan as it was before the switch, in full — the block templates and
+   * categories the apply replaced wholesale. Restoring instances alone would
+   * leave rows pointing at template and category ids that no longer exist,
+   * which is both the "orphaned history" the brief forbids and a guarantee
+   * that the next ensureRange materialises duplicate blocks beside them.
+   */
+  previousTemplates: BlockTemplate[];
+  previousCategories: Category[];
+  undone: boolean;
+}
+
+/**
  * How much of a wide window the content column is allowed to use.
  *
  * `comfortable` keeps a book-like measure, `wide` fills a maximised laptop
@@ -314,6 +343,12 @@ export interface Workspace {
   instances: BlockInstance[];
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
+  /**
+   * Optional for the same reason as `customTemplates`: a backup exported before
+   * template switches were recorded must still import. An old export simply has
+   * no switch log to restore.
+   */
+  switchEvents?: TemplateSwitchEvent[];
   settings: Settings;
   /**
    * Optional so a backup exported before Stabilo existed still imports. Losing

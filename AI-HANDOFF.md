@@ -466,6 +466,24 @@ Satu jalur penerapan: `applyStudyTemplate()` di dalam store dipakai `applyTempla
 
 **Uji.** `tests/motion.test.ts`: toleransi `fillsScreen`, `resolveContentWidth`, `forceMotion` bawaan mati, dan baris `StabiloPrefs` lama (tanpa field itu) tetap terbaca.
 
+### 11.13 Rilis 0.5.7 — ganti template yang benar-benar mengganti Hari ini
+
+**Diagnosis 3.5 (terbukti, bukan dugaan).** `applyStudyTemplate` menyaring `state.instances` dengan syarat "pertahankan bila `instance.date <= today`". Itu berarti setiap blok **hari ini** selalu lolos dan tidak pernah dibuang, sementara `ensureRange` hanya membuat instance untuk pasangan `date|templateId` yang belum ada — jadi hari ini mempertahankan blok template lama **dan** mendapat blok template baru (karena `templateId`-nya berbeda). Gejalanya terbaca sebagai "template tidak berubah", padahal yang terjadi adalah hari ini tidak bisa dibersihkan. Bukan T2 (state basi): store menulis lewat `set()` sebelum `replaceAll`, dan `TodayScreen` berlangganan `instances`. Bukan T3 (`propagate` hanya untuk suntingan). Bukan T5 (tidak ada balapan yang terlihat: `ensureRange` dipanggil setelah tulis selesai).
+
+**Perbaikan.** `planTemplateSwitch()` di `src/domain/template-switch.ts` memutuskan apa yang boleh diganti: `date >= startDate`, `status === "planned"`, catatan kosong, `actualSeconds === 0`, dan `movedFrom === null`. `applyStudyTemplate` memakai `replacedIds` dari rencana itu — bukan lagi perbandingan tanggal — sehingga Hari ini ikut jendela penggantian. Rencana yang sama dipakai lembar konfirmasi sebagai pratinjau, jadi pratinjau tidak mungkin menyimpang dari penerapan.
+
+**Kategori yang diadopsi.** Sebelum mengganti tabel kategori, kategori baru dicocokkan dengan yang lama (nama + ikon + target mingguan). Yang cocok memakai id lama, sehingga blok lampau tetap menemukan namanya; yang tidak cocok ditambahkan. Tanpa ini, mengganti template meninggalkan riwayat dengan `categoryId` yatim — Rekap dan Catatan blok kehilangan labelnya.
+
+**Terapkan mulai.** `applyTemplate(id, { startDate })` dan `applyCustomTemplate(id, { startDate })`. Tanggal divalidasi: format `YYYY-MM-DD` dan harus `> today`, kalau tidak jatuh ke hari ini. Saat `startDate` di masa depan, `ensureRange` membekukan jendela sebelum tanggal itu (`frozenUntil`) supaya rencana lama tetap utuh sampai harinya tiba — tanpa itu, id template baru tidak ada di hari-hari awal dan blok baru akan menumpuk di atas rencana lama.
+
+**Urungkan.** `TemplateSwitchEvent` menyimpan `restoreBefore` (salinan penuh baris yang dihapus), `createdInstanceIds` (diisi setelah `ensureRange`, karena id baru baru ada saat itu), dan salinan `previousTemplates` + `previousCategories`. `undoTemplateSwitchEvent` menulis satu `replaceAll`, bukan beberapa put, karena penerapan juga mengganti tabel template dan kategori secara borongan. Toast 10 detik dengan aksi **Urungkan** ada di `useTemplateSwitchFeedback()`.
+
+**Jebakan yang mudah terulang.** `createdInstanceIds` **harus** diisi setelah `ensureRange`, bukan dari nilai kembaliannya (fungsi itu tidak mengembalikan apa pun). Idempotensi undo dijaga oleh flag `event.undone`, sama seperti log geser.
+
+**Batas rilis.** 3.6d (tombol Template di header Hari ini) ikut di rilis ini. 3.6a-b (Galeri Template), 3.6c (editor template lengkap), dan 3.7 (langkah Jam hari) **belum** dikerjakan; brief menaruhnya di 0.5.7, dan nomor 0.5.7 dipakai lebih dulu untuk perbaikan bug ini karena 0.5.6 sudah dirilis tanpa 3.5.
+
+**Uji.** `tests/template-switch.test.ts` (9): hari sebelum tanggal mulai tidak tersentuh, blok `running`/`done`/bercatatan/terukur/dipindahkan tetap dipertahankan, pembagian tidak menghitung ganda, rencana terbatas pada tanggal mulai, pratinjau identik dengan penerapan (`restoreBefore` = `replacedIds`), undo mengembalikan salinan (bukan referensi hidup ke event), dan undo juga mengembalikan template serta kategori lama sehingga tidak ada baris yang yatim.
+
 ---
 
 ## 12. Pekerjaan terbuka (belum dikerjakan, sudah diketahui)

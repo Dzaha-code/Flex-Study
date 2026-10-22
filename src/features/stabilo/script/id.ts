@@ -222,6 +222,33 @@ export const TOUR_ID: DialogueScript = {
       route: "/settings",
       target: "settings-custom-templates",
       text: "Simpan susunan blokmu jadi template sendiri, lalu pakai lagi kapan saja.",
+      next: "t07t",
+    },
+    // 3.6d: name both doors to the templates — the panel and the Today button —
+    // so nobody has to remember where they were hiding.
+    t07t: {
+      id: "t07t",
+      route: "/settings",
+      target: "settings-templates",
+      text: "Mau ganti susunan? Template ada di {{settings}} → {{templates}}, atau tombol {{templates}} di {{today}}.",
+      next: "q4",
+    },
+    q4: {
+      id: "q4",
+      route: "/settings",
+      target: "settings-templates",
+      text: "Eh, tunggu dulu!",
+      fx: ["pause"],
+      quiz: {
+        id: "quiz-templates",
+        kind: "choice",
+        prompt: "Coba tunjuk: di mana kamu mengganti template?",
+        options: [
+          { label: "{{settings}} → {{templates}}", correct: true },
+          { label: "{{week}}" },
+          { label: "{{journal}}" },
+        ],
+      },
       next: "t07b",
     },
     t07b: {

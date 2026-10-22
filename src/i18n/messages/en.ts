@@ -543,4 +543,26 @@ export const en: Messages = {
   "a11y.progress": "Today's progress: {{done}} of {{total}} blocks done.",
   "a11y.pattern": "Line pattern {{pattern}}",
   "a11y.required": "required",
+
+  "settings.templates.activeLine": "Active template: {{name}}",
+
+  "switch.title": "Apply template",
+  "switch.startLabel": "Apply starting",
+  "switch.today": "Today",
+  "switch.tomorrow": "Tomorrow",
+  "switch.nextMonday": "Next Monday",
+  "switch.previewReplaced": "{{count}} blocks replaced",
+  "switch.previewKept": "{{count}} blocks kept",
+  "switch.previewNothing":
+    "No blocks can be replaced; everything that exists stays untouched.",
+  "switch.reasonDone": "{{count}} done",
+  "switch.reasonRunning": "{{count}} running",
+  "switch.reasonNoted": "{{count}} with a note",
+  "switch.reasonMeasured": "{{count}} already timed",
+  "switch.reasonOther": "{{count}} other",
+  "switch.applied": "Template applied",
+
+  "tour.templates.title": "Want a different daily layout?",
+  "tour.templates.body":
+    "Templates live in Settings → Templates, or through the Templates button on the Today header. Swap whenever you like — before it applies you see how many blocks change and how many stay.",
 };

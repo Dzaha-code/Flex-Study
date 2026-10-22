@@ -9,6 +9,7 @@ import type {
   Reflection,
   Settings,
   ShiftEvent,
+  TemplateSwitchEvent,
   Workspace,
 } from "@/domain/types";
 import { getDatabase, isQuotaError, isStorageAvailable } from "./db";
@@ -42,6 +43,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     instances,
     reflections,
     shiftEvents,
+    switchEvents,
     settings,
     stabilo,
     customTemplates,
@@ -51,6 +53,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     db.instances.toArray(),
     db.reflections.toArray(),
     db.shiftEvents.toArray(),
+    db.switchEvents.toArray(),
     readSettings(),
     readStabilo(),
     readCustomTemplates(),
@@ -62,6 +65,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     instances,
     reflections,
     shiftEvents,
+    switchEvents,
     settings,
     stabilo,
     customTemplates,
@@ -159,6 +163,10 @@ export async function persistShiftEvent(event: ShiftEvent): Promise<WriteOutcome
   return guard(() => getDatabase().shiftEvents.put(event));
 }
 
+export async function persistSwitchEvent(event: TemplateSwitchEvent): Promise<WriteOutcome> {
+  return guard(() => getDatabase().switchEvents.put(event));
+}
+
 /**
  * Drops generated-but-untouched blocks after a given day, so editing the plan
  * never erases something the user already acted on.
@@ -181,7 +189,15 @@ export async function replaceAll(workspace: Workspace): Promise<WriteOutcome> {
   return guard(() =>
     db.transaction(
       "rw",
-      [db.categories, db.templates, db.instances, db.reflections, db.shiftEvents, db.meta],
+      [
+        db.categories,
+        db.templates,
+        db.instances,
+        db.reflections,
+        db.shiftEvents,
+        db.switchEvents,
+        db.meta,
+      ],
       async () => {
         await Promise.all([
           db.categories.clear(),
@@ -189,12 +205,19 @@ export async function replaceAll(workspace: Workspace): Promise<WriteOutcome> {
           db.instances.clear(),
           db.reflections.clear(),
           db.shiftEvents.clear(),
+          db.switchEvents.clear(),
         ]);
         await db.categories.bulkPut(workspace.categories);
         await db.templates.bulkPut(workspace.templates);
         await db.instances.bulkPut(workspace.instances);
         await db.reflections.bulkPut(workspace.reflections);
         await db.shiftEvents.bulkPut(workspace.shiftEvents);
+        // Absent in an older export: the table stays empty with the rest of
+        // the replaced rows, because a kept event would undo into instances
+        // that no longer exist. Applies always carry their log explicitly.
+        if (workspace.switchEvents) {
+          await db.switchEvents.bulkPut(workspace.switchEvents);
+        }
         await db.meta.put({ key: "settings", value: workspace.settings });
         // An older export has no `stabilo` key; writing defaults there would
         // silently erase the nickname this device already had.
@@ -214,7 +237,15 @@ export async function clearWorkspace(): Promise<WriteOutcome> {
   return guard(() =>
     db.transaction(
       "rw",
-      [db.categories, db.templates, db.instances, db.reflections, db.shiftEvents, db.meta],
+      [
+        db.categories,
+        db.templates,
+        db.instances,
+        db.reflections,
+        db.shiftEvents,
+        db.switchEvents,
+        db.meta,
+      ],
       async () => {
         await Promise.all([
           db.categories.clear(),
@@ -222,6 +253,7 @@ export async function clearWorkspace(): Promise<WriteOutcome> {
           db.instances.clear(),
           db.reflections.clear(),
           db.shiftEvents.clear(),
+          db.switchEvents.clear(),
           db.meta.clear(),
         ]);
       },
