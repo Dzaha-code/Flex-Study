@@ -63,7 +63,10 @@ export function categoryProgressForWeek({
         doneMinutes,
         doneBlocks,
         plannedBlocks: own.filter(
-          (instance) => instance.status === "planned" || instance.status === "running",
+          (instance) =>
+            instance.status === "planned" ||
+            instance.status === "running" ||
+            instance.status === "paused",
         ).length,
         totalBlocks: own.length,
         percent: target > 0 ? Math.min(1, doneMinutes / target) : 0,

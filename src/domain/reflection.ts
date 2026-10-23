@@ -43,6 +43,11 @@ export interface ReflectionDraft {
   body: string;
   learnings: readonly string[];
   promptId: string | null;
+  /**
+   * Which journal section the entry belongs to. Callers that do not touch it
+   * leave it out, and the existing value survives — same contract as the star.
+   */
+  sectionId?: string | null;
   /** Left out by callers that do not touch the star, so it survives edits. */
   favorite?: boolean;
   existing?: Reflection | null;
@@ -60,6 +65,11 @@ export function makeReflection(draft: ReflectionDraft): Reflection {
     body: draft.body,
     learnings: normalizeLearnings(draft.learnings),
     wordCount: countWords(draft.body),
+    // `undefined` means "leave it where it is"; an explicit `null` means the
+    // default stream. Written with `=== undefined` rather than `??` because
+    // `null ?? existing` would resurrect the old section and make "Tanpa
+    // bagian" impossible to choose.
+    sectionId: draft.sectionId === undefined ? draft.existing?.sectionId ?? null : draft.sectionId,
     // Editing the text must not clear a star, and starring must not clear text.
     favorite: draft.favorite ?? draft.existing?.favorite ?? false,
     createdAt: draft.existing?.createdAt ?? stamp,
@@ -70,17 +80,39 @@ export function makeReflection(draft: ReflectionDraft): Reflection {
 
 /**
  * Search across everything a person might remember about an entry: the headline
- * they gave it, what they wrote, the take-aways, and the date itself. Pure and
- * dependency-free, so the matching rule is unit-testable rather than buried in a
- * component. An empty query matches everything.
+ * they gave it, what they wrote, the take-aways, the section it lives in, and
+ * the date itself. Pure and dependency-free, so the matching rule is
+ * unit-testable rather than buried in a component. An empty query matches
+ * everything.
  */
-export function reflectionMatches(reflection: Reflection, query: string): boolean {
+export function reflectionMatches(
+  reflection: Reflection,
+  query: string,
+  sectionName?: string,
+): boolean {
   const needle = query.trim().toLowerCase();
   if (needle === "") return true;
-  const haystack = [reflection.title, reflection.body, reflection.date, ...reflection.learnings]
+  const haystack = [
+    reflection.title,
+    reflection.body,
+    reflection.date,
+    sectionName ?? "",
+    ...reflection.learnings,
+  ]
     .join("\n")
     .toLowerCase();
   return haystack.includes(needle);
+}
+
+/**
+ * The entries of one section, plus the ones that belong to no section when
+ * `sectionId` is null — the default stream is a real bucket, not a leftover.
+ */
+export function reflectionsInSection(
+  reflections: readonly Reflection[],
+  sectionId: string | null,
+): Reflection[] {
+  return reflections.filter((reflection) => (reflection.sectionId ?? null) === sectionId);
 }
 
 /** One month inside the archive. */

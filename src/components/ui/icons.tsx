@@ -17,6 +17,7 @@ import {
   Info,
   Lightbulb,
   Note,
+  Pause,
   PencilSimple,
   Play,
   Plus,
@@ -70,6 +71,7 @@ function icon(Glyph: PhosphorIcon, weight: "regular" | "fill" = "regular") {
 }
 
 export const IconPlay = icon(Play, "fill");
+export const IconPause = icon(Pause, "fill");
 export const IconCheck = icon(Check);
 export const IconUndo = icon(ArrowCounterClockwise);
 export const IconSkip = icon(SkipForward);

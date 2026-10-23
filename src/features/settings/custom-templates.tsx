@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { TextInput } from "@/components/ui/field";
 import { IconPlus } from "@/components/ui/icons";
-import { Chip } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import type { ISODate } from "@/domain/types";
@@ -22,13 +21,15 @@ import { TemplateSwitchSheet, useTemplateSwitchFeedback } from "./template-switc
  */
 export function CustomTemplates() {
   const customTemplates = useAppStore((state) => state.customTemplates);
-  const planSize = useAppStore(
-    (state) => state.templates.filter((template) => !template.archived).length,
-  );
+  const templates = useAppStore((state) => state.templates);
+  const categories = useAppStore((state) => state.categories);
+  // The same list `saveCustomTemplate` snapshots, read here so the preview
+  // cannot drift from what the save actually takes.
+  const activeBlocks = templates.filter((template) => !template.archived);
   const saveCustomTemplate = useAppStore((state) => state.saveCustomTemplate);
   const deleteCustomTemplate = useAppStore((state) => state.deleteCustomTemplate);
   const applyCustomTemplate = useAppStore((state) => state.applyCustomTemplate);
-  const { t } = useI18n();
+  const { t, formatMinutes, formatWeekdayIndex } = useI18n();
   const raiseSwitchToast = useTemplateSwitchFeedback();
 
   const [creating, setCreating] = useState(false);
@@ -48,10 +49,23 @@ export function CustomTemplates() {
       setCreating(false);
       setName("");
       setDescription("");
-      toastManager.add({ title: t("settings.customTemplateSaved"), timeout: 3_000 });
+      // The complaint behind this panel was "did it even save?", so the toast
+      // names where to look and the list below shows the saved blocks.
+      toastManager.add({
+        title: t("settings.customTemplateSaved"),
+        description: t("settings.customTemplateSavedBody"),
+        timeout: 5_000,
+      });
     } finally {
       setBusy(false);
     }
+  }
+
+  /** The blocks being snapshotted live one panel up, on the same screen. */
+  function scrollToBlocks() {
+    document
+      .querySelector('[data-tour="settings-blocks"]')
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   /**
@@ -83,7 +97,7 @@ export function CustomTemplates() {
           size="sm"
           variant="secondary"
           aria-expanded={creating}
-          disabled={planSize === 0}
+          disabled={activeBlocks.length === 0}
           onClick={() => setCreating((open) => !open)}
         >
           <IconPlus size={16} />
@@ -91,7 +105,7 @@ export function CustomTemplates() {
         </Button>
       </div>
 
-      {planSize === 0 ? (
+      {activeBlocks.length === 0 ? (
         <p className="text-label text-ink-muted">{t("settings.customTemplateNeedsBlocks")}</p>
       ) : null}
 
@@ -112,6 +126,50 @@ export function CustomTemplates() {
             maxLength={240}
             onChange={(event) => setDescription(event.target.value)}
           />
+
+          {/* The answer to "what exactly am I saving?" before the save button
+              is pressed: the same blocks the store will snapshot, listed. */}
+          <div className="flex flex-col gap-1.5 rounded-panel border border-line bg-surface p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-label font-medium text-ink-muted">
+                {t("settings.customTemplatePreview", { count: activeBlocks.length })}
+              </span>
+              <button
+                type="button"
+                onClick={scrollToBlocks}
+                className="text-caption text-ink-muted underline hover:text-ink"
+              >
+                {t("settings.customTemplateOpenPlan")}
+              </button>
+            </div>
+            {activeBlocks.length === 0 ? (
+              <p className="text-meta text-ink-muted">{t("settings.customTemplateNeedsBlocks")}</p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {activeBlocks.map((block) => {
+                  const category = categories.find(
+                    (candidate) => candidate.id === block.categoryId,
+                  );
+                  return (
+                    <li
+                      key={block.id}
+                      className="flex flex-wrap items-baseline gap-x-2 text-label text-ink"
+                    >
+                      <span className="font-medium">{block.title}</span>
+                      {category ? (
+                        <span className="text-ink-muted">{category.name}</span>
+                      ) : null}
+                      <span className="text-ink-muted">{formatMinutes(block.durationMin)}</span>
+                      <span className="text-ink-muted">
+                        {block.days.map((day) => formatWeekdayIndex(day)).join(" · ")}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={busy} onClick={() => void save()}>
               {t("common.save")}
@@ -139,9 +197,35 @@ export function CustomTemplates() {
                     {template.description}
                   </span>
                 ) : null}
-                <Chip>
-                  {t("settings.customTemplateBlocks", { count: template.blocks.length })}
-                </Chip>
+                {/* The count is the headline; opening it is the proof that the
+                    save landed, block for block — the same question the create
+                    form answers before the fact. */}
+                <details className="w-fit rounded-panel border border-line bg-surface p-2">
+                  <summary className="cursor-pointer text-label font-medium text-ink-muted">
+                    {t("settings.customTemplateBlocks", { count: template.blocks.length })}
+                  </summary>
+                  <ul className="flex flex-col gap-1 pt-2">
+                    {template.blocks.map((block, index) => (
+                      <li
+                        key={`${template.id}-${index}`}
+                        className="flex flex-wrap items-baseline gap-x-2 text-label text-ink"
+                      >
+                        <span className="font-medium">{block.title}</span>
+                        {template.categories[block.categoryIndex] ? (
+                          <span className="text-ink-muted">
+                            {template.categories[block.categoryIndex].name}
+                          </span>
+                        ) : null}
+                        <span className="text-ink-muted">
+                          {formatMinutes(block.durationMin)}
+                        </span>
+                        <span className="text-ink-muted">
+                          {block.days.map((day) => formatWeekdayIndex(day)).join(" · ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               </div>
               <div className="flex items-center gap-2">
                 <Button

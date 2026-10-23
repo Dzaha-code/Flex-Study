@@ -68,8 +68,10 @@ function durationSum(instances: BlockInstance[]): number {
 /**
  * Blocks a reschedule is allowed to touch.
  *
- * Only `planned` blocks move. A running block is already happening, and
- * skipping it would silently throw away measured time.
+ * Only `planned` and `paused` blocks move — a running block is already
+ * happening, and skipping it would silently throw away measured time. Paused
+ * blocks belong with planned ones: the timer is off, the user clearly wants
+ * this work somewhere else, and whatever was banked travels with the row.
  */
 function movableBlocks(
   instances: BlockInstance[],
@@ -79,7 +81,7 @@ function movableBlocks(
 ): BlockInstance[] {
   const filter = blockIds && blockIds.length > 0 ? new Set(blockIds) : null;
   return layoutDay(instancesOn(instances, date), { dayStartMinute: bounds.dayStartMinute })
-    .filter((block) => block.instance.status === "planned")
+    .filter((block) => block.instance.status === "planned" || block.instance.status === "paused")
     .filter((block) => (filter ? filter.has(block.instance.id) : true))
     .map((block) => block.instance);
 }

@@ -158,7 +158,10 @@ export function periodRecap(options: RecapOptions, from: string, to: string): Re
     percent: percentOf(doneMinutes, targetMinutes),
     doneBlocks: window.filter((instance) => instance.status === "done").length,
     plannedBlocks: window.filter(
-      (instance) => instance.status === "planned" || instance.status === "running",
+      (instance) =>
+        instance.status === "planned" ||
+        instance.status === "running" ||
+        instance.status === "paused",
     ).length,
     deferredBlocks: window.filter((instance) => instance.status === "deferred").length,
     skippedBlocks: window.filter((instance) => instance.status === "skipped").length,

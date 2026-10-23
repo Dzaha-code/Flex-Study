@@ -203,6 +203,13 @@ export const TOUR_ID: DialogueScript = {
       route: "/journal",
       target: "journal-history",
       text: "Tulisan lama tersimpan di bawah. Bisa dicari dan dibintangi.",
+      next: "t06c",
+    },
+    t06c: {
+      id: "t06c",
+      route: "/journal",
+      target: "journal-sections",
+      text: "Tiap proyek bisa punya bagian sendiri di jurnal. Bikin, ganti nama, hapus.",
       next: "t07",
     },
     t07: {

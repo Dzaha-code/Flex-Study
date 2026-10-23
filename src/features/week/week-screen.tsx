@@ -20,6 +20,8 @@ function markTone(status: BlockStatus): string {
       return "border-ok bg-ok";
     case "running":
       return "border-accent bg-accent";
+    case "paused":
+      return "border-warn bg-surface";
     case "deferred":
       return "border-warn bg-warn-surface";
     case "skipped":

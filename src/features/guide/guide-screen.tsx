@@ -36,11 +36,12 @@ const TIPS: MessageKey[] = [
 ];
 
 /** Every status is shown with the real badge, so the guide cannot drift. */
-const GLOSSARY: BlockStatus[] = ["planned", "running", "done", "deferred", "skipped"];
+const GLOSSARY: BlockStatus[] = ["planned", "running", "paused", "done", "deferred", "skipped"];
 
 const STATUS_BODY: Record<BlockStatus, MessageKey> = {
   planned: "guide.glossary.planned",
   running: "guide.glossary.running",
+  paused: "guide.glossary.paused",
   done: "guide.glossary.done",
   deferred: "guide.glossary.deferred",
   skipped: "guide.glossary.skipped",

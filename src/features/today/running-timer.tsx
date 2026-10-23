@@ -40,15 +40,21 @@ export const TimerWatcher = memo(function TimerWatcher({
   return null;
 });
 
-/** The time in a compact row: a live countdown while running, otherwise the plan. */
+/**
+ * The time in a compact row: a live countdown while running, a frozen one
+ * while paused, otherwise the plan. A paused block's seconds are already
+ * banked, so `remainingSeconds` reads the same number on every render — the
+ * clock stays stopped without a special case.
+ */
 export const Countdown = memo(function Countdown({ instance }: { instance: BlockInstance }) {
   const { formatMinutes } = useI18n();
   const running = instance.status === "running";
+  const paused = instance.status === "paused";
   const nowEpoch = useNow(running, 1000);
 
   return (
     <span className="text-label text-ink-muted">
-      {running
+      {running || paused
         ? formatCountdown(remainingSeconds(instance, nowEpoch))
         : formatMinutes(instance.durationMin)}
     </span>
@@ -78,11 +84,12 @@ function TimerAnnouncement({ instance }: { instance: BlockInstance }) {
 export const FocusTimer = memo(function FocusTimer({ instance }: { instance: BlockInstance }) {
   const { t, formatMinutes } = useI18n();
   const running = instance.status === "running";
+  const paused = instance.status === "paused";
   const nowEpoch = useNow(running, 1000);
 
   const remaining = remainingSeconds(instance, nowEpoch);
   const overrunning = running && remaining === 0;
-  const ratio = running ? progressRatio(instance, nowEpoch) : 0;
+  const ratio = running || paused ? progressRatio(instance, nowEpoch) : 0;
 
   // Remembered per block, so the full-screen moment appears exactly once and a
   // dismissal is never undone by the next tick.
@@ -97,18 +104,24 @@ export const FocusTimer = memo(function FocusTimer({ instance }: { instance: Blo
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="text-display font-semibold tabular-nums">
-          {running ? formatCountdown(remaining) : formatMinutes(instance.durationMin)}
+          {running || paused
+            ? formatCountdown(remaining)
+            : formatMinutes(instance.durationMin)}
         </span>
         <span className="text-meta text-ink-muted">
           {running
             ? overrunning
               ? t("today.overtime")
               : t("today.remaining", { time: formatCountdown(remaining) })
-            : t("common.minutesValue", { count: instance.durationMin })}
+            : paused
+              ? t("today.pausedRemaining", { time: formatCountdown(remaining) })
+              : t("common.minutesValue", { count: instance.durationMin })}
         </span>
       </div>
 
-      {running ? <TimerAnnouncement instance={instance} /> : null}
+      {/* Announced on the same slow cadence — a paused timer is worth knowing
+          about, and it is exactly the moment someone looks away. */}
+      {running || paused ? <TimerAnnouncement instance={instance} /> : null}
 
       <ProgressBar
         value={ratio}

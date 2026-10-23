@@ -5,7 +5,15 @@ import { Button, IconButton } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { Sheet } from "@/components/ui/dialog";
 import { SelectField, TextInput } from "@/components/ui/field";
-import { IconCaretDown, IconDownload, IconPlus, IconStar, IconStarFilled } from "@/components/ui/icons";
+import {
+  IconCaretDown,
+  IconDownload,
+  IconPencil,
+  IconPlus,
+  IconStar,
+  IconStarFilled,
+  IconTrash,
+} from "@/components/ui/icons";
 import {
   CategoryTag,
   Chip,
@@ -32,6 +40,7 @@ import {
 } from "@/domain";
 import type { BlockInstance, Reflection } from "@/domain/types";
 import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
+import { StabiloAside } from "@/features/stabilo/ui/StabiloAside";
 import { NoteDetailSheet } from "@/features/today/note-detail-sheet";
 import { NoteSheet } from "@/features/today/timeline";
 import { useI18n, type MessageKey } from "@/i18n";
@@ -65,6 +74,7 @@ function JournalEditor({
   promptId: string;
 }) {
   const saveReflection = useAppStore((state) => state.saveReflection);
+  const journalSections = useAppStore((state) => state.journalSections);
   const { t, formatDateLong } = useI18n();
 
   const [title, setTitle] = useState(existing?.title ?? "");
@@ -72,6 +82,16 @@ function JournalEditor({
   const [learnings, setLearnings] = useState<string[]>(
     normalizeLearnings(existing?.learnings ?? []),
   );
+  // "" is the default stream, kept in step with the store's `null`.
+  const [sectionId, setSectionId] = useState(existing?.sectionId ?? "");
+
+  // A section deleted elsewhere clears the entry in the store; honour that
+  // without an effect by deriving the value: a pointer to a section that no
+  // longer exists reads as the default stream, so neither the select nor the
+  // next keystroke's save can name a home nothing can see or filter by.
+  const activeSectionId = journalSections.some((section) => section.id === sectionId)
+    ? sectionId
+    : "";
 
   const wordCount = useMemo(() => countWords(body), [body]);
   const filled = hasEntry(title, body, learnings);
@@ -80,10 +100,17 @@ function JournalEditor({
   useEffect(() => {
     if (!hasEntry(title, body, learnings)) return;
     const timer = setTimeout(() => {
-      void saveReflection({ date, title, body, learnings, promptId });
+      void saveReflection({
+        date,
+        title,
+        body,
+        learnings,
+        promptId,
+        sectionId: activeSectionId === "" ? null : activeSectionId,
+      });
     }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [title, body, learnings, date, promptId, saveReflection]);
+  }, [title, body, learnings, activeSectionId, date, promptId, saveReflection]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -105,6 +132,18 @@ function JournalEditor({
         maxLength={120}
         value={title}
         onChange={(event) => setTitle(event.target.value)}
+      />
+
+      {/* Which project or part of life this entry belongs to. Empty is the
+          default stream — a real home, not a leftover. */}
+      <SelectField
+        label={t("journal.sections")}
+        value={activeSectionId}
+        options={[
+          { value: "", label: t("journal.sectionNone") },
+          ...journalSections.map((section) => ({ value: section.id, label: section.name })),
+        ]}
+        onChange={(event) => setSectionId(event.target.value)}
       />
 
       <div className="flex flex-col gap-1.5">
@@ -174,6 +213,12 @@ function JournalDetailSheet({
   onDelete: (reflection: Reflection) => void;
 }) {
   const { t, formatDateLong } = useI18n();
+  const journalSections = useAppStore((state) => state.journalSections);
+  // Named in the sheet, so opening an entry always says which project it
+  // belongs to without the reader having to find it in the list again.
+  const sectionName = reflection?.sectionId
+    ? journalSections.find((section) => section.id === reflection.sectionId)?.name
+    : null;
 
   const learnings = reflection?.learnings.filter((item) => item.trim() !== "") ?? [];
 
@@ -186,7 +231,9 @@ function JournalDetailSheet({
       title={reflection ? reflection.title.trim() || formatDateLong(reflection.date) : ""}
       description={
         reflection
-          ? `${formatDateLong(reflection.date)} · ${t("journal.words", { count: reflection.wordCount })}`
+          ? `${formatDateLong(reflection.date)} · ${t("journal.words", { count: reflection.wordCount })}${
+              sectionName ? ` · ${sectionName}` : ""
+            }`
           : undefined
       }
       footer={
@@ -240,6 +287,154 @@ function JournalDetailSheet({
         </div>
       ) : null}
     </Sheet>
+  );
+}
+
+/**
+ * Named homes for entries: one per project or part of life.
+ *
+ * A student with three projects stops scrolling one mixed stream, so the whole
+ * manager is one panel: a name field, a list with counts, inline rename, and a
+ * delete that promises — truthfully — to keep the writing inside.
+ */
+function SectionsPanel() {
+  const journalSections = useAppStore((state) => state.journalSections);
+  const reflections = useAppStore((state) => state.reflections);
+  const saveJournalSection = useAppStore((state) => state.saveJournalSection);
+  const deleteJournalSection = useAppStore((state) => state.deleteJournalSection);
+  const { t } = useI18n();
+
+  const [draft, setDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const countFor = (sectionId: string) =>
+    reflections.filter((reflection) => reflection.sectionId === sectionId).length;
+
+  const removing =
+    removingId === null
+      ? null
+      : (journalSections.find((section) => section.id === removingId) ?? null);
+
+  return (
+    <Panel data-tour="journal-sections">
+      <PanelHeader title={t("journal.sections")} description={t("journal.sectionsHint")} />
+      <StabiloAside text={t("stabilo.journalSectionsTip")} />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <TextInput
+            label={t("journal.sectionName")}
+            placeholder={t("journal.sectionNamePlaceholder")}
+            maxLength={80}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+        </div>
+        <Button
+          size="sm"
+          disabled={draft.trim() === ""}
+          onClick={() => {
+            void saveJournalSection({ name: draft }).then((id) => {
+              if (!id) return;
+              setDraft("");
+              toastManager.add({ title: t("journal.sectionAdded"), timeout: 3_000 });
+            });
+          }}
+        >
+          <IconPlus size={16} />
+          {t("journal.sectionAdd")}
+        </Button>
+      </div>
+
+      {journalSections.length === 0 ? (
+        <p className="text-meta text-ink-muted">{t("journal.sectionEmpty")}</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line">
+          {journalSections.map((section) => (
+            <li
+              key={section.id}
+              className="flex flex-wrap items-center justify-between gap-3 py-2"
+            >
+              {editingId === section.id ? (
+                <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
+                  <div className="min-w-40 flex-1">
+                    <TextInput
+                      label={t("journal.sectionRename")}
+                      maxLength={80}
+                      autoFocus
+                      value={editingName}
+                      onChange={(event) => setEditingName(event.target.value)}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={editingName.trim() === ""}
+                    onClick={() => {
+                      void saveJournalSection({ id: section.id, name: editingName }).then(() =>
+                        setEditingId(null),
+                      );
+                    }}
+                  >
+                    {t("common.save")}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    {t("common.cancel")}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate text-body">{section.name}</span>
+                    <span className="text-label text-ink-muted">
+                      {t("journal.entryCount", { count: countFor(section.id) })}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <IconButton
+                      label={t("journal.sectionRenameAction", { name: section.name })}
+                      onClick={() => {
+                        setEditingId(section.id);
+                        setEditingName(section.name);
+                      }}
+                    >
+                      <IconPencil size={18} />
+                    </IconButton>
+                    <IconButton
+                      label={t("journal.sectionDeleteAction", { name: section.name })}
+                      onClick={() => setRemovingId(section.id)}
+                    >
+                      <IconTrash size={18} />
+                    </IconButton>
+                  </span>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Deleting a section must never read as deleting the writing: the sheet
+          says where the entries go instead, and the store keeps them. */}
+      <ConfirmSheet
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemovingId(null);
+        }}
+        title={t("journal.sectionDelete")}
+        description={t("journal.sectionDeleteBody", { name: removing?.name ?? "" })}
+        confirmLabel={t("common.delete")}
+        tone="danger"
+        onConfirm={() => {
+          if (removing) {
+            void deleteJournalSection(removing.id);
+            toastManager.add({ title: t("journal.sectionDeleted"), timeout: 3_000 });
+          }
+          setRemovingId(null);
+        }}
+      />
+    </Panel>
   );
 }
 
@@ -438,6 +633,7 @@ export function JournalScreen() {
   const reflections = useAppStore((state) => state.reflections);
   const deleteReflection = useAppStore((state) => state.deleteReflection);
   const setReflectionFavorite = useAppStore((state) => state.setReflectionFavorite);
+  const journalSections = useAppStore((state) => state.journalSections);
   const { t, formatDateLong, formatMonthName } = useI18n();
 
   const [tab, setTab] = useState<JournalTab>("entries");
@@ -445,6 +641,8 @@ export function JournalScreen() {
   const [selected, setSelected] = useState(today);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<HistoryFilter>("all");
+  /** "all", "none", or a section id — the third reading of the archive. */
+  const [sectionFilter, setSectionFilter] = useState("all");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   // The three sheets the notes tab can open. Never two at once: each swap
@@ -467,9 +665,20 @@ export function JournalScreen() {
     () =>
       reflections.filter(
         (reflection) =>
-          (filter === "all" || reflection.favorite) && reflectionMatches(reflection, query),
+          (filter === "all" || reflection.favorite) &&
+          (sectionFilter === "all" ||
+            (sectionFilter === "none"
+              ? !reflection.sectionId
+              : reflection.sectionId === sectionFilter)) &&
+          reflectionMatches(
+            reflection,
+            query,
+            reflection.sectionId
+              ? journalSections.find((section) => section.id === reflection.sectionId)?.name
+              : undefined,
+          ),
       ),
-    [reflections, filter, query],
+    [reflections, filter, sectionFilter, query, journalSections],
   );
 
   // Ordering is the archive's own rule, so the store's order does not matter here.
@@ -478,7 +687,8 @@ export function JournalScreen() {
   // Both levels share one map: a year key is `"2026"` and a month key `"2026-10"`,
   // so they cannot collide. While searching nothing may stay shut — a collapsed
   // year would hide the very entry that matched.
-  const searching = query.trim() !== "" || filter !== "all";
+  // A section filter is a search too: while it is on, nothing may stay shut.
+  const searching = query.trim() !== "" || filter !== "all" || sectionFilter !== "all";
   const isYearCollapsed = (year: string, index: number) =>
     searching ? false : (collapsed[year] ?? index > 0);
   // The newest year opens on its newest month; every other month starts shut, so
@@ -566,6 +776,10 @@ export function JournalScreen() {
         </Panel>
       ) : null}
 
+      {/* Sections are made where they are used: one panel below the editor,
+          before the long archive that they organize. */}
+      {tab === "entries" ? <SectionsPanel /> : null}
+
       {tab === "entries" ? (
         <Panel data-tour="journal-history">
         <PanelHeader title={t("journal.history")} />
@@ -598,11 +812,27 @@ export function JournalScreen() {
                   { value: "favorite", label: t("journal.filter.favorite") },
                 ]}
               />
+              {/* The third reading of the same archive: by the project or part
+                  of life the entry was written for. */}
+              <SelectField
+                label={t("journal.sectionFilter")}
+                value={sectionFilter}
+                options={[
+                  { value: "all", label: t("journal.filter.all") },
+                  { value: "none", label: t("journal.sectionNone") },
+                  ...journalSections.map((section) => ({
+                    value: section.id,
+                    label: section.name,
+                  })),
+                ]}
+                onChange={(event) => setSectionFilter(event.target.value)}
+                className="sm:max-w-[14rem]"
+              />
             </div>
 
             {visible.length === 0 ? (
               <p className="text-meta text-ink-muted">
-                {filter === "favorite" && query.trim() === ""
+                {filter === "favorite" && sectionFilter === "all" && query.trim() === ""
                   ? t("journal.noFavorite")
                   : t("journal.searchEmpty")}
               </p>
@@ -691,6 +921,11 @@ export function JournalScreen() {
                                         const preview =
                                           reflectionPreview(reflection.body) ||
                                           reflection.learnings.filter(Boolean).join(" · ");
+                                        const sectionName = reflection.sectionId
+                                          ? journalSections.find(
+                                              (section) => section.id === reflection.sectionId,
+                                            )?.name
+                                          : null;
                                         return (
                                           <li key={reflection.id} className="flex items-center gap-1">
                                             <button
@@ -717,6 +952,9 @@ export function JournalScreen() {
                                                 <span>
                                                   {t("journal.words", { count: reflection.wordCount })}
                                                 </span>
+                                                {/* Which project this entry was
+                                                    written for, said inline. */}
+                                                {sectionName ? <Chip>{sectionName}</Chip> : null}
                                               </span>
                                               {preview ? (
                                                 <span className="truncate text-meta text-ink-muted">

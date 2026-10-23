@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { IconCalendar, IconPlus, IconShuffle } from "@/components/ui/icons";
+import { IconCalendar, IconPlus, IconShuffle, IconUndo } from "@/components/ui/icons";
 import { EmptyState, Panel, PanelHeader, ProgressBar, StatusBadge } from "@/components/ui/surface";
 import { MATERIALISE_DAYS, useAppStore } from "@/data/store";
 import {
@@ -90,6 +90,7 @@ function TodayContent({ date }: { date: string }) {
   const instances = useAppStore((state) => state.instances);
   const categories = useAppStore((state) => state.categories);
   const planSize = useAppStore((state) => state.templates.length);
+  const restoreSkippedBlock = useAppStore((state) => state.restoreSkippedBlock);
   const dayStart = useAppStore((state) => state.settings.dayStart);
   const remindersEnabled = useAppStore((state) => state.settings.remindersEnabled);
   const { t, formatDateLong, formatDateShort, formatMinutes } = useI18n();
@@ -262,7 +263,22 @@ function TodayContent({ date }: { date: string }) {
                       : t("status.skipped")}
                   </span>
                 </div>
-                <StatusBadge status={instance.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={instance.status} />
+                  {/* Only a skip is reversible here. A moved block already has
+                      a copy on another day, so offering "put back" would
+                      duplicate it rather than undo anything. */}
+                  {instance.status === "skipped" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void restoreSkippedBlock(instance.id)}
+                    >
+                      <IconUndo size={16} />
+                      {t("today.undoSkip")}
+                    </Button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
