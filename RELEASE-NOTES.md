@@ -6,6 +6,55 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.5.8 — 23 Oktober 2026
+
+Bisa menjeda timer fleksibel, jurnal punya section untuk proyek, dan UX template
+menjadi lebih jelas dengan pratinjau dan konfirmasi.
+
+### Yang baru
+
+- **Sistem pause untuk blok fleksibel.** Blok tanpa waktu tetap (`plannedStart: null`)
+  bisa dijeda — detik terukur tersimpan, hitungan mundur membeku, dan blok tetap
+  di tempatnya di timeline. Tombol **Jeda** muncul saat timer berjalan, tombol
+  **Lanjut** saat status `paused`. Blok dengan waktu tetap tidak bisa dijeda
+  karena pembekuan hitungan mundur akan tetap mengklaim slot jam — solusi
+  jujurnya di situ adalah memindahkan atau menyelesaikan blok.
+- **Section jurnal: satu rumah per proyek.** Panel baru di layar Jurnal: buat,
+  ubah nama, dan hapus section. Setiap entri bisa memilih section mana yang
+  dipakai; yang tidak punya section tetap di aliran default. Riwayat bisa
+  disaring per section, dan panel **Catatan blok** punya tab sendiri. Menghapus
+  section tidak menghapus tulisan di dalamnya — isinya kembali ke aliran default,
+  seperti yang dijanjikan di konfirmasi.
+- **UX pembuatan template lebih jelas.** Form simpan menampilkan **pratinjau blok**
+  sebelum tombol Simpan ditekan — judul, kategori, durasi, dan hari berulang.
+  Setelah tersimpan, toast menamakan di mana template muncul dan list di bawah
+  memperlihatkan isi yang tersimpan (dalam details). Terapkan template masih
+  melewati lembar konfirmasi yang sama dengan katalog.
+- **Undo untuk "Tidak dikerjakan hari ini".** Menekan Lewati memunculkan toast
+  6 detik dengan tombol **Urungkan**; blok kembali ke `planned` dan waktu yang
+  terukur tetap tersimpan. Di panel "Tidak dikerjakan hari ini", setiap baris
+  `skipped` punya tombol **Kembalikan**. Blok `deferred` sengaja tidak punya
+  tombol ini karena salinannya memang sudah ada di hari lain.
+- **CategoryPicker di form "Tambah blok".** Tombol **Kategori baru** dan `StabiloAside`
+  sekarang ada di sini juga, sama dengan form blok di Atur. Judul blok dipakai
+  sebagai saran nama untuk kategori baru.
+
+### Yang diperbaiki
+
+- **Status `paused` tercatat dengan benar di schema dan types.** Sebelumnya hanya
+  label di UI; sekarang ini status resmi dengan icon sendiri (IconPause), dot
+  timeline yang berbeda (border accent, hollow), dan hitungan mundur yang
+  membeku dengan benar.
+
+### Berkas
+
+| Berkas | Ukuran | SHA-256 |
+|---|---|---|
+| `FlexStudy_0.5.8_x64-setup.exe` | 2.634.212 byte (2,51 MiB) | `1ea152f8d0d85cf377e24ee5a2a30fcc64c135f9af536ab19a03dd1f3ce142f1` |
+| `FlexStudy_0.5.8_x64_en-US.msi` | 3.166.112 byte (3,02 MiB) | `0c21cbb30c4509c3a91d012afcf594a520b1e410366a4d9134452d4c98dc6b92` |
+
+---
+
 ## 0.5.7 — 22 Oktober 2026
 
 Mengganti template kini benar-benar mengganti Hari ini — dengan pilihan tanggal mulai,
