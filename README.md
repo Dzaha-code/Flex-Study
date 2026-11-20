@@ -10,11 +10,13 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.5.7_x64-setup.exe](installers/FlexStudy_0.5.7_x64-setup.exe) — versi terbaru, sekitar 2,6 MB
+### [FlexStudy_0.6.0_x64-setup.exe](installers/FlexStudy_0.6.0_x64-setup.exe) — versi terbaru, 2.721.222 byte (2,6 MB)
 
-Versi **0.5.7**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi **0.6.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
-Yang baru di 0.5.7: **mengganti template kini benar-benar mengganti Hari ini.** Selama ini blok hari ini sudah termaterialisasi dari template lama, dan aturan "pertahankan" justru mengecualikan setiap blok bertanggal hari ini — jadi berapa kali pun template diganti, isinya tidak bisa berubah. Sekarang setiap penerapan lewat satu lembar **"Terapkan mulai"** (Hari ini · Besok · Senin depan) dengan pratinjau yang dihitung oleh fungsi yang sama dengan yang dipakai saat menerapkan, **Urungkan 10 detik**, dan aturan aman: hanya blok `planned` tanpa catatan dan tanpa waktu terukur yang boleh diganti; blok yang sudah dikerjakan atau bercatatan tidak pernah disentuh. Kategori milik blok lama kini diadopsi, jadi riwayat tidak lagi kehilangan nama kategori. Tombol **Template** juga hadir di header Hari ini.
+Yang baru di 0.6.0: **blok dibuka dengan sekali ketuk, hari bisa digeser, dan blok sekali-pakai tidak lagi hilang saat template berubah.** Strip tujuh hari kini membuka hari mana pun — lampau atau depan — lewat geseran, panah berpindah pekan, dan di layar sempit linimasa bisa diusap. Setiap blok punya alarm: nada, notifikasi sistem, taskbar berkedip, dan kartu layar penuh **Selesai / +5 menit / Lanjut**; di Android tenggatnya dijadwalkan sistem operasi sehingga tetap berbunyi saat aplikasi di latar. Catatan blok mendapat **Simpan & tutup** dengan toast, jadi menyimpan tidak lagi ambigu. Jurnal bertambah peta menulis, statistik kata dan rentetan, serta dinding pelajaran. **Sinkronisasi opsional ke Supabase** hadir sebagai fitur yang harus dinyalakan sendiri — masuk lewat kode 6 digit ke email, dan data ditarik otomatis saat aplikasi kembali aktif.
+
+Yang baru di 0.5.7 tetap ada: **mengganti template kini benar-benar mengganti Hari ini.** Selama ini blok hari ini sudah termaterialisasi dari template lama, dan aturan "pertahankan" justru mengecualikan setiap blok bertanggal hari ini — jadi berapa kali pun template diganti, isinya tidak bisa berubah. Sekarang setiap penerapan lewat satu lembar **"Terapkan mulai"** (Hari ini · Besok · Senin depan) dengan pratinjau yang dihitung oleh fungsi yang sama dengan yang dipakai saat menerapkan, **Urungkan 10 detik**, dan aturan aman: hanya blok `planned` tanpa catatan dan tanpa waktu terukur yang boleh diganti; blok yang sudah dikerjakan atau bercatatan tidak pernah disentuh. Kategori milik blok lama kini diadopsi, jadi riwayat tidak lagi kehilangan nama kategori. Tombol **Template** juga hadir di header Hari ini.
 
 Yang baru di 0.5.6 tetap ada: **catatan bisa ditulis dan dibaca di tengah sesi, setiap baris tur punya jalan keluar yang terlihat, dan animasi pembuka bisa menjelaskan dirinya sendiri saat berhenti.** Editor catatan punya tombol **Simpan** (atau Ctrl+Enter) dengan konfirmasi "Tersimpan 20:27"; ikon catatan di Hari ini **membaca dulu** — catatan yang ada membuka lembar rincian (judul, tanggal, durasi, teks, Ubah/Salin/Buka blok), yang belum langsung membuka editor; Jurnal mendapat segmen **Catatan blok** dengan pencarian dan saringan. Setiap simpul tur Stabilo kini punya **"Lanjut ▼"** dan **"✕ Tutup tur"** dua langkah, ditambah pengingat setelah 10 detik diam. Animasi pembuka tak lagi dilewati oleh klik acak di latar, kegagalannya menyingkapkan aplikasi utuh alih-alih setengah layar, dan **log diagnosis di layar** (saklar debug di Atur, atau `?introDebug=1`) mencetak penyebabnya langsung di mesin yang terdampak. Fondasi bahasa gerak "Tinta" (DESIGN v3 Fase 1) masuk — token durasi, riak tekan di semua tombol, indikator segmen yang mencair — dan **`framer-motion`/`motion` dihapus dari dependensi**.
 
@@ -30,9 +32,10 @@ Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favor
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.5.7_x64-setup.exe` — sekitar 2,6 MB. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.5.7_x64_en-US.msi` — sekitar 3,0 MB. Terpasang mesin-luas ke `Program Files`, **butuh admin** |
-| Sistem | Windows 64-bit |
+| Disarankan | `FlexStudy_0.6.0_x64-setup.exe` — 2.721.222 byte. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.6.0_x64_en-US.msi` — 3.248.128 byte (3,1 MB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| ARM64 | `FlexStudy_0.6.0_arm64-setup.exe` — 2.613.234 byte. Build native untuk Windows on ARM, tidak lewat emulasi |
+| Sistem | Windows 64-bit (x64 atau ARM64) |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
 
@@ -46,16 +49,16 @@ Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi j
 
 ### Perangkat ARM (Windows on ARM)
 
-Installer di atas dibuat untuk x64. Di Windows 11 ARM — Snapdragon X, Copilot+ PC — ia tetap terpasang dan berjalan lewat emulasi x64, termasuk WebView2-nya. Aplikasinya kecil, jadi selisihnya tidak besar, tetapi emulasi tetap memakan lebih banyak CPU dan baterai daripada build native.
+Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_0.6.0_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
 
-Untuk build native ARM64, di mesin Windows yang sudah punya Rust:
+Untuk membangunnya sendiri di mesin Windows yang sudah punya Rust:
 
     npm run build:windows-arm64
 
 Prasyaratnya, sekali saja:
 
 1. `rustup target add aarch64-pc-windows-msvc`
-2. Visual Studio Build Tools dengan komponen **MSVC v143 — VS 2022 C++ ARM64 build tools** dan **Windows SDK**
+2. Visual Studio dengan komponen **MSVC C++ ARM64 build tools** dan **Windows SDK** (di VS 2026, linker-nya ada di `VC\Tools\MSVC\<versi>\bin\Hostx64\arm64\link.exe`)
 
 Skrip di atas memeriksa keduanya lebih dulu dan berhenti dengan pesan yang jelas kalau belum siap, bukan error linker yang tidak menjelaskan apa pun. Hasilnya ada di `src-tauri\target\aarch64-pc-windows-msvc\release\bundle\` sebagai `FlexStudy_<versi>_arm64-setup.exe` dan `..._arm64_en-US.msi`.
 

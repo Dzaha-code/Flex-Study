@@ -6,6 +6,66 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.6.0 — 20 November 2026
+
+Blok dibuka dengan sekali ketuk, hari bisa digeser, alarm fokus berbunyi di layar mana pun,
+dan sinkronisasi hadir sebagai pilihan yang harus dinyalakan sendiri.
+
+### Yang baru
+
+- **Ketuk blok → kartu blok.** Tombol **Mulai** pindah ke dalam kartu, tidak lagi menempel di
+  setiap baris; satu baris kini hanya menjanjikan satu hal.
+- **Strip tujuh hari yang benar-benar bisa dibuka.** Hari mana pun — lampau atau depan —
+  terbuka dengan geseran, panah berpindah pekan, dan di layar sempit linimasa bisa diusap
+  antar-hari.
+- **Blok "sekali saja".** Form tambah blok menawarkan tanggal tunggal atau pengulangan
+  mingguan. Blok sekali-pakai **bertahan** saat template disunting atau diganti — sebelumnya
+  ia ikut terhapus bersama blok terjadwal — dan Atur mendaftar yang akan datang.
+- **Alarm fokus di semua layar.** Nada, notifikasi sistem, taskbar berkedip, dan kartu layar
+  penuh **Selesai / +5 menit / Lanjut**. Di Android tenggatnya dijadwalkan oleh sistem operasi,
+  jadi tetap berbunyi saat aplikasi di latar.
+- **Bar "sedang berjalan"** di layar lain, sisa waktu di judul jendela, opsi layar tetap
+  menyala, dan haptik di ponsel.
+- **Catatan blok: Simpan & tutup** dengan toast — menyimpan berhenti terasa ambigu.
+- **Jurnal**: peta menulis, statistik kata dan rentetan, dinding pelajaran, dan entri sebagai
+  kartu.
+- **Sinkronisasi opsional ke Supabase** (`docs/SYNC.md`). Masuk lewat kode 6 digit ke email
+  (berlaku 10 menit, maksimal 30 email per jam); migrasi `0002` memberi izin
+  select/insert/update hanya kepada pengguna yang sudah login, dan mencabut truncate/delete
+  dari peran klien. Data ditarik otomatis saat aplikasi kembali aktif, jaringan pulih, atau
+  jendela mendapat fokus.
+- **Android 11–17**: proyek Tauri Android (`src-tauri/gen/android`) dengan minSdk 30,
+  target SDK 37, izin notifikasi/alarm presisi/getar, dan tanda tangan rilis lewat
+  `keystore.properties` yang tidak ikut repo.
+
+### Performa
+
+- Instance i18n dibangun sekali per bahasa. Sebelumnya setiap pemanggilan `useI18n` membuat
+  enam formatter `Intl`, sehingga membuka Jurnal butuh ~2 detik di CPU yang diperlambat;
+  sekarang ~0,8 detik.
+- Tab yang diketuk langsung menyala dan memberi sedikit tekanan, jadi ketukan tidak pernah
+  terasa gagal saat layar berikutnya masih dirender.
+
+### Batas rilis ini (penting)
+
+`0.6.0` dibangun dari branch **`sapo-update`**, yang bercabang dari `0.5.7`. **Pekerjaan
+0.5.8 — jeda timer dan bagian jurnal — belum ikut di sini**, karena ia hidup di lineage
+`main` yang terpisah. Artinya memasang 0.6.0 di atas pemasangan 0.5.8 akan kehilangan
+kedua fitur itu sampai kedua lineage digabung. Penggabungan itu belum dilakukan.
+
+### Berkas
+
+| Berkas | Ukuran | SHA-256 |
+|---|---|---|
+| `FlexStudy_0.6.0_x64-setup.exe` | 2.721.222 byte (2,60 MiB) | `4b74defc4cfdd9d66ec4f682f1d3b0ec902d71cd8d0dd76f189ca34c6bad9b7b` |
+| `FlexStudy_0.6.0_x64_en-US.msi` | 3.248.128 byte (3,10 MiB) | `f6febdda9ad67312b00250fdc105420262d23c36f16024c9023a53bbbb72b1b5` |
+| `FlexStudy_0.6.0_arm64-setup.exe` | 2.613.234 byte (2,49 MiB) | `054e5726ca029b81013cdf539b04551315c883d872608d8af875efe336a4e78b` |
+| `FlexStudy_0.6.0_arm64_en-US.msi` | 3.194.880 byte (3,05 MiB) | `e46274ecc8a7618e1f6f036911e4276908b37c4a4d4b913dc0f10af2782d7954` |
+
+Build pertama kali untuk kedua arsitektur dari commit yang sama. Biner ARM64 adalah build
+native (`aarch64-pc-windows-msvc`), bukan pembungkusan ulang biner x64 — jadi tidak ada
+lapisan emulasi di perangkat Windows on ARM.
+
 ## 0.5.7 — 22 Oktober 2026
 
 Mengganti template kini benar-benar mengganti Hari ini — dengan pilihan tanggal mulai,
