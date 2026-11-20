@@ -5,7 +5,7 @@ import "./stabilo.css";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "@/data/store";
-import { todayISO } from "@/domain";
+import { addDays, journalStats, todayISO, weekdayIndex } from "@/domain";
 import type { AnimationPreference } from "@/domain/types";
 import { useIntroHolding } from "@/features/intro/intro-status";
 import { useI18n } from "@/i18n";
@@ -31,6 +31,7 @@ import { showClassicTour, showStabilo } from "@/features/guide/guide-coordinator
 import { resolveReducedMotion, systemPrefersReducedMotion } from "@/lib/motion";
 import { closeTour } from "@/features/tour/tour-store";
 import { REACTIONS, scriptFor, wrongLine, type Flow, type TourContext } from "./script";
+import { buildGreeting, type GreetingContext } from "./script/greeting";
 import { closeStabilo, useStabiloHost } from "./stabilo-store";
 import { DialogueBox } from "./ui/DialogueBox";
 import { Sprite } from "./ui/Sprite";
@@ -112,6 +113,7 @@ export function StabiloHost() {
    */
   const autoIntro = useRef(false);
   const autoTour = useRef(false);
+  const autoGreeting = useRef(false);
 
   useEffect(() => {
     if (STABILO_PLACEHOLDER) return;
@@ -176,7 +178,39 @@ export function StabiloHost() {
       const timer = window.setTimeout(() => showStabilo("tour"), 500);
       return () => window.clearTimeout(timer);
     }
-  }, [prefs.enabled, prefs.introSeen, prefs.tourDone, onboardingCompleted, status, available, holding]);
+    /**
+     * The daily hello. Only after the first-run flow is fully behind the user,
+     * never on top of another walkthrough, and once per calendar day: the
+     * session records the date the moment she appears, so closing her early
+     * still counts.
+     */
+    const today = todayISO(Date.now());
+    if (
+      onboardingCompleted &&
+      prefs.dailyGreeting &&
+      prefs.lastGreetingDate !== today &&
+      flow === null
+    ) {
+      if (autoGreeting.current) return;
+      autoGreeting.current = true;
+      const timer = window.setTimeout(() => showStabilo("greeting"), 700);
+      return () => {
+        window.clearTimeout(timer);
+        autoGreeting.current = false;
+      };
+    }
+  }, [
+    prefs.enabled,
+    prefs.introSeen,
+    prefs.tourDone,
+    prefs.dailyGreeting,
+    prefs.lastGreetingDate,
+    onboardingCompleted,
+    status,
+    available,
+    holding,
+    flow,
+  ]);
 
   if (available !== true) return null;
 
@@ -202,7 +236,44 @@ function StabiloSession({ flow }: { flow: Flow }) {
       .instances.some((instance) => instance.date === todayISO(Date.now())),
   }));
 
-  const script = useMemo(() => scriptFor(flow, locale, tourContext), [flow, locale, tourContext]);
+  /** The greeting is assembled once per session from the day as it stands. */
+  const [greetingContext] = useState<Omit<GreetingContext, "lang">>(() => {
+    const store = useAppStore.getState();
+    const now = new Date();
+    const today = todayISO(now.getTime());
+    const yesterday = addDays(today, -1);
+    const todays = store.instances
+      .filter((instance) => instance.date === today && instance.status !== "deferred" && instance.status !== "skipped")
+      .sort((a, b) => (a.plannedStart ?? "99:99").localeCompare(b.plannedStart ?? "99:99") || a.order - b.order);
+    const yesterdays = store.instances.filter(
+      // Same rule as the day header and the strip: skipped and moved blocks
+      // left the day, so "3 of 3" here matches "3/3" on screen.
+      (instance) =>
+        instance.date === yesterday &&
+        instance.status !== "deferred" &&
+        instance.status !== "skipped",
+    );
+    return {
+      date: today,
+      hour: now.getHours(),
+      weekday: weekdayIndex(today),
+      blocksToday: todays.length,
+      firstBlock: todays.find((instance) => instance.status !== "done")?.title ?? null,
+      plannedYesterday: yesterdays.length,
+      doneYesterday: yesterdays.filter((instance) => instance.status === "done").length,
+      journalStreak: journalStats(store.reflections, today).currentStreak,
+      // Read before the session records today, so "never greeted" is exact.
+      firstTime: store.stabilo.lastGreetingDate === null,
+    };
+  });
+
+  const script = useMemo(
+    () =>
+      flow === "greeting"
+        ? buildGreeting({ ...greetingContext, lang: locale })
+        : scriptFor(flow, locale, tourContext),
+    [flow, locale, tourContext, greetingContext],
+  );
   const reactions = REACTIONS[locale];
 
   const [state, setState] = useState<DialogueState>(() => {
@@ -212,6 +283,13 @@ function StabiloSession({ flow }: { flow: Flow }) {
     }
     return base;
   });
+
+  // Recorded on arrival, not on finish: a greeting closed after one line has
+  // still happened, and must not come back on the next launch today.
+  useEffect(() => {
+    if (flow !== "greeting") return;
+    void updateStabilo({ lastGreetingDate: greetingContext.date });
+  }, [flow, greetingContext.date, updateStabilo]);
 
   const [mouth, setMouth] = useState<Mouth>("closed");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -272,9 +350,14 @@ function StabiloSession({ flow }: { flow: Flow }) {
   const rect = node?.target && spotlight.key === spotKey ? spotlight.rect : null;
 
   const finish = useCallback(() => {
-    void updateStabilo(
-      flow === "intro" ? { introSeen: true } : { tourDone: true, progress: null },
-    );
+    // The greeting recorded its date when it opened; nothing else to save.
+    // Meeting her in the intro or the tour counts as today's hello, so a new
+    // user who just finished the tour is not greeted a second time right away.
+    const today = todayISO(Date.now());
+    if (flow === "intro") void updateStabilo({ introSeen: true, lastGreetingDate: today });
+    if (flow === "tour") {
+      void updateStabilo({ tourDone: true, progress: null, lastGreetingDate: today });
+    }
     /**
      * The classic tour carries its own completion flag. Without this, a user who
      * finished *this* tour and later turned the character off would be shown the
@@ -534,6 +617,7 @@ function StabiloSession({ flow }: { flow: Flow }) {
    */
   if (!node) return null;
 
+  const greeting = flow === "greeting";
   const visualPhase = visualPhaseFor(state, prefs.intensity);
   /**
    * Idle blinking, on the calm frame only. `stabilo_blink.webp` shares the flat
@@ -657,14 +741,15 @@ function StabiloSession({ flow }: { flow: Flow }) {
               skip: t("stabilo.skip"),
               skipQuiz: t("stabilo.skipQuiz"),
               next: t("stabilo.next"),
-              close: t("stabilo.close"),
-              exitTitle: t("stabilo.exitTitle"),
+              // A greeting is not a tour, so it does not call itself one.
+              close: greeting ? t("stabilo.greeting.close") : t("stabilo.close"),
+              exitTitle: greeting ? t("stabilo.greeting.exitTitle") : t("stabilo.exitTitle"),
               exitYes: t("stabilo.exitYes"),
-              exitNo: t("stabilo.exitNo"),
+              exitNo: greeting ? t("stabilo.greeting.exitNo") : t("stabilo.exitNo"),
               pickOne: t("stabilo.pickOne"),
               confused: t("stabilo.confused"),
               confusedBody: t("stabilo.confusedBody"),
-              keys: t("stabilo.keys"),
+              keys: greeting ? t("stabilo.greeting.keys") : t("stabilo.keys"),
               nudge: t("stabilo.nudge"),
             }}
             />

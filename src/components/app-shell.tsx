@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
+import { FocusAlarmHost } from "@/features/today/focus-alarm";
+import { RunningBar } from "@/features/today/running-bar";
+import { SyncHost } from "@/features/settings/sync-panel";
 import { GuidedTour } from "@/features/tour/guided-tour";
 import { startTour } from "@/features/tour/tour-store";
 import type { ContentWidth } from "@/domain/types";
@@ -214,14 +217,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main
           id="main"
-          className="min-w-0 flex-1 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-5 lg:px-0 lg:pb-12 lg:pt-8"
+          className="min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.25rem+env(safe-area-inset-top))] lg:px-0 lg:pb-12 lg:pt-8"
         >
           <StorageNotice />
           {children}
+          <RunningBar />
         </main>
       </div>
 
       <GuidedTour />
+      {/* Watches the running block on every screen, not only on Today. */}
+      <FocusAlarmHost />
+      {/* Starts sync after the local data is loaded, only when signed in. */}
+      <SyncHost />
     </div>
   );
 }
