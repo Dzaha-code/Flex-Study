@@ -6,6 +6,58 @@ diunduh langsung dari GitHub.
 
 ---
 
+## 0.6.1 — 20 November 2026
+
+Akun dan sinkronisasi akhirnya bisa dipakai: alamat server Supabase dan kunci publiknya
+kini ikut ke dalam build.
+
+### Yang diperbaiki
+
+- **Panel *Atur → Akun & sinkronisasi* hanya menampilkan "belum diaktifkan di versi ini".**
+  Penyebabnya bukan kode yang rusak, melainkan sakelar build: `syncConfigured()` di
+  `src/data/sync/supabase.ts` mengembalikan `false` kalau `NEXT_PUBLIC_SUPABASE_URL` atau
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` kosong, dan `next build` meng-inline nilai itu **saat
+  build**, bukan saat aplikasi berjalan. Build 0.6.0 dibuat tanpa keduanya, jadi form email
+  dan kode 6 digit tidak pernah dirender — di installer x64, ARM64, maupun di deployment
+  web (`creplann-3y41.vercel.app`), yang bundle-nya diperiksa dan juga tidak memuat alamat
+  Supabase sama sekali.
+- **Jebakan nama variabel, sekarang tercatat di `docs/SYNC.md`.** Dashboard Supabase
+  menamai kuncinya *publishable key* (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), sedangkan
+  kode membaca `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js hanya meng-inline nama yang persis
+  sama, jadi nama dari dashboard itu menghasilkan build tanpa alamat server tanpa satu pun
+  error saat build.
+
+### Yang diverifikasi sebelum build
+
+- Project `swabdezgmyoahtzeafbp.supabase.co` menjawab: `/auth/v1/health` 200
+  (GoTrue v2.198.0), `/auth/v1/settings` 200 dengan `"email": true` dan
+  `"disable_signup": false`, sedangkan `sync_rows` sebagai peran `anon` ditolak
+  `42501 permission denied` — tabelnya ada dan anon memang tidak boleh menyentuhnya,
+  sesuai migration `0002`.
+- Setelah build, `swabdezgmyoahtzeafbp` dan kunci `sb_publishable_…` ditemukan di
+  `out/_next/static/chunks/06bltj9jryqet.js` — chunk lazy milik modul Supabase. Ini
+  bukti nilai itu benar-benar masuk, bukan hanya terbaca di mesin build.
+
+### Yang belum teruji
+
+Pengiriman email kode 6 digit belum pernah dicoba dengan inbox sungguhan dari build ini.
+Jalur OTP terbuka (`"email": true`, `"mailer_autoconfirm": false`), tetapi apakah emailnya
+sampai bergantung pada SMTP yang tersimpan di project Supabase tersebut — hal yang tidak
+terlihat dari luar. Kalau kode tidak sampai, perbaikannya lewat `supabase config push`
+(`docs/SYNC.md` langkah 3).
+
+### Berkas
+
+| Berkas | Ukuran | SHA-256 |
+|---|---|---|
+| `FlexStudy_0.6.1_x64-setup.exe` | 2.721.683 byte (2,60 MiB) | `2363db48acc0e26b8f56391406417af95c046e1cdd2fda763f21e67d22e8e47a` |
+| `FlexStudy_0.6.1_x64_en-US.msi` | 3.248.128 byte (3,10 MiB) | `b3f6eea480bfddc34da4f8cd640561e0aac71e944b1cdc0128df08ce436d1d77` |
+| `FlexStudy_0.6.1_arm64-setup.exe` | 2.612.340 byte (2,49 MiB) | `755d345151799c1638f5c10be4c2fd6ce9b49eac350ff915585eedf2f2edeeb1` |
+| `FlexStudy_0.6.1_arm64_en-US.msi` | 3.190.784 byte (3,04 MiB) | `2e023aa3fb1eab086e7a290751053df8e45244347f3e913570ca98a0eb3edef3` |
+
+Batas rilis 0.6.0 di bawah masih berlaku untuk 0.6.1: keduanya dibangun dari branch
+`sapo-update`, jadi jeda timer dan bagian jurnal dari 0.5.8 belum ikut.
+
 ## 0.6.0 — 20 November 2026
 
 Blok dibuka dengan sekali ketuk, hari bisa digeser, alarm fokus berbunyi di layar mana pun,
