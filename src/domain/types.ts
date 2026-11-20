@@ -247,6 +247,17 @@ export interface Settings {
   animation: AnimationPreference;
   weekStart: WeekStart;
   remindersEnabled: boolean;
+  /**
+   * Sound, a system notification and a flashing taskbar button when a running
+   * focus block reaches zero. On by default: a timer that ends in silence while
+   * another window has focus is a timer nobody notices.
+   */
+  focusAlarm: boolean;
+  /**
+   * Keeps the display on while a focus block runs, so the countdown stays in
+   * sight on a phone propped on the desk. Per device: never synced.
+   */
+  keepScreenOn: boolean;
   /** Clock time at which a day's timeline begins for blocks without a start. */
   dayStart: ClockTime;
   /** Latest clock time a block may be scheduled to start. */
@@ -291,6 +302,14 @@ export interface StabiloPrefs {
   tourDone: boolean;
   ph3Seen: number;
   progress: { nodeId: string; phase: 0 | 1 | 2 | 3 } | null;
+  /**
+   * The once-a-day hello and encouragement when the app is first opened on a
+   * new day. On by default, one switch away in Settings for anyone who would
+   * rather not be greeted.
+   */
+  dailyGreeting: boolean;
+  /** The last day she greeted, so a second launch the same day stays quiet. */
+  lastGreetingDate: string | null;
 }
 
 /**
@@ -308,6 +327,8 @@ export const DEFAULT_STABILO_PREFS: StabiloPrefs = {
   tourDone: false,
   ph3Seen: 0,
   progress: null,
+  dailyGreeting: true,
+  lastGreetingDate: null,
 };
 
 /**
@@ -374,6 +395,8 @@ export const DEFAULT_SETTINGS: Settings = {
   animation: "system",
   weekStart: 1,
   remindersEnabled: false,
+  focusAlarm: true,
+  keepScreenOn: true,
   dayStart: "08:00",
   dayEnd: "21:30",
   contentWidth: "wide",

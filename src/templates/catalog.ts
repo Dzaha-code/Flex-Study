@@ -59,25 +59,121 @@ const selfStudy: StudyTemplate = {
   ],
 };
 
+const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];
+const WEEKEND = [0, 6];
+
 /**
- * "Empty" still ships one category, so the very first block can be created
- * without a detour through settings.
+ * A blank page. No blocks at all, and three plain categories so the very first
+ * block can be filed somewhere without a detour through Settings. The names
+ * are deliberately generic: this template is for people whose days look
+ * nothing like the examples below.
  */
 const empty: StudyTemplate = {
   templateId: "empty",
-  name: { id: "Kosong", en: "Empty" },
+  name: { id: "Kosong", en: "Blank" },
   description: {
-    id: "Mulai dari nol: satu kategori, tanpa blok. Kamu yang menentukan.",
-    en: "Start from scratch: one category, no blocks. You decide the rest.",
+    id: "Tanpa blok sama sekali. Hanya tiga kategori umum (Fokus, Pribadi, Istirahat) supaya kamu bisa langsung menyusun sendiri.",
+    en: "No blocks at all. Just three plain categories (Focus, Personal, Rest) so you can build your own days straight away.",
   },
   audienceKey: "template.empty.audience",
   categories: [
-    { id: "focus", name: { id: "Sesi fokus", en: "Focus session" }, icon: "star", weeklyTargetMinutes: 300 },
+    { id: "focus", name: { id: "Fokus", en: "Focus" }, icon: "star", weeklyTargetMinutes: 300 },
+    { id: "personal", name: { id: "Pribadi", en: "Personal" }, icon: "ring", weeklyTargetMinutes: 0 },
+    { id: "rest", name: { id: "Istirahat", en: "Rest" }, icon: "square-open", weeklyTargetMinutes: 0 },
   ],
   blocks: [],
 };
 
-export const TEMPLATES: StudyTemplate[] = [utbkPkl, selfStudy, empty];
+/**
+ * A general-purpose day that fits most people: one deep block, one shallow
+ * block for the small stuff, movement, reading and a short look at tomorrow.
+ * Nothing in it assumes school, an exam or a particular job.
+ */
+const balancedDay: StudyTemplate = {
+  templateId: "balanced-day",
+  name: { id: "Hari seimbang", en: "Balanced day" },
+  description: {
+    id: "Satu blok kerja mendalam, satu blok urusan kecil, olahraga, membaca, dan 10 menit merencanakan besok. Akhir pekan lebih ringan.",
+    en: "One deep-work block, one block for small tasks, exercise, reading and ten minutes planning tomorrow. Lighter at the weekend.",
+  },
+  audienceKey: "template.balancedDay.audience",
+  categories: [
+    { id: "deep", name: { id: "Kerja mendalam", en: "Deep work" }, icon: "disc", weeklyTargetMinutes: 450 },
+    { id: "admin", name: { id: "Urusan kecil", en: "Small tasks" }, icon: "square", weeklyTargetMinutes: 150 },
+    { id: "health", name: { id: "Kesehatan", en: "Health" }, icon: "plus", weeklyTargetMinutes: 210 },
+    { id: "growth", name: { id: "Membaca & refleksi", en: "Reading & reflection" }, icon: "diamond", weeklyTargetMinutes: 210 },
+  ],
+  blocks: [
+    { title: { id: "Kerja mendalam", en: "Deep work" }, categoryId: "deep", durationMin: 90, days: WEEKDAYS, plannedStart: null },
+    { title: { id: "Email, pesan, dan urusan kecil", en: "Email, messages and small tasks" }, categoryId: "admin", durationMin: 30, days: WEEKDAYS, plannedStart: null },
+    { title: { id: "Olahraga atau jalan kaki", en: "Exercise or a walk" }, categoryId: "health", durationMin: 30, days: EVERY_DAY, plannedStart: null },
+    { title: { id: "Membaca", en: "Reading" }, categoryId: "growth", durationMin: 20, days: EVERY_DAY, plannedStart: null },
+    { title: { id: "Rencanakan besok", en: "Plan tomorrow" }, categoryId: "growth", durationMin: 10, days: EVERY_DAY, plannedStart: null },
+  ],
+};
+
+/** Small daily habits, every day of the week, nothing longer than half an hour. */
+const dailyHabits: StudyTemplate = {
+  templateId: "daily-habits",
+  name: { id: "Kebiasaan harian", en: "Daily habits" },
+  description: {
+    id: "Blok pendek setiap hari: gerak pagi, belajar satu keterampilan, membaca, merapikan, dan jurnal malam.",
+    en: "Short blocks every day: morning movement, practising one skill, reading, tidying up and an evening journal.",
+  },
+  audienceKey: "template.dailyHabits.audience",
+  categories: [
+    { id: "body", name: { id: "Tubuh", en: "Body" }, icon: "plus", weeklyTargetMinutes: 140 },
+    { id: "mind", name: { id: "Belajar", en: "Learning" }, icon: "triangle", weeklyTargetMinutes: 280 },
+    { id: "home", name: { id: "Rumah", en: "Home" }, icon: "square-open", weeklyTargetMinutes: 105 },
+    { id: "journal", name: { id: "Jurnal", en: "Journal" }, icon: "diamond", weeklyTargetMinutes: 70 },
+  ],
+  blocks: [
+    { title: { id: "Gerak pagi", en: "Morning movement" }, categoryId: "body", durationMin: 20, days: EVERY_DAY, plannedStart: "06:30" },
+    { title: { id: "Latih satu keterampilan", en: "Practise one skill" }, categoryId: "mind", durationMin: 30, days: EVERY_DAY, plannedStart: null },
+    { title: { id: "Membaca 10 halaman", en: "Read ten pages" }, categoryId: "mind", durationMin: 15, days: EVERY_DAY, plannedStart: null },
+    { title: { id: "Merapikan rumah", en: "Tidy up" }, categoryId: "home", durationMin: 15, days: EVERY_DAY, plannedStart: null },
+    { title: { id: "Jurnal malam", en: "Evening journal" }, categoryId: "journal", durationMin: 10, days: EVERY_DAY, plannedStart: "21:00" },
+  ],
+};
+
+/** School or university in general: assignments, review and a weekly plan. */
+const schoolWeek: StudyTemplate = {
+  templateId: "school-week",
+  name: { id: "Sekolah / kuliah", en: "School / university" },
+  description: {
+    id: "Mengerjakan tugas, mengulang materi hari itu, dan latihan soal di hari sekolah, ditambah persiapan pekan di akhir minggu.",
+    en: "Assignments, reviewing the material of the day and practice on school days, plus getting the week ready at the weekend.",
+  },
+  audienceKey: "template.schoolWeek.audience",
+  categories: [
+    { id: "homework", name: { id: "Tugas", en: "Assignments" }, icon: "square", weeklyTargetMinutes: 300 },
+    { id: "review", name: { id: "Mengulang materi", en: "Review" }, icon: "disc", weeklyTargetMinutes: 225 },
+    { id: "practice", name: { id: "Latihan", en: "Practice" }, icon: "triangle", weeklyTargetMinutes: 150 },
+    { id: "plan", name: { id: "Persiapan", en: "Planning" }, icon: "diamond", weeklyTargetMinutes: 60 },
+  ],
+  blocks: [
+    { title: { id: "Kerjakan tugas", en: "Work on assignments" }, categoryId: "homework", durationMin: 60, days: WEEKDAYS, plannedStart: null },
+    { title: { id: "Ulang materi hari ini", en: "Review the material of the day" }, categoryId: "review", durationMin: 45, days: WEEKDAYS, plannedStart: null },
+    { title: { id: "Latihan soal", en: "Practice questions" }, categoryId: "practice", durationMin: 30, days: WEEKDAYS, plannedStart: null },
+    { title: { id: "Cicil tugas besar", en: "Chip away at a big project" }, categoryId: "homework", durationMin: 60, days: [6], plannedStart: null },
+    { title: { id: "Siapkan pekan depan", en: "Get next week ready" }, categoryId: "plan", durationMin: 30, days: [0], plannedStart: null },
+    { title: { id: "Ulang materi sepekan", en: "Review the week" }, categoryId: "review", durationMin: 45, days: WEEKEND, plannedStart: null },
+  ],
+};
+
+/**
+ * Blank first, then the general examples, then the specific ones. Someone
+ * scanning the list meets the plans that fit most people before the ones that
+ * fit one situation.
+ */
+export const TEMPLATES: StudyTemplate[] = [
+  empty,
+  balancedDay,
+  dailyHabits,
+  schoolWeek,
+  selfStudy,
+  utbkPkl,
+];
 
 export function findTemplate(templateId: string): StudyTemplate | null {
   return TEMPLATES.find((template) => template.templateId === templateId) ?? null;

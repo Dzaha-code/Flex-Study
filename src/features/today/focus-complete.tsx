@@ -5,24 +5,32 @@ import { IconCheck } from "@/components/ui/icons";
 import type { BlockInstance } from "@/domain/types";
 import { useI18n } from "@/i18n";
 
+const EXTEND_MINUTES = 5;
+
 /**
  * The full-screen moment when a focus block runs out of time.
  *
  * It paints itself as the inverse of the current theme — `--ink` paper with
  * `--bg` text — so in a light theme it is light type on near-black, and in a
  * dark theme the whole thing flips with it. No shadow, no blur, no looping
- * animation: the screen arrives once, says one thing and leaves.
+ * animation: the screen arrives once, asks one question and leaves.
  *
- * It takes over without being asked, so it also has to be effortless to leave:
- * Escape, a click anywhere, or the button. The block keeps running either way —
- * dismissing this is not a decision about the work, only about the screen.
+ * The question is "finished, or more time?", answered right here, so knowing
+ * whether the work is done never needs a trip back to the timeline. It takes
+ * over without being asked, so it also has to be effortless to leave: Escape,
+ * a click on the backdrop, or the close button. Closing keeps the block running
+ * — dismissing this is a decision about the screen, not about the work.
  */
 export function FocusComplete({
   instance,
   onDismiss,
+  onFinish,
+  onExtend,
 }: {
   instance: BlockInstance;
   onDismiss: () => void;
+  onFinish?: () => void;
+  onExtend?: (minutes: number) => void;
 }) {
   const { t, formatMinutes } = useI18n();
 
@@ -34,6 +42,9 @@ export function FocusComplete({
     return () => window.removeEventListener("keydown", onKey);
   }, [onDismiss]);
 
+  const buttonClass =
+    "inline-flex h-11 items-center gap-2 rounded-control border border-current px-5 text-meta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current";
+
   return (
     <div
       role="dialog"
@@ -42,7 +53,7 @@ export function FocusComplete({
       onClick={onDismiss}
       className="focus-complete fixed inset-0 z-90 flex flex-col items-center justify-center gap-5 px-6 text-center"
     >
-      <span className="flex size-14 items-center justify-center rounded-full border border-current">
+      <span className="focus-complete-bell flex size-14 items-center justify-center rounded-full border border-current">
         <IconCheck size={28} />
       </span>
 
@@ -55,16 +66,41 @@ export function FocusComplete({
         })}
       </p>
 
-      <p className="measure text-meta opacity-60">{t("timer.completeHint")}</p>
+      <p className="measure text-meta opacity-60">{t("alarm.question")}</p>
 
-      <button
-        type="button"
-        autoFocus
-        onClick={onDismiss}
-        className="mt-1 inline-flex h-11 items-center rounded-control border border-current px-5 text-meta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+      <div
+        className="mt-1 flex flex-wrap items-center justify-center gap-2"
+        onClick={(event) => event.stopPropagation()}
       >
-        {t("common.close")}
-      </button>
+        {onFinish ? (
+          <button
+            type="button"
+            autoFocus
+            onClick={onFinish}
+            className={`${buttonClass} bg-[var(--bg)] font-semibold text-[var(--ink)]`}
+          >
+            <IconCheck size={16} />
+            {t("alarm.finish")}
+          </button>
+        ) : null}
+        {onExtend ? (
+          <button
+            type="button"
+            onClick={() => onExtend(EXTEND_MINUTES)}
+            className={buttonClass}
+          >
+            {t("alarm.extend", { minutes: EXTEND_MINUTES })}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          autoFocus={!onFinish}
+          onClick={onDismiss}
+          className={buttonClass}
+        >
+          {t("alarm.keepGoing")}
+        </button>
+      </div>
     </div>
   );
 }

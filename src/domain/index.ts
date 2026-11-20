@@ -11,3 +11,5 @@ export * from "./notes";
 export * from "./shift";
 export * from "./propagate";
 export * from "./template-switch";
+export * from "./journal-insights";
+export * from "./sync";

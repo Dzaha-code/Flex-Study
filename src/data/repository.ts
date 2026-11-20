@@ -177,7 +177,9 @@ export async function deleteUntouchedInstancesAfter(date: string): Promise<Write
     const keys = await db.instances
       .where("date")
       .above(date)
-      .filter((instance) => isUntouchedInstance(instance))
+      // Only generated rows come back through ensureRange. A one-off block
+      // added by hand has no template to be regenerated from, so it stays.
+      .filter((instance) => instance.templateId !== null && isUntouchedInstance(instance))
       .primaryKeys();
     if (keys.length > 0) await db.instances.bulkDelete(keys);
   });
@@ -266,4 +268,58 @@ export async function estimateUsage(): Promise<{ usage: number; quota: number } 
   if (typeof navigator === "undefined" || !navigator.storage?.estimate) return null;
   const { usage = 0, quota = 0 } = await navigator.storage.estimate();
   return { usage, quota };
+}
+
+/** One batch of rows that arrived from another device. */
+export interface SyncBatch {
+  categories: { put: Category[]; remove: string[] };
+  templates: { put: BlockTemplate[]; remove: string[] };
+  instances: { put: BlockInstance[]; remove: string[] };
+  reflections: { put: Reflection[]; remove: string[] };
+  shiftEvents: { put: ShiftEvent[]; remove: string[] };
+  switchEvents: { put: TemplateSwitchEvent[]; remove: string[] };
+  settings: Settings | null;
+  stabilo: StabiloPrefs | null;
+  customTemplates: CustomTemplate[] | null;
+}
+
+/**
+ * Writes a sync batch in one transaction: a sync interrupted halfway must not
+ * leave a template without its category, or blocks pointing at neither.
+ */
+export async function applySyncBatch(batch: SyncBatch): Promise<WriteOutcome> {
+  const db = getDatabase();
+  return guard(() =>
+    db.transaction(
+      "rw",
+      [
+        db.categories,
+        db.templates,
+        db.instances,
+        db.reflections,
+        db.shiftEvents,
+        db.switchEvents,
+        db.meta,
+      ],
+      async () => {
+        const pairs = [
+          [db.categories, batch.categories],
+          [db.templates, batch.templates],
+          [db.instances, batch.instances],
+          [db.reflections, batch.reflections],
+          [db.shiftEvents, batch.shiftEvents],
+          [db.switchEvents, batch.switchEvents],
+        ] as const;
+        for (const [table, change] of pairs) {
+          if (change.put.length > 0) await (table as typeof db.categories).bulkPut(change.put as never);
+          if (change.remove.length > 0) await table.bulkDelete(change.remove);
+        }
+        if (batch.settings) await db.meta.put({ key: "settings", value: batch.settings });
+        if (batch.stabilo) await db.meta.put({ key: "stabilo", value: batch.stabilo });
+        if (batch.customTemplates) {
+          await db.meta.put({ key: "customTemplates", value: batch.customTemplates });
+        }
+      },
+    ),
+  );
 }
