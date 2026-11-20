@@ -22,36 +22,50 @@ Kode ada di:
 | `src/data/sync/sync-store.ts` | Penghubung ke store aplikasi dan state UI login |
 | `src/features/settings/sync-panel.tsx` | Panel Atur → Akun & sinkronisasi |
 | `supabase/migrations/0001_flexstudy_sync.sql` | Tabel, RLS, fungsi push, realtime |
+| `supabase/migrations/0002_sync_rows_grants.sql` | Izin tabel untuk user login (wajib di project baru) |
+| `supabase/config.toml`, `supabase/templates/` | Pengaturan Auth, SMTP, dan email kode |
 | `tests/sync.test.ts`, `tests/sync-engine.test.ts` | Unit test dan simulasi dua perangkat |
 
-## Setup (sekali saja)
+## Setup (sekali saja, lewat CLI)
 
-1. Buat project di <https://supabase.com>.
-2. Buka **SQL Editor**, tempel isi `supabase/migrations/0001_flexstudy_sync.sql`, lalu **Run**.
-3. **Authentication → Sign In / Providers → Email**: pastikan Email aktif.
-4. **Authentication → Emails → Magic Link**: ganti isi template supaya mengirim **kode**, bukan link. Contoh:
+Semua pengaturan server ada di repo (`supabase/`), jadi project baru cukup disiapkan dari terminal.
 
-   ```html
-   <h2>Kode masuk FlexStudy</h2>
-   <p>Masukkan kode ini di aplikasi:</p>
-   <p style="font-size:28px;letter-spacing:6px"><strong>{{ .Token }}</strong></p>
-   <p>Kode berlaku beberapa menit. Abaikan email ini kalau kamu tidak meminta masuk.</p>
-   ```
-
-   Tanpa langkah ini, Supabase mengirim link, dan app desktop maupun Android tidak bisa memakainya.
-5. **Project Settings → API**: salin *Project URL* dan *anon public key* ke `.env.local`:
+1. `npx supabase login`, lalu buat project (atau pakai yang sudah ada) dan tautkan:
 
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   npx supabase link --project-ref <ref>
+   npx supabase db push --remote        # migration 0001 (tabel, RLS, realtime) + 0002 (izin tabel)
    ```
 
-6. Jalankan ulang `npm run dev`. Untuk build Tauri, variabel ini dibaca saat `npm run build:desktop`, jadi harus sudah ada di `.env.local` sebelum build.
+   Migration 0002 wajib: project Supabase baru tidak lagi memberi izin tabel ke role API secara otomatis. Tanpanya login berhasil tapi setiap sinkron gagal dengan "permission denied".
+
+2. Isi `.env.local` (tidak ikut git):
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # publishable key, aman di klien
+   SUPABASE_AUTH_SMTP_USER=akun@gmail.com              # pengirim email kode
+   SUPABASE_AUTH_SMTP_PASS=sandiaplikasi16huruf        # Google App Password, tanpa spasi
+   ```
+
+   Sandi aplikasi dibuat di <https://myaccount.google.com/apppasswords> (butuh Verifikasi 2 Langkah aktif).
+
+3. Kirim pengaturan Auth (SMTP, template email kode, masa berlaku 10 menit, kode 6 digit, batas 30 email/jam):
+
+   ```
+   set -a; . ./.env.local; set +a        # Git Bash: muat variabel SMTP ke shell
+   npx supabase config diff               # tinjau dulu
+   npx supabase config push --yes
+   ```
+
+   Supabase gratis menolak template email kustom selama masih memakai pengirim bawaannya, jadi SMTP harus aktif bersamaan dengan template. Template ada di `supabase/templates/`; judul email memuat kodenya langsung.
+
+4. Jalankan ulang `npm run dev`. Build Tauri membaca `NEXT_PUBLIC_*` saat `npm run build:desktop`, jadi `.env.local` harus terisi sebelum build.
 
 Catatan:
-- Pengirim email bawaan Supabase dibatasi beberapa email per jam. Untuk dipakai banyak orang, sambungkan SMTP sendiri di **Authentication → Emails → SMTP Settings**.
-- *Anon key* memang dirancang untuk dibagikan ke browser. Yang menjaga data tiap orang tetap privat adalah RLS di tabel `sync_rows`. Jangan pernah memasukkan *service_role key* ke aplikasi.
+- *Publishable/anon key* memang untuk klien. Yang menjaga data tiap orang tetap privat adalah RLS di `sync_rows`. Jangan pernah memasukkan *secret/service_role key* ke aplikasi.
+- Mengetes dari HP di Wi-Fi yang sama: `npm run dev -- -H 0.0.0.0`, buka `http://<IP-laptop>:3000`. `next.config.ts` otomatis mengizinkan IP laptop sebagai origin dev.
 
 ## Catatan untuk versi Android
 
-Logika sinkronisasi tidak bergantung pada Tauri, jadi build Android (Tauri mobile atau WebView lain) cukup memakai kode yang sama dan `.env.local` yang sama. Login dengan kode OTP tidak butuh deep link atau redirect.
+Logika sinkronisasi tidak bergantung pada Tauri, jadi build Android (Tauri mobile atau WebView lain) cukup memakai kode yang sama dan `.env.local` yang sama. Login dengan kode OTP tidak butuh deep link atau redirect. Saat aplikasi kembali dari background, sinkron langsung menarik perubahan yang terlewat (lihat `hookResume` di `sync-store.ts`).

@@ -1,4 +1,16 @@
+import { networkInterfaces } from "node:os";
 import type { NextConfig } from "next";
+
+/**
+ * This machine's own LAN addresses, so a phone on the same Wi-Fi can open the
+ * dev server (and `tauri android dev` can load it). Next blocks dev assets for
+ * any other origin, which leaves the phone on a blank page. Read at startup, so
+ * a new network only needs a dev server restart; nothing here ships in a build.
+ */
+const lanHosts = Object.values(networkInterfaces())
+  .flat()
+  .filter((net) => net && net.family === "IPv4" && !net.internal)
+  .map((net) => net!.address);
 
 /**
  * The desktop build is opt-in behind `TAURI_BUILD=1` so the Vercel build keeps
@@ -10,6 +22,7 @@ const isProd = process.env.NODE_ENV === "production";
 const devHost = process.env.TAURI_DEV_HOST || "localhost";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: lanHosts,
   /* config options here */
   experimental: {
     agentFeedback: true,
