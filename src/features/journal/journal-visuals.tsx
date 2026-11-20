@@ -52,20 +52,21 @@ function StatTile({
   );
 }
 
+/**
+ * One square of the map. There are ~140 of them, so the label comes from the
+ * parent instead of each square subscribing to the store for translations.
+ */
 function HeatCellView({
   cell,
+  label,
   selected,
   onPick,
 }: {
   cell: HeatCell;
+  label: string;
   selected: boolean;
   onPick: (date: string) => void;
 }) {
-  const { t, formatDateLong } = useI18n();
-  const label = cell.hasEntry
-    ? t("journal.map.cellWritten", { date: formatDateLong(cell.date), count: cell.words })
-    : t("journal.map.cellEmpty", { date: formatDateLong(cell.date) });
-
   if (cell.future) {
     return <span aria-hidden="true" className="heat-cell size-3.5" data-future="true" />;
   }
@@ -97,7 +98,11 @@ export function WritingOverview({
   weekStart: 0 | 1;
   onPickDate: (date: string) => void;
 }) {
-  const { t, formatMonthShort, formatWeekdayIndex } = useI18n();
+  const { t, formatDateLong, formatMonthShort, formatWeekdayIndex } = useI18n();
+  const cellLabel = (cell: HeatCell) =>
+    cell.hasEntry
+      ? t("journal.map.cellWritten", { date: formatDateLong(cell.date), count: cell.words })
+      : t("journal.map.cellEmpty", { date: formatDateLong(cell.date) });
 
   const stats = useMemo(() => journalStats(reflections, today), [reflections, today]);
   const columns = useMemo(
@@ -171,6 +176,7 @@ export function WritingOverview({
                     <HeatCellView
                       key={cell.date}
                       cell={cell}
+                      label={cell.future ? "" : cellLabel(cell)}
                       selected={cell.date === selected}
                       onPick={onPickDate}
                     />

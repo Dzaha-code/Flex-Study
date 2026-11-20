@@ -527,6 +527,16 @@
   transform: scale(0.96);
 }
 
+/* Tab bar: the icon dips under the thumb, so a tap reads as taken even while
+   the next screen is still being drawn. The colour change itself is instant. */
+.nav-tab > span:first-child {
+  transition: transform var(--t-instant) var(--ease-out);
+}
+
+.nav-tab:active > span:first-child {
+  transform: scale(0.88);
+}
+
 /* The card a row opens into: it grows out of the row instead of popping in. */
 @keyframes block-open {
   from {

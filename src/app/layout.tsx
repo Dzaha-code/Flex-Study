@@ -44,7 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
-      <body className="min-h-full">
+      {/* Extensions such as ColorZilla stamp attributes on <body> before React
+          loads. This only silences attribute diffs on this one element. */}
+      <body className="min-h-full" suppressHydrationWarning>
         <AppProviders>
           <AppBoundary>{children}</AppBoundary>
         </AppProviders>

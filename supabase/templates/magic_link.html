@@ -1,7 +1,55 @@
-<div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #14171a;">
-  <p style="font-size: 14px; margin: 0 0 4px;">FlexStudy</p>
-  <h2 style="font-size: 20px; margin: 0 0 16px;">Kode masuk / Sign-in code</h2>
-  <p style="margin: 0 0 12px;">Ketik kode ini di aplikasi FlexStudy. / Type this code into the FlexStudy app.</p>
-  <p style="font-size: 32px; font-weight: 700; letter-spacing: 8px; background: #e4f55a; display: inline-block; padding: 8px 16px; border-radius: 8px; margin: 0 0 16px;">{{ .Token }}</p>
-  <p style="font-size: 13px; color: #5e645f; margin: 0;">Berlaku 10 menit. Abaikan email ini kalau kamu tidak meminta masuk. / Valid for 10 minutes. Ignore this email if you did not ask to sign in.</p>
-</div>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Kode masuk kamu</title>
+</head>
+<body style="margin:0; padding:0; background:#f6f5f0;">
+<!-- Inbox preview line: the code itself, so it can be read from the notification. -->
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; color:#f6f5f0;">Kode masuk FlexStudy: {{ .Token }} &middot; berlaku 10 menit.&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f5f0;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#14171a;">
+        <tr>
+          <td style="padding:0 4px 20px;">
+            <span style="font-size:17px; font-weight:700; letter-spacing:-0.2px; background:linear-gradient(transparent 55%, #e4f55a 55%); padding:0 2px;">FlexStudy</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#ffffff; border:1px solid #dcdad1; border-radius:16px; padding:32px 28px;">
+            <h1 style="margin:0 0 10px; font-size:22px; line-height:1.3; font-weight:700;">Kode masuk kamu</h1>
+            <p style="margin:0 0 24px; font-size:15px; line-height:1.6; color:#3d423f;">Ketik 6 angka ini di <strong>Pengaturan &rarr; Sinkronisasi</strong> untuk menyambungkan perangkat ini ke akun FlexStudy-mu. Jadwal, catatan, dan progresmu akan ikut tersinkron.</p>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="background:#e4f55a; border-radius:12px; padding:20px 12px;">
+                  <div style="font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#14171a; margin:0 0 6px;">Kode masuk</div>
+                  <div style="font-family:'SF Mono', Menlo, Consolas, 'Courier New', monospace; font-size:36px; line-height:1.1; font-weight:700; letter-spacing:10px; color:#14171a; padding-left:10px;">{{ .Token }}</div>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:16px 0 0; font-size:13px; line-height:1.6; color:#5e645f; text-align:center;">Berlaku <strong style="color:#14171a;">10 menit</strong> dan hanya bisa dipakai sekali.</p>
+
+            <hr style="border:none; border-top:1px solid #dcdad1; margin:28px 0 20px;">
+
+            <p style="margin:0 0 8px; font-size:13px; line-height:1.6; color:#5e645f;"><strong style="color:#14171a;">Tidak merasa meminta kode?</strong> Abaikan saja email ini. Tanpa kode ini tidak ada yang bisa masuk ke akunmu, dan tim FlexStudy tidak akan pernah menanyakannya.</p>
+            <p style="margin:16px 0 0; font-size:12px; line-height:1.6; color:#5e645f;"><strong style="color:#14171a;">Your sign-in code.</strong> Type these 6 digits in Settings &rarr; Sync to link this device to your FlexStudy account. The code above is valid for 10 minutes and works once. If you did not ask for it, you can ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 8px 0; font-size:12px; line-height:1.6; color:#5e645f; text-align:center;">
+            Dikirim ke {{ .Email }} karena ada permintaan masuk ke FlexStudy.<br>
+            Masuk hanya dibutuhkan untuk sinkronisasi antar perangkat &mdash; aplikasinya tetap jalan tanpa akun.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
