@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
+import { FocusAlarmHost } from "@/features/today/focus-alarm";
+import { RunningBar } from "@/features/today/running-bar";
+import { SyncHost } from "@/features/settings/sync-panel";
 import { GuidedTour } from "@/features/tour/guided-tour";
 import { startTour } from "@/features/tour/tour-store";
 import type { ContentWidth } from "@/domain/types";
@@ -74,6 +77,13 @@ const notFullscreen = () => false;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  /**
+   * The tab the user just tapped, lit at once. Rendering the next screen can
+   * take a moment on a phone, and a tab bar that does not react to a tap reads
+   * as a missed tap, so people tap again. Cleared when the route arrives.
+   */
+  const [tapped, setTapped] = useState<{ href: string; from: string } | null>(null);
+  const pendingHref = tapped && tapped.from === pathname ? tapped.href : null;
   const { t } = useI18n();
   const contentWidth = useAppStore((state) => state.settings.contentWidth);
   const tourCompleted = useAppStore((state) => state.settings.tourCompleted);
@@ -145,14 +155,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="hidden px-5 pb-4 text-body font-semibold lg:block">{t("app.name")}</p>
           <ul className="grid grid-cols-5 lg:flex lg:flex-col lg:gap-1 lg:px-2">
             {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
-              const active = isActive(pathname, href);
+              const active = pendingHref ? pendingHref === href : isActive(pathname, href);
               return (
                 <li key={href}>
                   <Link
                     href={href}
-                    aria-current={active ? "page" : undefined}
+                    aria-current={isActive(pathname, href) ? "page" : undefined}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                      if (!isActive(pathname, href)) setTapped({ href, from: pathname });
+                    }}
                     className={cn(
-                      "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-label transition-colors lg:min-h-11 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-control lg:px-3 lg:text-meta",
+                      "nav-tab flex min-h-14 touch-manipulation select-none flex-col items-center justify-center gap-1 px-1 text-label transition-colors lg:min-h-11 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-control lg:px-3 lg:text-meta",
                       active
                         ? "text-accent lg:bg-accent-surface lg:font-medium"
                         : "text-ink-muted hover:text-ink lg:hover:bg-accent-surface/60",
@@ -214,14 +228,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main
           id="main"
-          className="min-w-0 flex-1 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-5 lg:px-0 lg:pb-12 lg:pt-8"
+          className="min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.25rem+env(safe-area-inset-top))] lg:px-0 lg:pb-12 lg:pt-8"
         >
           <StorageNotice />
           {children}
+          <RunningBar />
         </main>
       </div>
 
       <GuidedTour />
+      {/* Watches the running block on every screen, not only on Today. */}
+      <FocusAlarmHost />
+      {/* Starts sync after the local data is loaded, only when signed in. */}
+      <SyncHost />
     </div>
   );
 }

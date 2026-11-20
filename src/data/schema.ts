@@ -164,6 +164,10 @@ export const SettingsSchema = z.object({
   animation: z.enum(["system", "full", "reduced"]).default("system"),
   weekStart: z.union([z.literal(0), z.literal(1)]),
   remindersEnabled: z.boolean(),
+  // Defaulted so a workspace exported before the alarm existed imports with
+  // the alarm on, which is what a fresh install gets too.
+  focusAlarm: z.boolean().default(true),
+  keepScreenOn: z.boolean().default(true),
   dayStart: clockTimeSchema,
   dayEnd: clockTimeSchema,
   // Defaulted rather than required, so a workspace exported before these
@@ -193,6 +197,9 @@ export const StabiloPrefsSchema = z.object({
     })
     .nullable()
     .default(null),
+  // Defaulted so rows and exports from before the greeting existed still load.
+  dailyGreeting: z.boolean().default(true),
+  lastGreetingDate: z.string().nullable().default(null),
 });
 
 /**

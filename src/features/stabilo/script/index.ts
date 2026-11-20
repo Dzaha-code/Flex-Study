@@ -3,7 +3,8 @@ import type { DialogueScript } from "../engine/types";
 import { INTRO_EN, TOUR_EN, TOUR_EN_EMPTY } from "./en";
 import { INTRO_ID, TOUR_ID, TOUR_ID_EMPTY } from "./id";
 
-export type Flow = "intro" | "tour";
+/** `greeting` is assembled per day by `buildGreeting`, not stored here. */
+export type Flow = "intro" | "tour" | "greeting";
 
 /**
  * What the app looks like right now, so the tour can describe the screen the
@@ -14,7 +15,7 @@ export interface TourContext {
   hasBlocks: boolean;
 }
 
-const SCRIPTS: Record<Lang, Record<Flow, DialogueScript>> = {
+const SCRIPTS: Record<Lang, Record<Exclude<Flow, "greeting">, DialogueScript>> = {
   id: { intro: INTRO_ID, tour: TOUR_ID },
   en: { intro: INTRO_EN, tour: TOUR_EN },
 };
@@ -24,7 +25,11 @@ const EMPTY_DAY: Record<Lang, DialogueScript> = {
   en: TOUR_EN_EMPTY,
 };
 
-export function scriptFor(flow: Flow, lang: Lang, context?: TourContext): DialogueScript {
+export function scriptFor(
+  flow: Exclude<Flow, "greeting">,
+  lang: Lang,
+  context?: TourContext,
+): DialogueScript {
   if (flow === "tour" && context?.hasBlocks === false) return EMPTY_DAY[lang];
   return SCRIPTS[lang][flow];
 }

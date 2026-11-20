@@ -6,6 +6,7 @@ import { Sheet } from "@/components/ui/dialog";
 import { NumberInput, TextInput, TimeInput } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/surface";
 import { useAppStore, type BlockTemplateDraft } from "@/data/store";
+import { todayISO } from "@/domain/time";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { CategoryPicker } from "./category-picker";
@@ -63,18 +64,40 @@ function DayPicker({
   );
 }
 
+/** Weekly blocks come back every chosen weekday; a one-off lives on one date. */
+export type BlockRepeat = "weekly" | "once";
+
 export function BlockTemplateForm({
   initial,
   onClose,
   hint,
+  defaultDate,
+  defaultRepeat = "weekly",
 }: {
   initial: BlockTemplateDraft;
   onClose: () => void;
   /** Extra context for the caller's situation, e.g. editing from the timeline. */
   hint?: string;
+  /**
+   * The date a one-off block lands on when the user does not change it: the day
+   * on screen in Today, today in Settings.
+   */
+  defaultDate?: string;
+  /**
+   * Which mode a new block opens in. Today opens on "once", because something
+   * added from the day view is usually about that day; Settings opens on
+   * "weekly". Editing an existing weekly block never offers the switch.
+   */
+  defaultRepeat?: BlockRepeat;
 }) {
   const saveBlockTemplate = useAppStore((state) => state.saveBlockTemplate);
+  const addInstance = useAppStore((state) => state.addInstance);
   const { t } = useI18n();
+
+  const creating = !initial.id;
+  const [repeat, setRepeat] = useState<BlockRepeat>(creating ? defaultRepeat : "weekly");
+  const [date, setDate] = useState(() => defaultDate ?? todayISO(Date.now()));
+  const once = repeat === "once";
 
   const [title, setTitle] = useState(initial.title);
   const [categoryId, setCategoryId] = useState(initial.categoryId);
@@ -86,8 +109,10 @@ export function BlockTemplateForm({
   const parsedDuration = Number.parseInt(duration, 10);
   const titleMissing = title.trim() === "";
   const durationInvalid = !Number.isFinite(parsedDuration) || parsedDuration < 1;
-  const daysMissing = days.length === 0;
-  const disabled = titleMissing || durationInvalid || daysMissing || categoryId === "";
+  const daysMissing = !once && days.length === 0;
+  const dateMissing = once && !/^\d{4}-\d{2}-\d{2}$/.test(date);
+  const disabled =
+    titleMissing || durationInvalid || daysMissing || dateMissing || categoryId === "";
 
   return (
     <Sheet
@@ -104,6 +129,17 @@ export function BlockTemplateForm({
           <Button
             disabled={disabled}
             onClick={() => {
+              if (once) {
+                void addInstance({
+                  date,
+                  title,
+                  categoryId,
+                  durationMin: parsedDuration,
+                  plannedStart: fixedStart ? plannedStart : null,
+                });
+                onClose();
+                return;
+              }
               void saveBlockTemplate({
                 id: initial.id,
                 title,
@@ -148,8 +184,41 @@ export function BlockTemplateForm({
         onChange={(event) => setDuration(event.target.value)}
       />
 
-      <DayPicker days={days} onChange={setDays} />
-      {daysMissing ? <p className="text-label text-danger">{t("a11y.required")}</p> : null}
+      {creating ? (
+        <SegmentedControl
+          legend={t("block.repeat")}
+          name="block-repeat-mode"
+          value={repeat}
+          onChange={setRepeat}
+          options={[
+            { value: "once", label: t("block.repeat.once") },
+            { value: "weekly", label: t("block.repeat.weekly") },
+          ]}
+        />
+      ) : null}
+
+      {once ? (
+        <div className="flex flex-col gap-1.5">
+          <TextInput
+            label={t("block.date")}
+            type="date"
+            value={date}
+            required
+            error={dateMissing ? t("a11y.required") : undefined}
+            onChange={(event) => setDate(event.target.value)}
+            className="max-w-[12rem]"
+          />
+          <p className="measure text-caption text-mute">{t("block.repeat.onceHint")}</p>
+        </div>
+      ) : (
+        <>
+          <DayPicker days={days} onChange={setDays} />
+          {daysMissing ? <p className="text-label text-danger">{t("a11y.required")}</p> : null}
+          {creating ? (
+            <p className="measure text-caption text-mute">{t("block.repeat.weeklyHint")}</p>
+          ) : null}
+        </>
+      )}
 
       <SegmentedControl
         legend={t("settings.blockStart")}
