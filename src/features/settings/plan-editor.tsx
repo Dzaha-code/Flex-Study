@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/icons";
 import { CategoryTag, EmptyState } from "@/components/ui/surface";
 import { BlockTemplateForm } from "@/features/plan/block-template-form";
+import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
+import { todayISO } from "@/domain/time";
 import { useAppStore, type BlockTemplateDraft, type CategoryDraft } from "@/data/store";
-import type { BlockTemplate, Category, CategorySymbol } from "@/domain/types";
+import type { BlockInstance, BlockTemplate, Category, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
 
 /** The picker shows the marker itself — a symbol needs no translated name. */
@@ -323,6 +325,8 @@ export function BlockListEditor({ dense = false }: { dense?: boolean }) {
 
       {draft ? <BlockTemplateForm initial={draft} onClose={() => setDraft(null)} /> : null}
 
+      {!dense ? <UpcomingOneOffs /> : null}
+
       <ConfirmSheet
         open={removing !== null}
         onOpenChange={(next) => {
@@ -334,6 +338,95 @@ export function BlockListEditor({ dense = false }: { dense?: boolean }) {
         tone="danger"
         onConfirm={() => {
           if (removing) void deleteBlockTemplate(removing.id);
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * One-off blocks still ahead: the meet-up on Saturday, the dentist on Tuesday.
+ *
+ * They live on a single date and have no weekly template, so without this list
+ * they would only be visible by paging to their day in Today.
+ */
+function UpcomingOneOffs() {
+  const instances = useAppStore((state) => state.instances);
+  const categories = useAppStore((state) => state.categories);
+  const removeInstance = useAppStore((state) => state.removeInstance);
+  const { t, formatDateLong, formatMinutes } = useI18n();
+  const [today] = useState(() => todayISO(Date.now()));
+  const [editing, setEditing] = useState<BlockInstance | null>(null);
+  const [removing, setRemoving] = useState<BlockInstance | null>(null);
+
+  const upcoming = instances
+    .filter(
+      (instance) =>
+        instance.templateId === null &&
+        instance.movedFrom === null &&
+        instance.date >= today &&
+        instance.status === "planned",
+    )
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        (a.plannedStart ?? "99:99").localeCompare(b.plannedStart ?? "99:99"),
+    );
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-4">
+      <div className="flex flex-col gap-0.5">
+        <h3 className="text-body font-medium">{t("block.oneOffs.title")}</h3>
+        <p className="measure text-caption text-mute">{t("block.oneOffs.hint")}</p>
+      </div>
+      {upcoming.length === 0 ? (
+        <p className="text-meta text-ink-muted">{t("block.oneOffs.empty")}</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line">
+          {upcoming.map((instance) => {
+            const category = categoryById.get(instance.categoryId);
+            return (
+              <li key={instance.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="text-body font-medium">{instance.title}</span>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label text-ink-muted">
+                    <span className="font-medium text-ink">{formatDateLong(instance.date)}</span>
+                    {category ? <CategoryTag name={category.name} icon={category.icon} /> : null}
+                    <span>{formatMinutes(instance.durationMin)}</span>
+                    <span>{instance.plannedStart ?? t("settings.blockStartFlexible")}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <Button variant="ghost" size="sm" onClick={() => setEditing(instance)}>
+                    {t("common.edit")}
+                  </Button>
+                  <IconButton
+                    label={`${t("common.delete")}: ${instance.title}`}
+                    onClick={() => setRemoving(instance)}
+                  >
+                    <IconTrash />
+                  </IconButton>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {editing ? <EditBlockSheet instance={editing} onClose={() => setEditing(null)} /> : null}
+
+      <ConfirmSheet
+        open={removing !== null}
+        onOpenChange={(next) => {
+          if (!next) setRemoving(null);
+        }}
+        title={`${t("common.delete")}: ${removing?.title ?? ""}`}
+        description={t("block.oneOffs.deleteHint")}
+        confirmLabel={t("common.delete")}
+        tone="danger"
+        onConfirm={() => {
+          if (removing) void removeInstance(removing.id);
         }}
       />
     </div>

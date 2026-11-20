@@ -43,6 +43,9 @@ export function isReplaceableBySwitch(
   startDate: ISODate,
 ): boolean {
   if (instance.date < startDate) return false;
+  // A block added by hand for one day (a meet-up, an appointment) belongs to
+  // that day, not to any plan, so switching plans must never take it away.
+  if (instance.templateId === null) return false;
   if (instance.status !== "planned") return false;
   if (instance.note.trim() !== "") return false;
   if (instance.actualSeconds > 0) return false;

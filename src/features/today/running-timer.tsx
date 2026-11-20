@@ -1,14 +1,11 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo } from "react";
 import { ProgressBar } from "@/components/ui/surface";
 import { formatCountdown, progressRatio, remainingSeconds } from "@/domain";
-import type { LaidOutBlock } from "@/domain/schedule";
 import type { BlockInstance } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { useNow } from "@/lib/use-now";
-import { FocusComplete } from "./focus-complete";
-import { useTimerCompletion } from "./use-reminders";
 
 /**
  * The one-second clock lives in this file and nowhere else (ToApk.md §7 D1.2).
@@ -18,27 +15,6 @@ import { useTimerCompletion } from "./use-reminders";
  * memoised leaf that owns its own clock, which keeps a running timer from
  * re-rendering the day header, the streak strip or the rest of the timeline.
  */
-
-/**
- * Renders nothing. It exists so the "block finished" notification fires on the
- * right second; it is mounted once per day view, so the same block can never be
- * announced twice.
- */
-export const TimerWatcher = memo(function TimerWatcher({
-  enabled,
-  running,
-  blocks,
-}: {
-  enabled: boolean;
-  running: boolean;
-  blocks: LaidOutBlock[];
-}) {
-  // No running block means no clock at all — idle cost is zero, not one tick per
-  // second that has nothing to update.
-  const nowEpoch = useNow(running, 1000);
-  useTimerCompletion(enabled, blocks, nowEpoch);
-  return null;
-});
 
 /** The time in a compact row: a live countdown while running, otherwise the plan. */
 export const Countdown = memo(function Countdown({ instance }: { instance: BlockInstance }) {
@@ -84,17 +60,10 @@ export const FocusTimer = memo(function FocusTimer({ instance }: { instance: Blo
   const overrunning = running && remaining === 0;
   const ratio = running ? progressRatio(instance, nowEpoch) : 0;
 
-  // Remembered per block, so the full-screen moment appears exactly once and a
-  // dismissal is never undone by the next tick.
-  const [dismissedId, setDismissedId] = useState<string | null>(null);
-  const dismiss = useCallback(() => setDismissedId(instance.id), [instance.id]);
-
   return (
     <>
-      {overrunning && dismissedId !== instance.id ? (
-        <FocusComplete instance={instance} onDismiss={dismiss} />
-      ) : null}
-
+      {/* The "time is up" screen and chime live in FocusAlarmHost, mounted
+          once in the shell, so they also fire away from this screen. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="text-display font-semibold tabular-nums">
           {running ? formatCountdown(remaining) : formatMinutes(instance.durationMin)}

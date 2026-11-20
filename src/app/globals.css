@@ -506,3 +506,200 @@
   pointer-events: none;
   animation: ink-sweep 280ms var(--ease-out) both;
 }
+
+/* ---------------------------------------------------------------------------
+ * Today: opening a block, picking a day, moving between days.
+ * All one-shot answers to a tap (DESIGN.md §6); the global reduced-motion
+ * guards above collapse every one of them to an instant change.
+ * ------------------------------------------------------------------------- */
+
+/* A row gives a little under the finger, so a tap feels pressed, not ignored. */
+.block-row,
+.day-chip {
+  transition:
+    transform var(--t-instant) var(--ease-out),
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.block-row:active,
+.day-chip:active {
+  transform: scale(0.96);
+}
+
+/* The card a row opens into: it grows out of the row instead of popping in. */
+@keyframes block-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.block-open {
+  transform-origin: top center;
+  animation: block-open var(--t-base) var(--ease-out) both;
+}
+
+/* The day just picked lands with a small rebound. */
+@keyframes day-chip-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.day-chip-selected {
+  animation: day-chip-pop var(--t-slow) var(--ease-squash) both;
+}
+
+/* Moving to another day slides the timeline the way time runs: a later day
+   comes in from the right, an earlier one from the left. */
+@keyframes day-slide-forward {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes day-slide-back {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.day-slide-forward {
+  animation: day-slide-forward var(--t-slow) var(--ease-out) both;
+}
+
+.day-slide-back {
+  animation: day-slide-back var(--t-slow) var(--ease-out) both;
+}
+
+/* The check on the "time is up" screen rings twice, like a bell, then rests. */
+@keyframes focus-complete-bell {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(-14deg);
+  }
+  30% {
+    transform: rotate(12deg);
+  }
+  45% {
+    transform: rotate(-8deg);
+  }
+  60% {
+    transform: rotate(5deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+.focus-complete-bell {
+  animation: focus-complete-bell 900ms var(--ease-out) 200ms 2 both;
+}
+
+/* ---------------------------------------------------------------------------
+ * Journal: the writing map. Four steps of ink on paper, the same single hue
+ * the rest of the app uses, so the map stays readable in both themes and
+ * never borrows a status colour. Favourite days carry the stabilo.
+ * ------------------------------------------------------------------------- */
+:root {
+  --heat-0: var(--line);
+  --heat-1: color-mix(in oklab, var(--ink) 22%, var(--raised));
+  --heat-2: color-mix(in oklab, var(--ink) 45%, var(--raised));
+  --heat-3: color-mix(in oklab, var(--ink) 70%, var(--raised));
+  --heat-4: var(--ink);
+}
+
+.heat-cell {
+  border-radius: 3px;
+  background: var(--heat-0);
+  transition: transform var(--t-instant) var(--ease-out);
+}
+
+.heat-cell[data-level="1"] {
+  background: var(--heat-1);
+}
+.heat-cell[data-level="2"] {
+  background: var(--heat-2);
+}
+.heat-cell[data-level="3"] {
+  background: var(--heat-3);
+}
+.heat-cell[data-level="4"] {
+  background: var(--heat-4);
+}
+
+.heat-cell[data-future="true"] {
+  background: transparent;
+  outline: 1px dashed var(--line);
+  outline-offset: -1px;
+}
+
+/* A favourite gets a stabilo dot in its corner; the ink level still reads. */
+.heat-cell[data-favorite="true"] {
+  box-shadow: inset 0 0 0 2px var(--hl);
+}
+
+.heat-cell[data-selected="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+button.heat-cell:hover {
+  transform: scale(1.25);
+}
+
+/* Entry cards: lift a hair on hover so the grid reads as things to open. */
+.journal-card {
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.journal-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+}
+
+.journal-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* The mini "now running" bar rises into place when it appears. */
+@keyframes running-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.running-bar {
+  animation: running-bar-in var(--t-base) var(--ease-out) both;
+}

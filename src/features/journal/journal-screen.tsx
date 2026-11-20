@@ -39,6 +39,7 @@ import { downloadTextFile } from "@/lib/download";
 import { renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 import { reflectionsToMarkdown } from "./export-markdown";
+import { EntryCard, LearningsWall, NoteShareBar, WritingOverview } from "./journal-visuals";
 
 const AUTOSAVE_DELAY_MS = 800;
 
@@ -289,6 +290,7 @@ function NotesPanel({ onOpen }: { onOpen: (instance: BlockInstance) => void }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <NoteShareBar instances={instances} categories={categories} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <TextInput
@@ -438,6 +440,7 @@ export function JournalScreen() {
   const reflections = useAppStore((state) => state.reflections);
   const deleteReflection = useAppStore((state) => state.deleteReflection);
   const setReflectionFavorite = useAppStore((state) => state.setReflectionFavorite);
+  const weekStart = useAppStore((state) => state.settings.weekStart);
   const { t, formatDateLong, formatMonthName } = useI18n();
 
   const [tab, setTab] = useState<JournalTab>("entries");
@@ -485,6 +488,16 @@ export function JournalScreen() {
   // a long year is a short list of dates rather than a wall of entries.
   const isMonthCollapsed = (month: string, index: number, yearIndex: number) =>
     searching ? false : (collapsed[month] ?? !(yearIndex === 0 && index === 0));
+
+  /** A day picked on the map opens in the editor, which scrolls into view. */
+  function openDay(date: string) {
+    setSelected(date);
+    requestAnimationFrame(() => {
+      document
+        .getElementById("journal-editor")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   function handleExport() {
     if (reflections.length === 0) return;
@@ -543,8 +556,21 @@ export function JournalScreen() {
         ]}
       />
 
+      {tab === "entries" && reflections.length > 0 ? (
+        <Panel>
+          <PanelHeader title={t("journal.overview")} description={t("journal.overviewHint")} />
+          <WritingOverview
+            reflections={reflections}
+            today={today}
+            selected={selected}
+            weekStart={weekStart}
+            onPickDate={openDay}
+          />
+        </Panel>
+      ) : null}
+
       {tab === "entries" ? (
-        <Panel data-tour="journal-entry">
+        <Panel data-tour="journal-entry" id="journal-editor" className="scroll-mt-4">
         <PanelHeader
           title={selected === today ? t("journal.todayEntry") : formatDateLong(selected)}
           description={t("journal.bodyPlaceholder")}
@@ -563,6 +589,13 @@ export function JournalScreen() {
           existing={existing}
           promptId={promptId}
         />
+        </Panel>
+      ) : null}
+
+      {tab === "entries" && reflections.length > 0 ? (
+        <Panel>
+          <PanelHeader title={t("journal.learningsWall")} description={t("journal.learningsWallHint")} />
+          <LearningsWall reflections={reflections} onOpen={setDetailId} />
         </Panel>
       ) : null}
 
@@ -685,66 +718,44 @@ export function JournalScreen() {
                                 </h4>
 
                                 {monthOpen ? (
-                                    <ul className="flex flex-col divide-y divide-line">
+                                    <ul className="grid gap-3 pt-1 sm:grid-cols-2 xl:grid-cols-3">
                                       {month.entries.map((reflection) => {
                                         const heading = headingOf(reflection, formatDateLong(reflection.date));
                                         const preview =
-                                          reflectionPreview(reflection.body) ||
+                                          reflectionPreview(reflection.body, 180) ||
                                           reflection.learnings.filter(Boolean).join(" · ");
                                         return (
-                                          <li key={reflection.id} className="flex items-center gap-1">
-                                            <button
-                                              type="button"
-                                              onClick={() => setDetailId(reflection.id)}
-                                              aria-label={t("journal.openDetail", { title: heading })}
-                                              className="flex min-w-0 flex-1 flex-col gap-1 py-3 text-left hover:bg-accent-surface/40"
-                                            >
-                                              <span className="flex min-w-0 items-center gap-2">
-                                                <span
-                                                  className={cn(
-                                                    "truncate text-body",
-                                                    reflection.date === selected && "font-medium text-accent",
-                                                  )}
+                                          <li key={reflection.id} className="flex">
+                                            <EntryCard
+                                              reflection={reflection}
+                                              heading={heading}
+                                              preview={preview}
+                                              selected={reflection.date === selected}
+                                              onOpen={() => setDetailId(reflection.id)}
+                                              favoriteButton={
+                                                <IconButton
+                                                  label={
+                                                    reflection.favorite
+                                                      ? t("journal.favoriteRemove")
+                                                      : t("journal.favoriteAdd")
+                                                  }
+                                                  aria-pressed={reflection.favorite}
+                                                  onClick={() =>
+                                                    void setReflectionFavorite(
+                                                      reflection.id,
+                                                      !reflection.favorite,
+                                                    )
+                                                  }
+                                                  className={reflection.favorite ? "text-accent" : undefined}
                                                 >
-                                                  {heading}
-                                                </span>
-                                                {reflection.favorite ? (
-                                                  <IconStarFilled size={14} className="shrink-0 text-accent" />
-                                                ) : null}
-                                              </span>
-                                              <span className="flex flex-wrap items-baseline gap-x-2 text-label text-ink-muted">
-                                                <span>{formatDateLong(reflection.date)}</span>
-                                                <span>
-                                                  {t("journal.words", { count: reflection.wordCount })}
-                                                </span>
-                                              </span>
-                                              {preview ? (
-                                                <span className="truncate text-meta text-ink-muted">
-                                                  {preview}
-                                                </span>
-                                              ) : null}
-                                            </button>
-                                            <IconButton
-                                              label={
-                                                reflection.favorite
-                                                  ? t("journal.favoriteRemove")
-                                                  : t("journal.favoriteAdd")
+                                                  {reflection.favorite ? (
+                                                    <IconStarFilled size={18} />
+                                                  ) : (
+                                                    <IconStar size={18} />
+                                                  )}
+                                                </IconButton>
                                               }
-                                              aria-pressed={reflection.favorite}
-                                              onClick={() =>
-                                                void setReflectionFavorite(
-                                                  reflection.id,
-                                                  !reflection.favorite,
-                                                )
-                                              }
-                                              className={reflection.favorite ? "text-accent" : undefined}
-                                            >
-                                              {reflection.favorite ? (
-                                                <IconStarFilled size={18} />
-                                              ) : (
-                                                <IconStar size={18} />
-                                              )}
-                                            </IconButton>
+                                            />
                                           </li>
                                         );
                                       })}

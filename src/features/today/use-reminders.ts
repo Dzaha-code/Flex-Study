@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { remainingSeconds } from "@/domain";
 import type { LaidOutBlock } from "@/domain/schedule";
 import { useI18n } from "@/i18n";
 import { notify } from "@/lib/desktop";
@@ -40,35 +39,4 @@ export function useDueReminders(
       );
     }
   }, [enabled, blocks, nowMinute, t, formatMinutes]);
-}
-
-/**
- * Fires once when a running timer reaches zero (ToApk.md §5).
- *
- * The moment is derived from the instance's `startedAt`, never counted up per
- * tick, so a sleeping or hidden window still reports the right time instead of
- * drifting with the render cadence.
- */
-export function useTimerCompletion(
-  enabled: boolean,
-  blocks: LaidOutBlock[],
-  nowEpoch: number,
-): void {
-  const notified = useRef<Set<string>>(new Set());
-  const { t } = useI18n();
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    for (const block of blocks) {
-      if (block.instance.status !== "running") continue;
-      if (remainingSeconds(block.instance, nowEpoch) > 0) continue;
-
-      const key = `${block.instance.date}:${block.instance.id}`;
-      if (notified.current.has(key)) continue;
-      notified.current.add(key);
-
-      void notify(t("timer.finished"), block.instance.title);
-    }
-  }, [enabled, blocks, nowEpoch, t]);
 }

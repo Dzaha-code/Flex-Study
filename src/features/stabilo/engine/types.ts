@@ -80,7 +80,7 @@ export interface DialogueNode {
 }
 
 export interface DialogueScript {
-  id: "intro" | "tour";
+  id: "intro" | "tour" | "greeting";
   lang: Lang;
   start: string;
   nodes: Record<string, DialogueNode>;

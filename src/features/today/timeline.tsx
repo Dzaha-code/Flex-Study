@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/dialog";
-import { NumberInput, SelectField, TextInput, TimeInput } from "@/components/ui/field";
 import {
+  IconCaretDown,
   IconCheck,
   IconNote,
   IconPencil,
@@ -17,9 +17,11 @@ import { CategoryTag, StatusBadge } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
 import type { LaidOutBlock } from "@/domain/schedule";
+import { notePreview } from "@/domain/notes";
 import { minuteOfDayFromEpoch } from "@/domain/time";
 import type { BlockInstance, Category } from "@/domain/types";
 import { useI18n } from "@/i18n";
+import { primeAlarm, vibrate } from "@/lib/alarm";
 import { useJustChanged } from "@/lib/ink";
 import { hasMarkup, renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
@@ -100,7 +102,20 @@ function NowMarker({ nowMinute }: { nowMinute: number }) {
   );
 }
 
-function BlockActions({ instance, prominent }: { instance: BlockInstance; prominent: boolean }) {
+/**
+ * Where the shown day sits relative to today. Only today can start a timer;
+ * a past day can still be settled (done, skipped) after the fact, and a future
+ * day is for reading and editing the plan.
+ */
+export type DayKind = "past" | "today" | "future";
+
+function BlockActions({
+  instance,
+  dayKind,
+}: {
+  instance: BlockInstance;
+  dayKind: DayKind;
+}) {
   const startBlock = useAppStore((state) => state.startBlock);
   const completeBlock = useAppStore((state) => state.completeBlock);
   const resetBlock = useAppStore((state) => state.resetBlock);
@@ -112,55 +127,52 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
 
   return (
     <>
-      {instance.status === "planned" ? (
+      {instance.status === "planned" && dayKind === "today" ? (
         // The wrapper is only here to anchor the ripple; it is sized by the
-        // button inside it, so it changes nothing about the row's layout.
+        // button inside it, so it changes nothing about the card's layout.
         <span className="relative inline-flex">
           <Button
-            size={prominent ? "md" : "sm"}
-            // Only the active block carries the one primary button on the screen
-            // (DESIGN.md §2 "satu sorotan per layar", §5). Rows use the text
-            // variant, matching the reference prototype.
-            variant={prominent ? "primary" : "ghost"}
+            size="md"
+            variant="primary"
             // This button already owns the one lime spread of the screen
             // (focus-ripple below) — Riak must not answer the same press twice.
-            data-ink-ripple={prominent ? "off" : undefined}
+            data-ink-ripple="off"
             onClick={() => {
               setRipple((count) => count + 1);
+              // The tap is the user gesture the alarm needs to be allowed to
+              // make sound when this block ends, possibly in another window.
+              primeAlarm();
+              vibrate(15);
               void startBlock(instance.id);
             }}
           >
             <IconPlay />
-            {prominent ? t("common.start") : t("common.startShort")}
+            {t("common.start")}
           </Button>
-          {/* The lime stays on the one primary button per screen, so the spread
-              is deliberately not repeated on the compact rows. */}
-          {prominent && ripple > 0 ? (
+          {ripple > 0 ? (
             <span key={ripple} className="focus-ripple rounded-control" aria-hidden="true" />
           ) : null}
         </span>
       ) : null}
+      {instance.status === "planned" && dayKind === "past" ? (
+        <Button size="md" variant="primary" onClick={() => void completeBlock(instance.id)}>
+          <IconCheck />
+          {t("today.markDone")}
+        </Button>
+      ) : null}
       {instance.status === "running" ? (
-        <Button
-          size={prominent ? "md" : "sm"}
-          variant={prominent ? "primary" : "ghost"}
-          onClick={() => void completeBlock(instance.id)}
-        >
+        <Button size="md" variant="primary" onClick={() => void completeBlock(instance.id)}>
           <IconCheck />
           {t("common.finish")}
         </Button>
       ) : null}
-      {instance.status === "done" ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => void resetBlock(instance.id)}
-        >
+      {instance.status === "done" || instance.status === "skipped" ? (
+        <Button size="sm" variant="ghost" onClick={() => void resetBlock(instance.id)}>
           <IconUndo />
           {t("common.reset")}
         </Button>
       ) : null}
-      {prominent && instance.status !== "done" ? (
+      {dayKind !== "future" && (instance.status === "planned" || instance.status === "running") ? (
         <Button size="sm" variant="ghost" onClick={() => void skipBlock(instance.id)}>
           <IconSkip />
           {t("common.skip")}
@@ -170,43 +182,89 @@ function BlockActions({ instance, prominent }: { instance: BlockInstance; promin
   );
 }
 
-function FocusCard({
+/**
+ * The open block: everything about it, and the buttons that act on it.
+ *
+ * Any block opens into this card with one tap on its row — there is no need to
+ * press Start just to see the details. Only one card is open at a time, and
+ * the block in focus is open by default.
+ */
+function BlockCard({
   instance,
   category,
+  isFocus,
+  dayKind,
+  startLabel,
+  onCollapse,
   onOpenNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
+  /** The block nearest to now: it keeps the "in focus" label. */
+  isFocus: boolean;
+  dayKind: DayKind;
+  startLabel: string;
+  onCollapse: () => void;
   onOpenNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
   const { t } = useI18n();
+  const note = instance.note.trim();
 
   return (
-    // The active block is the strongest line on the page: 1.5px of ink, the
-    // one highlight per screen (DESIGN.md §5).
-    <div className="surface-active flex flex-col gap-3 p-5" data-tour="focus">
+    // The open block is the strongest line on the page: 1.5px of ink, the one
+    // highlight per screen (DESIGN.md §5).
+    <div className="block-open surface-active flex flex-col gap-3 p-5" data-tour="focus">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-col gap-1">
-          <p>
-            <span className="stabilo">{t("today.focusTitle")}</span>
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-expanded="true"
+          aria-label={t("today.collapseBlock", { title: instance.title })}
+          className="flex min-w-0 flex-1 flex-col gap-1 rounded-ctl text-left"
+        >
+          <p className="flex flex-wrap items-center gap-2">
+            {isFocus ? <span className="stabilo">{t("today.focusTitle")}</span> : null}
+            <span className="text-label text-ink-muted">{startLabel}</span>
           </p>
           <h3 className="text-title-2">{instance.title}</h3>
+        </button>
+        <div className="flex items-center gap-1">
+          <StatusBadge status={instance.status} />
+          <IconButton label={t("today.collapseBlock", { title: instance.title })} onClick={onCollapse}>
+            <IconCaretDown size={18} className="rotate-180" />
+          </IconButton>
         </div>
-        <StatusBadge status={instance.status} />
       </div>
 
-      {category ? (
-        <CategoryTag name={category.name} icon={category.icon} />
-      ) : null}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {category ? <CategoryTag name={category.name} icon={category.icon} /> : null}
+        {instance.templateId === null ? (
+          <span className="text-label text-ink-muted">{t("today.oneOffTag")}</span>
+        ) : null}
+      </div>
 
       {/* Countdown, remaining label and rule tick together inside FocusTimer,
           which owns the only one-second clock on this screen (ToApk.md §7). */}
       <FocusTimer instance={instance} />
 
+      {note ? (
+        <button
+          type="button"
+          onClick={() => onOpenNote(instance)}
+          className="rounded-panel border border-line bg-surface p-3 text-left text-meta text-ink hover:bg-accent-surface"
+        >
+          <span className="line-clamp-3">{notePreview(note, 280)}</span>
+        </button>
+      ) : null}
+
+      {dayKind === "future" && instance.status === "planned" ? (
+        <p className="text-caption text-mute">{t("today.futureHint")}</p>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
-        <BlockActions instance={instance} prominent />
+        <BlockActions instance={instance} dayKind={dayKind} />
         <Button size="md" variant="secondary" onClick={() => onOpenNote(instance)}>
           <IconNote />
           {t("today.note")}
@@ -223,11 +281,14 @@ function FocusCard({
 function CompactRow({
   instance,
   category,
+  onOpen,
   onQuickNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
+  /** Tapping the row opens the block's card: details and Start in one place. */
+  onOpen: () => void;
   /**
    * The row icon: reading first. A row that already carries a note opens it;
    * one that does not still opens the editor, so writing is never a tap away.
@@ -238,29 +299,42 @@ function CompactRow({
   const { t } = useI18n();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span
-          className={cn(
-            "truncate text-body",
-            instance.status === "done" && "text-ink-muted",
-          )}
-        >
-          {instance.title}
+    <div className="flex items-center justify-between gap-x-2 py-1">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-expanded="false"
+        aria-label={t("today.openBlock", { title: instance.title })}
+        className="block-row flex min-w-0 flex-1 flex-col gap-0.5 rounded-ctl px-2 py-2 text-left hover:bg-accent-surface"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            className={cn(
+              "truncate text-body",
+              (instance.status === "done" || instance.status === "skipped") &&
+                "text-ink-muted",
+              instance.status === "skipped" && "line-through",
+            )}
+          >
+            {instance.title}
+          </span>
+          {instance.status !== "planned" ? (
+            <StatusBadge status={instance.status} className="shrink-0" />
+          ) : null}
         </span>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {category ? (
-            <CategoryTag name={category.name} icon={category.icon} />
-          ) : null}
+          {category ? <CategoryTag name={category.name} icon={category.icon} /> : null}
           <Countdown instance={instance} />
+          {instance.templateId === null ? (
+            <span className="text-label text-ink-muted">· {t("today.oneOffTag")}</span>
+          ) : null}
           {instance.note.trim() ? (
             <span className="text-label text-ink-muted">· {t("today.note")}</span>
           ) : null}
         </span>
-      </div>
+      </button>
 
-      <div className="flex items-center gap-1">
-        <BlockActions instance={instance} prominent={false} />
+      <div className="flex shrink-0 items-center gap-0.5">
         {/* Reading first, and visible at a glance: a row that carries a note
             lights its icon, so "which blocks have notes?" needs no scanning. */}
         <IconButton
@@ -281,10 +355,14 @@ function CompactRow({
   );
 }
 
+/** "none" means the user closed every card; `null` means "follow the focus". */
+type OpenChoice = string | "none" | null;
+
 export function Timeline({
   blocks,
   nowMinute,
   focusId,
+  dayKind,
   categoryById,
   onOpenNote,
   onQuickNote,
@@ -293,24 +371,35 @@ export function Timeline({
   blocks: LaidOutBlock[];
   nowMinute: number;
   focusId: string | null;
+  dayKind: DayKind;
   categoryById: CategoryLookup;
-  /** The focus card's button: writing, straight into the editor. */
+  /** The card's button: writing, straight into the editor. */
   onOpenNote: (instance: BlockInstance) => void;
   /** A compact row's icon: reading a note that exists, writing one that does not. */
   onQuickNote: (instance: BlockInstance) => void;
   onEditBlock: (instance: BlockInstance) => void;
 }) {
-  const { formatClockValue } = useI18n();
-  const markerIndex = blocks.findIndex((block) => block.startMinute > nowMinute);
+  const { t, formatClockValue } = useI18n();
+  const [choice, setChoice] = useState<OpenChoice>(null);
+  const showNow = dayKind === "today";
+  const markerIndex = showNow ? blocks.findIndex((block) => block.startMinute > nowMinute) : -2;
+
+  const openId =
+    choice === "none"
+      ? null
+      : choice !== null && blocks.some((block) => block.instance.id === choice)
+        ? choice
+        : focusId;
 
   return (
     <ol className="flex flex-col">
       {blocks.map((block, index) => {
-        const prominent = block.instance.id === focusId;
+        const open = block.instance.id === openId;
+        const category = categoryById.get(block.instance.categoryId);
         return (
           <li key={block.instance.id} className="flex flex-col">
             {index === markerIndex ? <NowMarker nowMinute={nowMinute} /> : null}
-            <div className="grid grid-cols-[3.25rem_1fr] gap-3 sm:grid-cols-[4rem_1fr]">
+            <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-3 sm:grid-cols-[4rem_minmax(0,1fr)]">
               <span
                 className={cn(
                   "pt-3 text-right text-meta tabular-nums",
@@ -321,27 +410,33 @@ export function Timeline({
                 {formatClockValue(block.startMinute)}
               </span>
 
-              <div className="relative border-l border-line pb-2 pl-4 pt-3">
+              <div className="relative min-w-0 border-l border-line pb-2 pl-4 pt-3">
                 <RowSweep status={block.instance.status} />
                 <TimelineDot status={block.instance.status} />
                 <div className="flex flex-col gap-1">
-                  {/* The "in focus" label lives inside FocusCard, which owns
-                      the one highlight for this part of the screen. */}
                   <div className="flex items-center gap-2">
                     <Markers status={block.instance.status} overlap={block.overlap} />
                   </div>
 
-                  {prominent ? (
-                    <FocusCard
+                  {open ? (
+                    <BlockCard
                       instance={block.instance}
-                      category={categoryById.get(block.instance.categoryId)}
+                      category={category}
+                      isFocus={block.instance.id === focusId}
+                      dayKind={dayKind}
+                      startLabel={t("today.blockTime", {
+                        start: formatClockValue(block.startMinute),
+                        end: formatClockValue(block.endMinute),
+                      })}
+                      onCollapse={() => setChoice("none")}
                       onOpenNote={onOpenNote}
                       onEditBlock={onEditBlock}
                     />
                   ) : (
                     <CompactRow
                       instance={block.instance}
-                      category={categoryById.get(block.instance.categoryId)}
+                      category={category}
+                      onOpen={() => setChoice(block.instance.id)}
                       onQuickNote={onQuickNote}
                       onEditBlock={onEditBlock}
                     />
@@ -352,7 +447,7 @@ export function Timeline({
           </li>
         );
       })}
-      {markerIndex === -1 ? (
+      {showNow && markerIndex === -1 ? (
         <li>
           <NowMarker nowMinute={nowMinute} />
         </li>
@@ -378,13 +473,24 @@ export function NoteSheet({
   const [value, setValue] = useState(current.note);
   const { t, formatClockValue } = useI18n();
 
+  const [saving, setSaving] = useState(false);
+
   /**
-   * Save now instead of waiting out the debounce. Autosave keeps working — the
-   * button is not the only way anything is written — it exists so that "did it
-   * save?" has an action and an answer attached to it.
+   * Save, then leave. Autosave keeps working, but the button has to give a
+   * clear answer: waiting for the write, closing the sheet and confirming with
+   * a toast. A sheet that stayed open after "Save" left people unsure whether
+   * anything had happened. If the write fails the sheet stays open, so the
+   * text is never closed away unsaved.
    */
   function saveNow() {
-    void flushNotes();
+    if (saving) return;
+    setSaving(true);
+    void flushNotes().then((ok) => {
+      setSaving(false);
+      if (!ok) return;
+      toastManager.add({ title: t("today.noteSavedToast"), timeout: 3_000 });
+      onClose();
+    });
   }
 
   /**
@@ -414,7 +520,15 @@ export function NoteSheet({
       title={t("today.note")}
       description={current.title}
       footer={
-        <Button onClick={requestClose}>{t("common.close")}</Button>
+        <>
+          <Button variant="ghost" onClick={requestClose}>
+            {t("common.close")}
+          </Button>
+          <Button onClick={saveNow} disabled={saving}>
+            <IconCheck />
+            {t("today.noteSaveClose")}
+          </Button>
+        </>
       }
     >
       <label className="flex flex-col gap-1.5">
@@ -451,12 +565,7 @@ export function NoteSheet({
               ? t("today.noteSaved", { time: formatClockValue(minuteOfDayFromEpoch(savedAt)) })
               : ""}
         </span>
-        <div className="flex items-center gap-2">
-          <span className="text-caption text-mute">{t("today.noteShortcutHint")}</span>
-          <Button size="sm" variant="secondary" onClick={saveNow}>
-            {t("today.noteSave")}
-          </Button>
-        </div>
+        <span className="text-caption text-mute">{t("today.noteShortcutHint")}</span>
       </div>
 
       {hasMarkup(value) ? (
@@ -464,97 +573,6 @@ export function NoteSheet({
           {renderMarkdown(value)}
         </div>
       ) : null}
-    </Sheet>
-  );
-}
-
-export function AddBlockSheet({ date, onClose }: { date: string; onClose: () => void }) {
-  const categories = useAppStore((state) => state.categories);
-  const addInstance = useAppStore((state) => state.addInstance);
-  const { t } = useI18n();
-
-  const [title, setTitle] = useState("");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
-  const [duration, setDuration] = useState("45");
-  const [fixed, setFixed] = useState(false);
-  const [start, setStart] = useState("09:00");
-
-  const parsedDuration = Number.parseInt(duration, 10);
-  const disabled =
-    title.trim() === "" || categoryId === "" || !Number.isFinite(parsedDuration) || parsedDuration < 1;
-
-  return (
-    <Sheet
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-      title={t("today.addBlockTitle")}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            disabled={disabled}
-            onClick={() => {
-              void addInstance({
-                date,
-                title,
-                categoryId,
-                durationMin: parsedDuration,
-                plannedStart: fixed ? start : null,
-              });
-              onClose();
-            }}
-          >
-            {t("common.save")}
-          </Button>
-        </>
-      }
-    >
-      <TextInput
-        label={t("settings.blockTitle")}
-        value={title}
-        maxLength={120}
-        error={title.trim() === "" ? t("a11y.required") : undefined}
-        onChange={(event) => setTitle(event.target.value)}
-      />
-      <SelectField
-        label={t("settings.blockCategory")}
-        value={categoryId}
-        options={categories.map((category) => ({ value: category.id, label: category.name }))}
-        onChange={(event) => setCategoryId(event.target.value)}
-      />
-      <NumberInput
-        label={t("settings.blockDuration")}
-        value={duration}
-        min={1}
-        max={1440}
-        step={5}
-        onChange={(event) => setDuration(event.target.value)}
-      />
-
-      <div className="flex flex-col gap-2">
-        <label className="flex items-center gap-2 text-meta">
-          <input
-            type="checkbox"
-            checked={fixed}
-            onChange={(event) => setFixed(event.target.checked)}
-            className="size-4 accent-[var(--accent)]"
-          />
-          {t("settings.blockStartFixed")}
-        </label>
-        {fixed ? (
-          <TimeInput
-            label={t("settings.blockStart")}
-            value={start}
-            onChange={(event) => setStart(event.target.value)}
-          />
-        ) : (
-          <p className="text-label text-ink-muted">{t("settings.blockStartFlexible")}</p>
-        )}
-      </div>
     </Sheet>
   );
 }

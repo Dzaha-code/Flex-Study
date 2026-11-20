@@ -27,6 +27,8 @@
     "@radix-ui/react-radio-group": "^1.5.1",
     "@radix-ui/react-select": "^2.4.1",
     "@radix-ui/react-switch": "^1.4.1",
+    "@supabase/supabase-js": "^2.119.2",
+    "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-notification": "^2.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
