@@ -10,9 +10,11 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.6.0_x64-setup.exe](installers/FlexStudy_0.6.0_x64-setup.exe) — versi terbaru, 2.721.222 byte (2,6 MB)
+### [FlexStudy_0.6.1_x64-setup.exe](installers/FlexStudy_0.6.1_x64-setup.exe) — versi terbaru, 2.721.683 byte (2,6 MB)
 
-Versi **0.6.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi **0.6.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+
+Yang baru di 0.6.1: **akun dan sinkronisasi akhirnya benar-benar bisa dipakai.** Build 0.6.0 membaca dua variabel `NEXT_PUBLIC_SUPABASE_*` saat build, dan karena keduanya belum terisi, panel *Atur → Akun & sinkronisasi* hanya menampilkan "belum diaktifkan di versi ini" — form email dan kode 6 digit tidak pernah muncul. Sekarang alamat server dan kunci publik sudah ter-inline ke dalam bundle, jadi kamu bisa masuk lewat kode 6 digit ke email dan menyinkronkan jadwal, jurnal, serta timer antara PC dan Android. Tanpa akun, aplikasi tetap berjalan penuh dan seluruh data tinggal di perangkat.
 
 Yang baru di 0.6.0: **blok dibuka dengan sekali ketuk, hari bisa digeser, dan blok sekali-pakai tidak lagi hilang saat template berubah.** Strip tujuh hari kini membuka hari mana pun — lampau atau depan — lewat geseran, panah berpindah pekan, dan di layar sempit linimasa bisa diusap. Setiap blok punya alarm: nada, notifikasi sistem, taskbar berkedip, dan kartu layar penuh **Selesai / +5 menit / Lanjut**; di Android tenggatnya dijadwalkan sistem operasi sehingga tetap berbunyi saat aplikasi di latar. Catatan blok mendapat **Simpan & tutup** dengan toast, jadi menyimpan tidak lagi ambigu. Jurnal bertambah peta menulis, statistik kata dan rentetan, serta dinding pelajaran. **Sinkronisasi opsional ke Supabase** hadir sebagai fitur yang harus dinyalakan sendiri — masuk lewat kode 6 digit ke email, dan data ditarik otomatis saat aplikasi kembali aktif.
 
@@ -32,9 +34,9 @@ Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favor
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.6.0_x64-setup.exe` — 2.721.222 byte. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.6.0_x64_en-US.msi` — 3.248.128 byte (3,1 MB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
-| ARM64 | `FlexStudy_0.6.0_arm64-setup.exe` — 2.613.234 byte. Build native untuk Windows on ARM, tidak lewat emulasi |
+| Disarankan | `FlexStudy_0.6.1_x64-setup.exe` — 2.721.683 byte. Terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_0.6.1_x64_en-US.msi` — 3.248.128 byte (3,1 MB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| ARM64 | `FlexStudy_0.6.1_arm64-setup.exe` — 2.612.340 byte. Build native untuk Windows on ARM, tidak lewat emulasi |
 | Sistem | Windows 64-bit (x64 atau ARM64) |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
@@ -49,7 +51,7 @@ Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi j
 
 ### Perangkat ARM (Windows on ARM)
 
-Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_0.6.0_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
+Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_0.6.1_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
 
 Untuk membangunnya sendiri di mesin Windows yang sudah punya Rust:
 

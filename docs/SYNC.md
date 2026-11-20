@@ -44,6 +44,13 @@ Semua pengaturan server ada di repo (`supabase/`), jadi project baru cukup disia
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # publishable key, aman di klien
+
+   Nama variabelnya harus persis `NEXT_PUBLIC_SUPABASE_ANON_KEY`, walaupun dashboard
+   Supabase kini menamai kuncinya *publishable key*. Next.js hanya meng-inline variabel
+   dengan nama yang sama persis seperti yang dibaca kode (`syncConfigured()` di
+   `src/data/sync/supabase.ts`), jadi menulisnya sebagai
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` akan menghasilkan build tanpa alamat server —
+   panel Atur akan menampilkan "belum diaktifkan" dan tidak ada error apa pun saat build.
    SUPABASE_AUTH_SMTP_USER=akun@gmail.com              # pengirim email kode
    SUPABASE_AUTH_SMTP_PASS=sandiaplikasi16huruf        # Google App Password, tanpa spasi
    ```
