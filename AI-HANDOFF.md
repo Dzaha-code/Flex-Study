@@ -282,10 +282,14 @@ Bukan `next-intl`. Mesin sendiri: `src/i18n/index.ts` (83 baris), kamus `message
 |---|---|---|
 | `FlexStudy_0.4.1_x64-setup.exe` (NSIS, per-user, tanpa admin) | 1.715.142 B | `ED29A1050DA7F55F511FE9929073E41AB72DD3231B1CDFF11D06A7E8D5A2F5BE` |
 | `FlexStudy_0.4.1_x64_en-US.msi` (per-mesin, butuh admin) | 2.236.416 B | `1B186C7FF319EC584FF8D3CC0FC4A357DD9EA28E92CB1063D5653FB39AE1C1DB` |
+| `FlexStudy_0.5.8_arm64-setup.exe` (NSIS, per-user, tanpa admin) | 2.529.654 B | `6B34F93D012D0013DC91F0D7F3DF00BB71123D6AE8520FEDBFB9A58B56492FC6` |
+| `FlexStudy_0.5.8_arm64_en-US.msi` (per-mesin, butuh admin) | 3.108.864 B | `38BA9B99BBBBF7FA8E1134C4C7A414C01FEDBEDC5DE37833A52C6B6DF4356C85` |
 
 Karena keduanya di-track, setiap build baru yang di-commit akan menambah ~3,9 MB permanen ke riwayat repo.
 
 **Waktu build terukur**: 0.4.0 = 692 detik; 0.4.1 = 413 detik (ekspor Next ± 60 detik termasuk kompilasi 30,5 detik dan TypeScript 20,8 detik; Rust release 4 m 36 s; sisanya MSI + NSIS). Menaikkan versi **selalu** memaksa crate Rust di-rebuild penuh — 5–7 menit — sekecil apa pun diff-nya.
+
+**Build ARM64** (`npm run build:windows-arm64`): prasyarat — `rustup target add aarch64-pc-windows-msvc` dan komponen MSVC v143 ARM64 build tools + Windows SDK ARM64 di Visual Studio Installer. Linker silang ada di `bin\Hostx64\arm64\link.exe` (VS 18/2026 Community terverifikasi). Waktu build 0.5.8 ≈ 7 m 25 s (Rust) + ~5 m (Next export). Installer ARM64 ~0,7 MiB lebih besar dari x64 karena tidak ada kompresi PE khusus arsitektur di NSIS/WiX untuk ARM64.
 
 ---
 
