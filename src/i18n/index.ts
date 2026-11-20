@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { addDays, durationParts, formatClock, formatCountdown, fromISODate } from "@/domain";
 import type { Locale } from "@/domain/types";
 import { useAppStore } from "@/data/store";
@@ -46,6 +45,23 @@ function interpolate(template: string, params?: TranslateParams): string {
 }
 
 /** Pure factory, so it can be unit tested without React. */
+/**
+ * One instance per language, built once. Every component calls useI18n, and a
+ * screen like the journal map renders well over a hundred of them; building
+ * six Intl.DateTimeFormat objects for each one made switching tabs take most
+ * of a second on a laptop and several on a phone.
+ */
+const INSTANCES = new Map<Locale, I18n>();
+
+export function getI18n(locale: Locale): I18n {
+  let instance = INSTANCES.get(locale);
+  if (!instance) {
+    instance = createI18n(locale);
+    INSTANCES.set(locale, instance);
+  }
+  return instance;
+}
+
 export function createI18n(locale: Locale): I18n {
   const dictionary = DICTIONARIES[locale] ?? DICTIONARIES.id;
   const t: Translate = (key, params) => interpolate(dictionary[key] ?? key, params);
@@ -102,7 +118,7 @@ export function useI18n(): I18n {
   const status = useAppStore((state) => state.status);
   const mounted = useMounted();
   const locale = mounted && status !== "ready" ? (readMirroredLocale() ?? stored) : stored;
-  return useMemo(() => createI18n(locale), [locale]);
+  return getI18n(locale);
 }
 
 export { DICTIONARIES };

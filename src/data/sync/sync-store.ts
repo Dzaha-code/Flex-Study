@@ -295,8 +295,34 @@ function loginErrorCode(error: unknown): LoginErrorCode {
   return "other";
 }
 
+let resumeHooked = false;
+let lastResume = 0;
+
+/**
+ * A phone parks the WebView in the background and its socket can look alive
+ * while it has silently missed every change. Coming back to the app, getting
+ * the network back or focusing the window all pull at once, so a block started
+ * on the laptop is already running when the phone is picked up.
+ */
+function hookResume() {
+  if (resumeHooked || typeof window === "undefined") return;
+  resumeHooked = true;
+  const resume = () => {
+    if (document.visibilityState !== "visible" || !engine) return;
+    const now = Date.now();
+    if (now - lastResume < 2000) return;
+    lastResume = now;
+    void engine.sync();
+  };
+  document.addEventListener("visibilitychange", resume);
+  window.addEventListener("online", resume);
+  window.addEventListener("focus", resume);
+  window.addEventListener("pageshow", resume);
+}
+
 export const useSyncStore = create<SyncUiState>((set, get) => {
   async function startFor(userId: string, email: string | null) {
+    hookResume();
     if (engine && engineUser === userId) return;
     engine?.stop();
     const client = await getClient();
