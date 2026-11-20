@@ -106,6 +106,44 @@ Tanpa itu installer tetap jalan normal, hanya panel "Akun & sinkronisasi" yang m
 
 Di laptop **Windows ARM64**, `npm run build:windows-arm64` menghasilkan installer ARM64 native. Untuk x64 dari mesin ARM64: `rustup target add x86_64-pc-windows-msvc`, pasang komponen **MSVC C++ x64/x86 build tools**, lalu `npx tauri build --target x86_64-pc-windows-msvc`.
 
+### Build Android (Android 11–17)
+
+Proyek Android sudah ada di `src-tauri/gen/android` (minimum Android 11 / API 30, target Android 17 / API 37). Di laptop baru, siapkan sekali:
+
+1. **Windows Developer Mode** aktif (Settings → System → For developers). Wajib: Tauri membuat symlink ke library Rust, dan tanpa ini build gagal di langkah terakhir dengan *"Failed to create a symbolic link"*.
+2. Rust (https://rustup.rs) + target Android:
+   `rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`
+3. Visual Studio Build Tools dengan **Desktop development with C++** (skrip build Rust tetap berjalan di Windows).
+4. JDK 17 dan Android SDK: cukup Android Studio, atau command-line tools lalu
+   `sdkmanager "platform-tools" "platforms/android-37.0" "build-tools/37.0.0" "ndk/29.0.14206865"`.
+5. Environment variable pengguna: `JAVA_HOME` (JDK 17), `ANDROID_HOME` (folder SDK), `NDK_HOME` (`%ANDROID_HOME%\ndk\29.0.14206865`).
+6. `.env.local` berisi `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` kalau ingin sinkronisasi ikut ter-build.
+
+Lalu:
+
+```bash
+npm install
+npm run build:desktop                                   # ekspor web ke out/ (ulangi bila berhenti karena pengingat upgrade Next)
+npx tauri android build --debug --apk --target aarch64 armv7 -c "{\"build\":{\"beforeBuildCommand\":\"\"}}"
+# hasil: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+```
+
+APK debug hanya untuk tes. Untuk APK yang dibagikan, buat keystore sekali (simpan file dan password-nya baik-baik; tanpa keystore yang sama, update tidak bisa dipasang di atas versi lama):
+
+```bash
+keytool -genkey -v -keystore %USERPROFILE%\flexstudy-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias flexstudy
+```
+
+lalu buat `src-tauri/gen/android/keystore.properties` (tidak ikut git):
+
+```
+storeFile=C:\Users\<nama>\flexstudy-upload.jks
+keyAlias=flexstudy
+password=<password keystore>
+```
+
+dan build tanpa `--debug`. Hasilnya di `.../apk/universal/release/app-universal-release.apk`.
+
 ---
 
 ## Keputusan desain
