@@ -50,3 +50,6 @@ next-env.d.ts
 # desktop build artifacts
 /out/
 /src-tauri/target/
+
+# The template holds no secrets; it documents which variables exist.
+!.env.example

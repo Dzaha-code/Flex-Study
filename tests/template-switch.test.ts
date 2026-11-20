@@ -6,7 +6,15 @@ import {
   undoTemplateSwitch,
   withCreatedInstances,
 } from "@/domain/template-switch";
+import type { BlockInstance } from "@/domain/types";
 import { makeCategory, makeInstance, makeTemplate, STAMP } from "./helpers";
+
+/** A block that came from the plan. The shared helper builds a hand-added one. */
+function generated(
+  partial: Partial<BlockInstance> & Pick<BlockInstance, "id" | "date">,
+): BlockInstance {
+  return makeInstance({ templateId: "tpl_plan", ...partial });
+}
 
 const TODAY = "2026-10-22";
 const YESTERDAY = "2026-10-21";
@@ -18,20 +26,25 @@ function countKept(plan: ReturnType<typeof planTemplateSwitch>): number {
 
 describe("isReplaceableBySwitch", () => {
   it("replaces an untouched planned block from the start day onward", () => {
-    expect(isReplaceableBySwitch(makeInstance({ id: "a", date: TODAY }), TODAY)).toBe(true);
-    expect(isReplaceableBySwitch(makeInstance({ id: "b", date: TOMORROW }), TODAY)).toBe(true);
+    expect(isReplaceableBySwitch(generated({ id: "a", date: TODAY }), TODAY)).toBe(true);
+    expect(isReplaceableBySwitch(generated({ id: "b", date: TOMORROW }), TODAY)).toBe(true);
+  });
+
+  it("keeps a one-off block added by hand, even when untouched", () => {
+    const meetUp = makeInstance({ id: "m", date: TOMORROW, templateId: null });
+    expect(isReplaceableBySwitch(meetUp, TODAY)).toBe(false);
   });
 
   it("never touches days before the start day", () => {
-    expect(isReplaceableBySwitch(makeInstance({ id: "a", date: YESTERDAY }), TODAY)).toBe(false);
+    expect(isReplaceableBySwitch(generated({ id: "a", date: YESTERDAY }), TODAY)).toBe(false);
   });
 
   it("never touches blocks the user worked on", () => {
-    const running = makeInstance({ id: "a", date: TODAY, status: "running" });
-    const done = makeInstance({ id: "b", date: TODAY, status: "done" });
-    const noted = makeInstance({ id: "c", date: TODAY, note: "jangan hilang" });
-    const measured = makeInstance({ id: "d", date: TODAY, actualSeconds: 60 });
-    const movedIn = makeInstance({ id: "e", date: TODAY, movedFrom: YESTERDAY });
+    const running = generated({ id: "a", date: TODAY, status: "running" });
+    const done = generated({ id: "b", date: TODAY, status: "done" });
+    const noted = generated({ id: "c", date: TODAY, note: "jangan hilang" });
+    const measured = generated({ id: "d", date: TODAY, actualSeconds: 60 });
+    const movedIn = generated({ id: "e", date: TODAY, movedFrom: YESTERDAY });
 
     for (const instance of [running, done, noted, measured, movedIn]) {
       expect(isReplaceableBySwitch(instance, TODAY)).toBe(false);
@@ -42,13 +55,13 @@ describe("isReplaceableBySwitch", () => {
 describe("planTemplateSwitch", () => {
   it("splits the calendar into replaced and kept, without double counting", () => {
     const instances = [
-      makeInstance({ id: "past", date: YESTERDAY }), // history: neither replaced nor kept
-      makeInstance({ id: "plain", date: TODAY }),
-      makeInstance({ id: "done", date: TODAY, status: "done" }),
-      makeInstance({ id: "running", date: TODAY, status: "running" }),
-      makeInstance({ id: "noted", date: TODAY, note: "catatan" }),
-      makeInstance({ id: "measured", date: TOMORROW, actualSeconds: 120 }),
-      makeInstance({ id: "skipped", date: TOMORROW, status: "skipped" }),
+      generated({ id: "past", date: YESTERDAY }), // history: neither replaced nor kept
+      generated({ id: "plain", date: TODAY }),
+      generated({ id: "done", date: TODAY, status: "done" }),
+      generated({ id: "running", date: TODAY, status: "running" }),
+      generated({ id: "noted", date: TODAY, note: "catatan" }),
+      generated({ id: "measured", date: TOMORROW, actualSeconds: 120 }),
+      generated({ id: "skipped", date: TOMORROW, status: "skipped" }),
     ];
 
     const plan = planTemplateSwitch({ instances, startDate: TODAY });
@@ -69,9 +82,9 @@ describe("planTemplateSwitch", () => {
   it("scopes itself to the start day: earlier days are out of the switch", () => {
     const instances = [
       // Belongs to the old plan either way — neither replaced nor counted.
-      makeInstance({ id: "today", date: TODAY }),
-      makeInstance({ id: "tomorrow-done", date: TOMORROW, status: "done" }),
-      makeInstance({ id: "next-day", date: "2026-10-24" }),
+      generated({ id: "today", date: TODAY }),
+      generated({ id: "tomorrow-done", date: TOMORROW, status: "done" }),
+      generated({ id: "next-day", date: "2026-10-24" }),
     ];
     const plan = planTemplateSwitch({ instances, startDate: TOMORROW });
 
@@ -82,14 +95,14 @@ describe("planTemplateSwitch", () => {
 
   it("is idempotent: after applying, the same plan replaces nothing", () => {
     const first = planTemplateSwitch({
-      instances: [makeInstance({ id: "a", date: TODAY })],
+      instances: [generated({ id: "a", date: TODAY })],
       startDate: TODAY,
     });
     expect(first.replacedIds).toEqual(["a"]);
 
     // Simulate the apply: the replaced rows are gone, kept rows remain.
     const second = planTemplateSwitch({
-      instances: [makeInstance({ id: "kept", date: TODAY, status: "done" })],
+      instances: [generated({ id: "kept", date: TODAY, status: "done" })],
       startDate: TODAY,
     });
     expect(second.replacedIds).toEqual([]);
@@ -99,8 +112,8 @@ describe("planTemplateSwitch", () => {
 describe("makeTemplateSwitchEvent / undoTemplateSwitch", () => {
   const plan = planTemplateSwitch({
     instances: [
-      makeInstance({ id: "replace-me", date: TODAY }),
-      makeInstance({ id: "keep-me", date: TODAY, status: "done" }),
+      generated({ id: "replace-me", date: TODAY }),
+      generated({ id: "keep-me", date: TODAY, status: "done" }),
     ],
     startDate: TODAY,
   });

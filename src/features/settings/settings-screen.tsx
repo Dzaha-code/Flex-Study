@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSheet } from "@/components/ui/confirm";
 import { TextInput, TimeInput } from "@/components/ui/field";
-import {
+import { IconSun,
   IconBook,
   IconCompass,
   IconDownload,
@@ -44,7 +44,9 @@ import { useI18n, type MessageKey } from "@/i18n";
 import { downloadTextFile, readFileAsText } from "@/lib/download";
 import { useReducedMotion } from "@/lib/motion";
 import { useWindowMaximised } from "@/lib/viewport";
-import { ensureNotificationPermission } from "@/lib/desktop";
+import { ensureNotificationPermission, notify } from "@/lib/desktop";
+import { playAlarm, primeAlarm } from "@/lib/alarm";
+import { SyncPanel } from "./sync-panel";
 import { pickLocalized, TEMPLATES } from "@/templates";
 import { BlockListEditor, CategoriesEditor } from "./plan-editor";
 
@@ -322,8 +324,42 @@ export function SettingsScreen() {
               void updateSettings({ remindersEnabled: next });
             }}
           />
+
+          <SwitchRow
+            label={t("settings.focusAlarm")}
+            hint={t("settings.focusAlarmHint")}
+            checked={settings.focusAlarm}
+            onChange={(next) => {
+              if (next) void ensureNotificationPermission();
+              void updateSettings({ focusAlarm: next });
+            }}
+          />
+          <SwitchRow
+            label={t("settings.keepScreenOn")}
+            hint={t("settings.keepScreenOnHint")}
+            checked={settings.keepScreenOn}
+            onChange={(next) => void updateSettings({ keepScreenOn: next })}
+          />
+          <div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                // A real click, so the chime is allowed to play; the
+                // notification goes through the same path the alarm uses.
+                primeAlarm();
+                playAlarm({ rounds: 1 });
+                void notify(t("timer.finished"), t("settings.focusAlarmTestBody"));
+              }}
+            >
+              {t("settings.focusAlarmTest")}
+            </Button>
+          </div>
         </div>
       </Panel>
+
+      {/* Optional by design: signed out, nothing here changes how the app works. */}
+      <SyncPanel />
 
       <Panel data-tour="settings-stabilo">
         <PanelHeader title={t("settings.stabilo")} description={t("settings.stabilo.hint")} />
@@ -336,6 +372,14 @@ export function SettingsScreen() {
             hint={t("settings.stabilo.enabledHint")}
             checked={stabilo.enabled}
             onChange={(next) => void updateStabilo({ enabled: next })}
+          />
+
+          <SwitchRow
+            label={t("settings.stabilo.greeting")}
+            hint={t("settings.stabilo.greetingHint")}
+            checked={stabilo.enabled && stabilo.dailyGreeting}
+            disabled={!stabilo.enabled}
+            onChange={(next) => void updateStabilo({ dailyGreeting: next })}
           />
 
           <SegmentedControl
@@ -406,6 +450,15 @@ export function SettingsScreen() {
             >
               <IconCompass size={16} />
               {t("settings.stabilo.replayTour")}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!stabilo.enabled}
+              onClick={() => showStabilo("greeting")}
+            >
+              <IconSun size={16} />
+              {t("settings.stabilo.playGreeting")}
             </Button>
             <Button
               size="sm"

@@ -32,6 +32,7 @@ import { buildFromTemplate, findTemplate, toStudyTemplate, type StudyTemplate } 
 import { DEFAULT_SETTINGS, DEFAULT_STABILO_PREFS } from "@/domain/types";
 import type { StabiloPrefs } from "@/domain/types";
 import { orphanedInstanceIds, propagateTemplateEdit } from "@/domain/propagate";
+import { generatedInstanceId } from "@/domain/sync";
 import {
   clearWorkspace,
   deleteUntouchedInstancesAfter,
@@ -163,6 +164,12 @@ export interface AppState {
   removeInstance: (id: string) => Promise<void>;
   startBlock: (id: string) => Promise<void>;
   completeBlock: (id: string) => Promise<void>;
+  /**
+   * Gives a running block more time, from the "time is up" alarm. Only this
+   * occurrence changes: needing ten more minutes today says nothing about the
+   * plan for every other day.
+   */
+  extendBlock: (id: string, minutes: number) => Promise<void>;
   resetBlock: (id: string) => Promise<void>;
   skipBlock: (id: string) => Promise<void>;
   setNote: (id: string, note: string) => void;
@@ -650,7 +657,9 @@ export const useAppStore = create<AppState>()((set, get) => {
           if (template.archived || !template.days.includes(weekday)) continue;
           if (existing.has(`${date}|${template.id}`)) continue;
           created.push({
-            id: createId("blk"),
+            // Deterministic, so two synced devices materialising the same day
+            // create the same row instead of two copies of it.
+            id: generatedInstanceId(template.id, date),
             date,
             templateId: template.id,
             categoryId: template.categoryId,
@@ -775,6 +784,19 @@ export const useAppStore = create<AppState>()((set, get) => {
         startedAt: null,
         actualSeconds: target.actualSeconds + spent,
         updatedAt: new Date(now).toISOString(),
+      };
+      set({ instances: replaceInstance(state.instances, next) });
+      guardWrite(await persistInstances([next]));
+    },
+
+    extendBlock: async (id, minutes) => {
+      const state = get();
+      const target = state.instances.find((instance) => instance.id === id);
+      if (!target) return;
+      const next: BlockInstance = {
+        ...target,
+        durationMin: Math.min(1_440, Math.max(1, target.durationMin + Math.round(minutes))),
+        updatedAt: new Date().toISOString(),
       };
       set({ instances: replaceInstance(state.instances, next) });
       guardWrite(await persistInstances([next]));

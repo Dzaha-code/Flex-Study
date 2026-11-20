@@ -52,6 +52,104 @@ export async function notify(title: string, body?: string): Promise<void> {
 }
 
 /**
+ * The Android build. Tauri's mobile shell runs the same bundle in the system
+ * WebView, so the user agent is the cheapest honest signal; no OS plugin needed.
+ */
+export const isAndroid = () =>
+  typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+
+/** True where the OS, not the page, has to deliver the focus alarm. */
+export const needsSystemAlarm = () => isDesktop() && isAndroid();
+
+const ALARM_CHANNEL = "focus-alarm";
+let channelReady: Promise<void> | null = null;
+
+/** A high-importance channel, so the alarm sounds and peeks over other apps. */
+function ensureAlarmChannel(): Promise<void> {
+  channelReady ??= (async () => {
+    try {
+      const { createChannel, Importance, Visibility } = await import(
+        "@tauri-apps/plugin-notification"
+      );
+      await createChannel({
+        id: ALARM_CHANNEL,
+        name: "Focus alarm",
+        description: "When a focus block runs out of time",
+        importance: Importance.High,
+        visibility: Visibility.Public,
+        vibration: true,
+        lights: true,
+      });
+    } catch {
+      // Older Android or no channel support: the default channel still works.
+    }
+  })();
+  return channelReady;
+}
+
+/**
+ * Schedules a notification with the OS for an exact moment.
+ *
+ * On Android the WebView is paused as soon as the app leaves the screen, so a
+ * JavaScript timer cannot be trusted to fire a focus alarm. The OS can: this
+ * hands it the deadline when the block starts, allowed to fire even in Doze.
+ * Desktop never needs it (the window keeps running), so it is a no-op there.
+ * Never rejects.
+ */
+export async function scheduleSystemAlarm(
+  id: number,
+  at: number,
+  title: string,
+  body: string,
+): Promise<void> {
+  if (!needsSystemAlarm() || at <= Date.now()) return;
+  try {
+    if (!(await ensureNotificationPermission())) return;
+    await ensureAlarmChannel();
+    const { sendNotification, Schedule } = await import("@tauri-apps/plugin-notification");
+    sendNotification({
+      id,
+      title,
+      body,
+      channelId: ALARM_CHANNEL,
+      schedule: Schedule.at(new Date(at), false, true),
+      autoCancel: true,
+    });
+  } catch {
+    // The in-app alarm still runs whenever the app is on screen.
+  }
+}
+
+/** Cancels alarms scheduled above, e.g. when the block finishes early. */
+export async function cancelSystemAlarms(ids: number[]): Promise<void> {
+  if (!needsSystemAlarm() || ids.length === 0) return;
+  try {
+    const { cancel } = await import("@tauri-apps/plugin-notification");
+    await cancel(ids);
+  } catch {
+    // Nothing scheduled, or the API is missing: either way nothing to cancel.
+  }
+}
+
+/**
+ * Asks the OS to get the user's attention: on Windows the taskbar button
+ * flashes until the window is focused again. Desktop only; the browser has no
+ * equivalent, so it quietly does nothing there. Never rejects.
+ */
+export async function requestAttention(): Promise<void> {
+  if (!isDesktop()) return;
+  try {
+    const { getCurrentWindow, UserAttentionType } = await import("@tauri-apps/api/window");
+    const window = getCurrentWindow();
+    // Already in front: flashing would only be noise.
+    if (await window.isFocused()) return;
+    await window.requestUserAttention(UserAttentionType.Critical);
+  } catch {
+    // Permission missing or API unavailable; the notification still went out.
+  }
+}
+
+/**
  * Fullscreen, on whichever shell is running.
  *
  * The Fullscreen API is used for both branches. WebView2 implements it, so the

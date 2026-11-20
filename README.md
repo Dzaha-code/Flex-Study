@@ -95,6 +95,17 @@ Untuk **membangun aplikasi desktop** kamu juga perlu Rust (https://rustup.rs) da
 
 Installer hasil build ada di `src-tauri/target/release/bundle/`.
 
+**Sinkronisasi akun ikut ter-build hanya kalau `.env.local` terisi** sebelum `npm run tauri build` (variabel `NEXT_PUBLIC_*` ditanam saat build). Minta dua baris ini ke pemilik project Supabase, lalu taruh di `.env.local` (tidak ikut git):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+```
+
+Tanpa itu installer tetap jalan normal, hanya panel "Akun & sinkronisasi" yang menampilkan "Sinkronisasi belum diaktifkan di versi ini". Detail server ada di [`docs/SYNC.md`](docs/SYNC.md).
+
+Di laptop **Windows ARM64**, `npm run build:windows-arm64` menghasilkan installer ARM64 native. Untuk x64 dari mesin ARM64: `rustup target add x86_64-pc-windows-msvc`, pasang komponen **MSVC C++ x64/x86 build tools**, lalu `npx tauri build --target x86_64-pc-windows-msvc`.
+
 ---
 
 ## Keputusan desain
