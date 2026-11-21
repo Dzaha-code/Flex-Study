@@ -1,4 +1,14 @@
-@import "tailwindcss";
+/*
+ * `source("../")` pins automatic content detection to `src/`.
+ *
+ * Without it Tailwind walks the whole project, including `src-tauri/` — Rust
+ * `target/` (13 GB) and Android Gradle intermediates (3 GB, with merged .so
+ * files). Turbopack then tries to read those through the CSS loader and the
+ * build dies with "Insufficient system resources exist to complete the
+ * requested service. (os error 1450)". Every application class lives under
+ * `src/`, so this is also the more honest scope.
+ */
+@import "tailwindcss" source("../");
 @import "tw-animate-css";
 
 /*

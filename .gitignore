@@ -51,5 +51,29 @@ next-env.d.ts
 /out/
 /src-tauri/target/
 
+# Android build output. 3+ GB of Gradle intermediates and merged .so files.
+# They were inside the CSS/Turbopack scan path, which is what made
+# `npm run build` fail with "Insufficient system resources (os error 1450)".
+/src-tauri/gen/android/.gradle/
+/src-tauri/gen/android/build/
+/src-tauri/gen/android/app/build/
+/src-tauri/gen/android/local.properties
+/src-tauri/gen/android/keystore.properties
+/src-tauri/gen/android/**/*.apk
+/src-tauri/gen/android/**/*.aab
+*.jks
+*.keystore
+!.env.example
+
+# Installers are published as GitHub Releases, not committed (72 MB and growing).
+/installers/
+
+# Local AI tooling leftovers; never part of the project.
+/.freebuff/
+
+# Extracted Android command-line tools kept next to the project.
+/_cmdtools-extract/
+/cmdline-tools.zip
+
 # The template holds no secrets; it documents which variables exist.
 !.env.example
