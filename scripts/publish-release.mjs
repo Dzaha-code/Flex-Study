@@ -62,6 +62,9 @@ if (tooSmall.length > 0) {
   fail(`Berkas ini terlalu kecil untuk sebuah installer:\n  ${tooSmall.join("\n  ")}`);
 }
 
+console.log(`[publish-release] ${tag}: ${wanted.length} berkas`);
+for (const file of wanted) console.log(`  - ${file.replace(`${root}\\`, "")}`);
+
 const auth = spawnSync("gh", ["auth", "status"], { shell: true, encoding: "utf8" });
 if (auth.status !== 0) {
   fail("GitHub CLI belum masuk. Jalankan `gh auth login` lebih dulu, lalu ulangi.");
