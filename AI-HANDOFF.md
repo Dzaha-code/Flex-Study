@@ -1,8 +1,12 @@
 # FlexStudy v2 — Konteks Lengkap untuk AI Penerus
 
-> Dokumen ini ditulis 17 Oktober 2026 untuk menyerahkan pekerjaan ke AI/agen lain.
+> Dokumen ini dimulai 17 Oktober 2026 untuk menyerahkan pekerjaan ke AI/agen lain, dan
+> **diperbarui 21 November 2026 untuk rilis 0.6.1**.
 > Semua angka dan jalur di bawah **diverifikasi langsung dari repo pada tanggal itu**, bukan dari ingatan.
 > Bila ada yang bertentangan dengan dokumen ini saat kamu membacanya, percayai repo — lalu perbarui dokumen ini.
+>
+> Bagian §11.6–§11.13 dan §13 masih memotret keadaan 0.4.1–0.5.7 dan sengaja dibiarkan
+> sebagai catatan sejarah. Keadaan sekarang ada di **§2 dan §16**.
 
 ---
 
@@ -27,15 +31,21 @@ Semua data lokal. Tidak ada akun, tidak ada server, tidak ada telemetri.
 | | |
 |---|---|
 | Working dir | `C:\laragon\www\flexstudy-dashboard` |
-| Branch | `feat/desktop-tauri` |
-| HEAD | `c94a44a739966b5de3c5055c788f0d44798c0307` — `feat(journal): lay the archive out by year, then month` (2026-10-16 07:57 +0700) |
+| Branch | `sapo-update` |
+| HEAD | `9752548` — `fix(sync): 0.6.1 activates account and sync` (2026-11-20) |
 | Remote | `https://github.com/Dzaha-code/Flex-Study.git` |
-| Sinkron | ya — `origin/feat/desktop-tauri` = HEAD lokal |
-| Working tree | bersih |
-| Versi | **0.4.1** di tiga tempat: `package.json:3`, `src-tauri/tauri.conf.json:5`, `src-tauri/Cargo.toml:3` (+ `package-lock.json` root) |
-| Uji | **139 test / 10 berkas**, semua lulus (`npm test`, ± 6 detik) |
+| Versi | **0.6.1** di tiga tempat: `package.json:3`, `src-tauri/tauri.conf.json:5`, `src-tauri/Cargo.toml:3` (+ `package-lock.json` root) |
+| Uji | **273 test / 22 berkas**, semua lulus (`npm test`, ± 2–5 detik) |
+| Build web | lulus: 6 rute statis + `/_not-found`, Turbopack |
+| Installer | tidak lagi di repo — diunggah ke GitHub Releases, lihat §16.5 |
 
-Dua rilis terakhir: `f60c6a9` (0.4.0, 45 berkas, +2611/−111) dan `c94a44a` (0.4.1, 16 berkas, +316/−134).
+Riwayat rilis: 0.4.0 → 0.4.1 → 0.5.0 (Stabilo + aset + audio) → 0.5.1–0.5.7 →
+0.6.0 (Android, ARM64, alarm, jurnal) → 0.6.1 (akun & sync benar-benar aktif).
+Rincian per versi ada di `RELEASE-NOTES.md`.
+
+**Dua kontributor manusia:** `Dzakwan Hafizh <mdzakwanhf@gmail.com>` dan
+`Satfaw <satriofawwas096@gmail.com>`. Dua commit ber-author `Accio <accio@local>`
+(0.6.0 dan 0.6.1) berasal dari asisten AI — lihat §16.6 sebelum menambah commit baru.
 
 ---
 
@@ -286,6 +296,30 @@ Bukan `next-intl`. Mesin sendiri: `src/i18n/index.ts` (83 baris), kamus `message
 Karena keduanya di-track, setiap build baru yang di-commit akan menambah ~3,9 MB permanen ke riwayat repo.
 
 **Waktu build terukur**: 0.4.0 = 692 detik; 0.4.1 = 413 detik (ekspor Next ± 60 detik termasuk kompilasi 30,5 detik dan TypeScript 20,8 detik; Rust release 4 m 36 s; sisanya MSI + NSIS). Menaikkan versi **selalu** memaksa crate Rust di-rebuild penuh — 5–7 menit — sekecil apa pun diff-nya.
+
+**Build Android** (`npm run build:android-debug` / `npm run build:android`):
+
+Prasyarat yang sudah dipasang di mesin ini (Nov 2026):
+
+| Komponen | Lokasi | Versi |
+|---|---|---|
+| JDK 17 portable | `C:\laragon\jdk17\jdk-17.0.15+6` | OpenJDK Temurin 17.0.15 |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk` | — |
+| Android NDK | `%LOCALAPPDATA%\Android\Sdk\ndk\27.2.12479018` | r27c |
+| Rust Android targets | 4 target via rustup | arm64, armv7, x86_64, x86 |
+
+Env vars yang harus di-set setiap sesi build Android:
+```
+$env:JAVA_HOME = "C:\laragon\jdk17\jdk-17.0.15+6"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:NDK_HOME = "$env:ANDROID_HOME\ndk\27.2.12479018"
+```
+
+`tauri android init` sudah dijalankan — `src-tauri/gen/android/` di-track di repo. Output APK di `src-tauri/gen/android/app/build/outputs/` (tidak di-track, di-generate ulang setiap build). APK debug 512 MiB (debug symbols 4 ABI); release jauh lebih kecil.
+
+`minSdkVersion = 30` (Android 11), `targetSdk = 37` (Android 17) — sudah di `tauri.conf.json` dan `app/build.gradle.kts`.
+
+**Dua jebakan NDK Windows:** (1) `Expand-Archive` PowerShell melewatkan file NDK di path panjang — gunakan `.NET ZipFile API` untuk ekstrak. (2) Developer Mode Windows harus aktif untuk symlink Tauri (`AllowDevelopmentWithoutDevLicense = 1` di registry).
 
 ---
 
@@ -555,3 +589,150 @@ Kalau kamu AI penerus, urutan yang aman:
 ### Prompt siap pakai untuk AI penerus
 
 > Kamu melanjutkan proyek FlexStudy v2 di `C:\laragon\www\flexstudy-dashboard` (branch `feat/desktop-tauri`, versi 0.4.1). Baca `AI-HANDOFF.md` dan `README.md` lebih dulu. Patuhi aturan di §3 handoff — terutama: jangan menambah Electron/Node runtime, build web Vercel harus tetap jalan, hanya `src/lib/desktop.ts` yang boleh mengimpor `@tauri-apps/*`, `src/domain/` harus tetap murni, token desain hanya di `src/app/globals.css`. Tugas berikutnya adalah fitur lanjutan "Stabilo" (karakter + ekspresi + audio). Spesifikasinya **belum ada**: mulai dengan menanyakan delapan pertanyaan di §11.3, jangan mengarang jawabannya. Aset gambar akan ditaruh di `public/stabilo/`, audio di `public/audio/`. Jangan mengklaim sesuatu sudah diuji visual kalau belum dilihat.
+
+---
+
+## 16. Perubahan 21 November 2026 (0.6.1 → keadaan sekarang)
+
+Bagian ini ditulis setelah audit menyeluruh. Semuanya sudah dijalankan di mesin
+ini kecuali yang disebut "belum diverifikasi".
+
+### 16.1 `npm run build` gagal karena pemindaian CSS (memperbaiki, penting)
+
+Gejalanya:
+
+```
+FATAL: An unexpected Turbopack error occurred: Failed to write app endpoint /page
+Caused by: reading file "...\src-tauri\gen\android\app\build\intermediates\
+  merged_jni_libs\universalDebug\...\libapp_lib.so"
+- Insufficient system resources exist to complete the requested service. (os error 1450)
+```
+
+Penyebabnya bukan memori yang kurang. Tailwind v4 melakukan deteksi konten
+otomatis dari seluruh pohon proyek, dan `src-tauri/` berisi `target/` (13 GB) dan
+`gen/android/app/build/` (3,2 GB) yang tidak di-ignore. Turbopack membaca berkas
+`.so` itu lewat loader CSS sampai Windows kehabisan handle.
+
+Dua perbaikan, keduanya perlu:
+
+1. `src/app/globals.css:14` — `@import "tailwindcss" source("../")` membatasi
+   pemindaian ke `src/` (satu-satunya tempat kelas aplikasi dipakai).
+2. `.gitignore` — `/src-tauri/gen/android/{.gradle,build,app/build}/`,
+   `local.properties`, `keystore.properties`, `*.jks`, `*.keystore`.
+
+Hasil: build gagal 222 detik → lulus 366 detik. **Jangan hapus `source("../")`**;
+tanpa itu build akan sesekali gagal lagi di mesin yang punya artefak Android.
+
+### 16.2 Catatan blok tidak pernah dicoba ulang setelah gagal simpan
+
+`store.ts` mengosongkan set id kotor **sebelum** menulis, jadi kegagalan
+`bulkPut` (kuota penuh, basis data terkunci) membuang teks sampai pengguna
+mengetik lagi di blok yang sama.
+
+Sekarang aturannya ada di `src/domain/note-queue.ts` (murni, teruji:
+`tests/note-queue.test.ts`). `flushNoteWrites` mengembalikan batch yang gagal ke
+antrean, lalu `scheduleNoteFlush(5_000)` mencoba lagi — kecuali `quota`, yang
+tidak diulang dengan timer karena kuota tidak akan lega dalam lima detik; teksnya
+tetap di antrean dan ikut tersimpan pada suntingan atau **Simpan** berikutnya.
+
+### 16.3 Menghapus kategori meninggalkan blok yatim
+
+`deleteCategory` dulu hanya menghapus baris kategori. Template dan blok yang
+menunjuk ke sana tetap menyimpan id mati, dan `periodRecap` menghitung menit per
+kategori dengan mengiterasi kategori yang **masih ada** — jadi blok yang selesai
+tetap dihitung "done" tetapi menitnya lenyap dari total.
+
+Sekarang `deleteCategory(id, { moveTo })` memindahkan template dan blok ke
+kategori lain: `moveTo` bila diberikan, kalau tidak kategori dengan `order`
+terkecil (`src/domain/category-removal.ts`, teruji di
+`tests/category-removal.test.ts`). Riwayat ikut pindah supaya Rekap tetap utuh.
+**Kategori terakhir tidak bisa dihapus** — tombolnya nonaktif dan store
+mengembalikan `null`.
+
+Dialog konfirmasi menampilkan jumlah blok/template yang akan pindah dan pemilih
+tujuannya (`ConfirmSheet` kini menerima `children` dan `confirmDisabled`).
+
+### 16.4 CSP Tauri
+
+`src-tauri/tauri.conf.json` sekarang punya `app.security.csp` (sebelumnya `null`):
+
+```
+default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
+img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:;
+connect-src 'self' https://*.supabase.co wss://*.supabase.co ipc: http://ipc.localhost;
+object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+```
+
+- `script-src` butuh `'unsafe-inline'` karena `<head>` memuat skrip tema
+  pre-paint (`src/app/layout.tsx:45`). Tauri juga menyuntik skrip IPC-nya sendiri.
+  Tidak ada `'unsafe-eval'`.
+- `style-src` butuh `'unsafe-inline'` karena banyak komponen memakai atribut
+  `style={{...}}` (lebar progres, transform). Hash CSP tidak menutupi atribut.
+- `connect-src` menyertakan `ipc:` dan `http://ipc.localhost` — IPC Tauri di
+  Windows. Tanpa itu notifikasi dan abstraksi desktop berhenti bekerja.
+- `devCsp: null` sengaja: `npm run tauri dev` memakai HMR Next yang butuh eval,
+  dan CSP ini hanya untuk build yang dikirim.
+- Risiko XSS tetap rendah karena tidak ada `dangerouslySetInnerHTML` untuk teks
+  pengguna (`src/lib/markdown.tsx` merender jadi elemen React).
+
+**Belum diverifikasi di aplikasi yang benar-benar berjalan.** Kalau jendela
+desktop kosong atau notifikasi berhenti, kembalikan `"csp": null` dulu, lalu
+laporkan directive mana yang dilanggar (DevTools → Console menampilkan
+`Refused to …`).
+
+### 16.5 Installer pindah ke GitHub Releases
+
+`installers/` (24 berkas, 71,8 MB) dikeluarkan dari git dan masuk `.gitignore`.
+Berkasnya tidak dihapus dari disk. Rilis diunggah oleh
+`scripts/publish-release.mjs` (`npm run release:publish`), yang:
+
+- menolak jalan bila `package.json` ≠ `src-tauri/tauri.conf.json`;
+- hanya mengambil berkas yang namanya memuat versi itu;
+- menolak berkas < 1 MB (tanda build belum selesai);
+- mengambil catatan rilis dari `RELEASE-NOTES.md`;
+- memakai `gh release create`, atau `gh release upload --clobber` bila tag sudah ada.
+
+Halaman Releases saat audit masih kosong — unggahan pertama harus dijalankan
+sendiri setelah `gh auth login`.
+
+### 16.6 Jejak agen AI di metadata git
+
+Keadaan saat audit:
+
+| Yang ditemukan | Jumlah | Bukti |
+|---|---|---|
+| Commit ber-author `Accio <accio@local>` | 2 | `9752548`, `fee1c15` |
+| Commit dengan `Co-Authored-By: Claude` / `Claude-Session:` | 4 | `12778c6`, `3674bd3`, `e8a698f`, `044d739` |
+| Commit dengan `Generated with Codebuff` / `Co-Authored-By: Codebuff` | 1 | `28cc591` |
+
+Yang sudah dilakukan (aman, tanpa mengubah riwayat):
+
+- `.mailmap` memetakan `accio@local` → `Dzakwan Hafizh <mdzakwanhf@gmail.com>`
+  untuk `git shortlog` dan alat lokal. **Catatan jujur:** `.mailmap` tidak
+  mengganti author pada commit, jadi grafik kontributor GitHub bisa tetap
+  menampilkan `Accio` sampai riwayatnya ditulis ulang.
+- `.githooks/commit-msg` menolak trailer agen dan baris `Claude-Session` pada
+  commit baru. Aktifkan per klon: `git config core.hooksPath .githooks`.
+- `CONTRIBUTING.md` menyatakan kebijakannya secara terbuka.
+
+Yang **belum** dilakukan dan butuh keputusan pemilik: menulis ulang 28 commit
+(`git filter-repo` untuk mengganti author dan membuang trailer), lalu
+`git push --force-with-lease`. Itu mengubah hash semua commit, memaksa kolaborator
+lain meng-clone ulang, dan tidak bisa dibatalkan dari sisi GitHub. Jangan
+menjalankannya tanpa izin eksplisit.
+
+### 16.7 Dependensi dipangkas
+
+Dihapus (nol impor di `src/`, `scripts/`, `tests/`): `@radix-ui/react-dialog`,
+`react-label`, `react-radio-group`, `react-select`, `react-switch`, `vaul`,
+`sonner`, `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`,
+`@hugeicons/core-free-icons`, `@hugeicons/react`, `lucide-react`.
+
+`shadcn` dipindah ke `devDependencies` — itu CLI, bukan runtime.
+
+`npm audit`: 10 moderate → 4 moderate setelah `npm audit fix`. Sisanya satu
+rantai build-time `shadcn → ts-morph → minimatch` (`GHSA-g3hv-75wg-m249`) yang
+tidak ikut ke bundel mana pun. Jangan `--force`; itu menurunkan shadcn ke 1.0.0.
+
+Hasil setelah pemangkasan: `npm test` 273 lulus, `tsc` bersih, ESLint bersih,
+`npm run build` lulus.
