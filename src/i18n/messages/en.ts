@@ -383,7 +383,13 @@ export const en: Messages = {
   "settings.blockStart": "Start time",
   "settings.blockStartFlexible": "Flexible (follows order)",
   "settings.blockStartFixed": "Fixed time",
-  "settings.deleteCategoryHint": "Blocks using this category stay in place.",
+  "settings.categoriesEmpty": "No categories yet. Create one so blocks have somewhere to go.",
+  "settings.deleteCategoryUnused":
+    "No block or template uses this category. It is safe to delete.",
+  "settings.deleteCategoryMoves":
+    "{{blocks}} blocks and {{templates}} templates will move to {{category}}. History moves with them, so the recap keeps their minutes.",
+  "settings.deleteCategoryTarget": "Move to category",
+  "settings.keepLastCategory": "The last category cannot be deleted — every block needs a home.",
   "settings.pattern.solid": "Solid",
   "settings.pattern.dashed": "Dashed",
   "settings.pattern.dotted": "Dotted",

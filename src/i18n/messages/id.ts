@@ -389,7 +389,14 @@ export const id = {
   "settings.blockStart": "Jam mulai",
   "settings.blockStartFlexible": "Fleksibel (mengikuti urutan)",
   "settings.blockStartFixed": "Jam tetap",
-  "settings.deleteCategoryHint": "Blok yang memakai kategori ini tetap ada.",
+  "settings.categoriesEmpty": "Belum ada kategori. Buat satu supaya blok punya tempat.",
+  "settings.deleteCategoryUnused":
+    "Tidak ada blok atau template yang memakai kategori ini. Aman dihapus.",
+  "settings.deleteCategoryMoves":
+    "{{blocks}} blok dan {{templates}} template akan dipindahkan ke {{category}}. Riwayat tetap ikut, jadi Rekap tidak kehilangan menitnya.",
+  "settings.deleteCategoryTarget": "Pindahkan ke kategori",
+  "settings.keepLastCategory":
+    "Kategori terakhir tidak bisa dihapus — setiap blok butuh tempat.",
   "settings.pattern.solid": "Solid",
   "settings.pattern.dashed": "Putus-putus",
   "settings.pattern.dotted": "Titik",

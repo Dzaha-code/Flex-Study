@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useI18n } from "@/i18n";
 import { Button } from "./button";
 import { Sheet } from "./dialog";
@@ -12,6 +13,10 @@ export interface ConfirmSheetProps {
   confirmLabel?: string;
   tone?: "primary" | "danger";
   onConfirm: () => void;
+  /** Extra content between the description and the buttons (a target picker, say). */
+  children?: ReactNode;
+  /** Blocks the confirm button, for a destructive action with no valid outcome. */
+  confirmDisabled?: boolean;
 }
 
 /**
@@ -26,6 +31,8 @@ export function ConfirmSheet({
   confirmLabel,
   tone = "primary",
   onConfirm,
+  children,
+  confirmDisabled = false,
 }: ConfirmSheetProps) {
   const { t } = useI18n();
 
@@ -42,6 +49,7 @@ export function ConfirmSheet({
           </Button>
           <Button
             variant={tone === "danger" ? "danger" : "primary"}
+            disabled={confirmDisabled}
             onClick={() => {
               onConfirm();
               onOpenChange(false);
@@ -52,7 +60,7 @@ export function ConfirmSheet({
         </>
       }
     >
-      <span className="hidden" />
+      {children ?? <span className="hidden" />}
     </Sheet>
   );
 }
