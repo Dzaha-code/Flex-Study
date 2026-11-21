@@ -8,6 +8,8 @@ export * from "./recap";
 export * from "./week";
 export * from "./reflection";
 export * from "./notes";
+export * from "./note-queue";
+export * from "./category-removal";
 export * from "./shift";
 export * from "./propagate";
 export * from "./template-switch";

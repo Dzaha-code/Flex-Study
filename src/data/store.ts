@@ -7,7 +7,10 @@ import {
   createId,
   makeReflection,
   makeTemplateSwitchEvent,
+  NoteQueue,
   planTemplateSwitch,
+  reassignCategory,
+  replacementCategory,
   SCHEMA_VERSION,
   todayISO,
   undoShift,
@@ -139,7 +142,13 @@ export interface AppState {
   updateStabilo: (patch: Partial<StabiloPrefs>) => Promise<void>;
 
   saveCategory: (draft: CategoryDraft) => Promise<string>;
-  deleteCategory: (id: string) => Promise<void>;
+  /**
+   * Removes a category, moving everything that pointed at it to `moveTo` — or
+   * to the next category in order when no target is given. Returns the id the
+   * rows moved to, or `null` when this was the last category and nothing was
+   * removed, because a block with no category has nowhere to be filed.
+   */
+  deleteCategory: (id: string, options?: { moveTo?: string }) => Promise<string | null>;
   saveBlockTemplate: (draft: BlockTemplateDraft) => Promise<void>;
   deleteBlockTemplate: (id: string) => Promise<void>;
   /** Edits a block that has no template behind it. */
@@ -210,18 +219,30 @@ function upsertById<T extends { id: string }>(rows: T[], next: T[]): T[] {
   return [...map.values()];
 }
 
-const dirtyNoteIds = new Set<string>();
+const noteQueue = new NoteQueue();
 let noteTimer: ReturnType<typeof setTimeout> | null = null;
 
+function scheduleNoteFlush(delay: number = NOTE_DEBOUNCE_MS): void {
+  if (noteTimer) clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => {
+    noteTimer = null;
+    void flushNoteWrites();
+  }, delay);
+}
+
 async function flushNoteWrites(): Promise<boolean> {
-  if (dirtyNoteIds.size === 0) return true;
-  const ids = [...dirtyNoteIds];
-  dirtyNoteIds.clear();
+  if (noteQueue.size === 0) return true;
+  const ids = noteQueue.take();
   const pending = { ...useAppStore.getState().notesPending };
   const instances = useAppStore.getState().instances.filter((instance) => ids.includes(instance.id));
   if (instances.length > 0) {
     const outcome = await persistInstances(instances);
     if (!outcome.ok) {
+      // Back on the queue, so the next attempt writes the newest text instead
+      // of the batch that just failed. A full quota is not retried on a timer
+      // (it will not free itself in five seconds) but the text stays queued.
+      const retryIn = noteQueue.restore(ids, outcome.reason);
+      if (retryIn !== null) scheduleNoteFlush(retryIn);
       // Still pending: the honest status for a write that did not land is
       // "not saved", never a green light.
       for (const id of ids) pending[id] = true;
@@ -474,10 +495,33 @@ export const useAppStore = create<AppState>()((set, get) => {
       return category.id;
     },
 
-    deleteCategory: async (id) => {
+    deleteCategory: async (id, options) => {
       const state = get();
-      set({ categories: state.categories.filter((category) => category.id !== id) });
+      const target =
+        (options?.moveTo && state.categories.some((category) => category.id === options.moveTo)
+          ? options.moveTo
+          : null) ?? replacementCategory(state.categories, id)?.id ?? null;
+      // The last category cannot go: every block needs somewhere to be filed,
+      // and an instance pointing at nothing is exactly the orphan this
+      // safeguards against.
+      if (target === null) return null;
+
+      const stamp = new Date().toISOString();
+      const movedTemplates = reassignCategory(state.templates, id, target, stamp);
+      const movedInstances = reassignCategory(state.instances, id, target, stamp);
+
+      set({
+        categories: state.categories.filter((category) => category.id !== id),
+        templates: upsertById(state.templates, movedTemplates),
+        instances: upsertById(state.instances, movedInstances),
+      });
+
       guardWrite(await removeCategoryRow(id));
+      if (movedTemplates.length > 0) guardWrite(await persistTemplates(movedTemplates));
+      // History moves with the category, so the recap keeps counting the
+      // minutes of blocks that were finished before the category disappeared.
+      if (movedInstances.length > 0) guardWrite(await persistInstances(movedInstances));
+      return target;
     },
 
     saveBlockTemplate: async (draft) => {
@@ -859,11 +903,8 @@ export const useAppStore = create<AppState>()((set, get) => {
         notesPending: { ...get().notesPending, [id]: true },
       });
 
-      dirtyNoteIds.add(id);
-      if (noteTimer) clearTimeout(noteTimer);
-      noteTimer = setTimeout(() => {
-        void flushNoteWrites();
-      }, NOTE_DEBOUNCE_MS);
+      noteQueue.mark(id);
+      scheduleNoteFlush();
     },
 
     flushNotes: async () => {

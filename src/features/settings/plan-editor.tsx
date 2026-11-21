@@ -17,6 +17,7 @@ import {
 import { CategoryTag, EmptyState } from "@/components/ui/surface";
 import { BlockTemplateForm } from "@/features/plan/block-template-form";
 import { EditBlockSheet } from "@/features/plan/edit-block-sheet";
+import { categoryUsage } from "@/domain/category-removal";
 import { todayISO } from "@/domain/time";
 import { useAppStore, type BlockTemplateDraft, type CategoryDraft } from "@/data/store";
 import type { BlockInstance, BlockTemplate, Category, CategorySymbol } from "@/domain/types";
@@ -109,20 +110,27 @@ function CategoryForm({ initial, onClose }: { initial: CategoryDraft; onClose: (
 
 export function CategoriesEditor() {
   const categories = useAppStore((state) => state.categories);
+  const templates = useAppStore((state) => state.templates);
+  const instances = useAppStore((state) => state.instances);
   const deleteCategory = useAppStore((state) => state.deleteCategory);
   const { t, formatMinutes } = useI18n();
 
   const [draft, setDraft] = useState<CategoryDraft | null>(null);
   const [removing, setRemoving] = useState<Category | null>(null);
+  const [moveTo, setMoveTo] = useState<string>("");
 
   const ordered = [...categories].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  const targets = ordered.filter((category) => category.id !== removing?.id);
+  const usage = removing ? categoryUsage(removing.id, templates, instances) : null;
+  const chosenTarget = moveTo || targets[0]?.id || "";
+  const chosenName = targets.find((category) => category.id === chosenTarget)?.name ?? "";
 
   return (
     <div className="flex flex-col gap-3">
       {ordered.length === 0 ? (
         <EmptyState
           title={t("settings.newCategory")}
-          body={t("settings.deleteCategoryHint")}
+          body={t("settings.categoriesEmpty")}
           action={
             <Button
               onClick={() =>
@@ -161,8 +169,16 @@ export function CategoriesEditor() {
                   {t("common.edit")}
                 </Button>
                 <IconButton
-                  label={`${t("common.delete")}: ${category.name}`}
-                  onClick={() => setRemoving(category)}
+                  label={
+                    ordered.length <= 1
+                      ? t("settings.keepLastCategory")
+                      : `${t("common.delete")}: ${category.name}`
+                  }
+                  disabled={ordered.length <= 1}
+                  onClick={() => {
+                    setMoveTo("");
+                    setRemoving(category);
+                  }}
                 >
                   <IconTrash />
                 </IconButton>
@@ -198,13 +214,35 @@ export function CategoriesEditor() {
           if (!next) setRemoving(null);
         }}
         title={`${t("common.delete")}: ${removing?.name ?? ""}`}
-        description={t("settings.deleteCategoryHint")}
+        description={
+          usage && usage.total > 0
+            ? t("settings.deleteCategoryMoves", {
+                blocks: usage.instances,
+                templates: usage.templates,
+                category: chosenName,
+              })
+            : t("settings.deleteCategoryUnused")
+        }
         confirmLabel={t("common.delete")}
         tone="danger"
+        confirmDisabled={targets.length === 0}
         onConfirm={() => {
-          if (removing) void deleteCategory(removing.id);
+          if (!removing) return;
+          void deleteCategory(removing.id, { moveTo: chosenTarget || undefined });
+          setRemoving(null);
         }}
-      />
+      >
+        {targets.length > 0 ? (
+          <SelectField
+            label={t("settings.deleteCategoryTarget")}
+            value={chosenTarget}
+            options={targets.map((category) => ({ value: category.id, label: category.name }))}
+            onChange={(event) => setMoveTo(event.target.value)}
+          />
+        ) : (
+          <p className="text-meta text-ink-muted">{t("settings.keepLastCategory")}</p>
+        )}
+      </ConfirmSheet>
     </div>
   );
 }
