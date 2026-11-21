@@ -1,0 +1,9 @@
+# Shell hooks must keep LF. A CRLF shebang makes `sh` treat the interpreter
+# path as "#!/bin/sh\r" and every commit fails with a confusing error.
+.githooks/* text eol=lf
+*.sh text eol=lf
+
+# Windows-only generated files pick up CRLF from the tools that write them;
+# keeping that out of diffs makes reviews readable.
+*.gradle.kts text eol=crlf
+gradlew text eol=lf
