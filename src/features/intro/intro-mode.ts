@@ -9,7 +9,14 @@ import type { IntroPreference } from "@/domain/types";
  */
 export type IntroPhase = "run" | "done";
 
-/** What an install that has never been configured uses: the first launch only. */
+/**
+ * What an install that has never been configured uses: every launch.
+ *
+ * This used to be described as "the first launch only" while the value was
+ * already `always`, which made the default impossible to trust from the
+ * comments. A stored `once` (including the schema default for older rows) is
+ * what keeps an upgraded install quiet after its first launch.
+ */
 export const DEFAULT_INTRO_MODE: IntroPreference = "always";
 
 /**

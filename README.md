@@ -2,7 +2,7 @@
 
 Menyusun hari dalam blok waktu yang realistis, lalu **menyesuaikannya tanpa rasa bersalah** ketika hari tidak berjalan sesuai rencana.
 
-Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Semua data tinggal di perangkat. Tidak ada akun, tidak ada pelacakan pihak ketiga.
+Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Semua data tinggal di perangkat, dan aplikasi berjalan penuh tanpa akun. Sejak 0.6.1 akun **opsional** bisa dinyalakan untuk menyinkronkan jadwal, jurnal, dan timer antara PC dan Android lewat Supabase — mati secara bawaan, dan tidak ada telemetri maupun pelacakan pihak ketiga.
 
 ---
 
@@ -10,9 +10,11 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
-### [FlexStudy_0.6.1_x64-setup.exe](installers/FlexStudy_0.6.1_x64-setup.exe) — versi terbaru, 2.721.683 byte (2,6 MB)
+### [Halaman Releases](https://github.com/Dzaha-code/Flex-Study/releases) — installer Windows x64 dan ARM64
 
-Versi **0.6.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian lengkap tiap rilis, ukuran, dan checksum ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Berkas installer **tidak lagi disimpan di dalam repositori** (dulu 72 MB dan terus bertambah di riwayat git). Semua unduhan ada di halaman Releases, satu tempat: `.exe` per pengguna tanpa hak admin, `.msi` mesin-luas, dan build native ARM64.
+
+Versi terbaru: **0.6.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian tiap rilis ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
 Yang baru di 0.6.1: **akun dan sinkronisasi akhirnya benar-benar bisa dipakai.** Build 0.6.0 membaca dua variabel `NEXT_PUBLIC_SUPABASE_*` saat build, dan karena keduanya belum terisi, panel *Atur → Akun & sinkronisasi* hanya menampilkan "belum diaktifkan di versi ini" — form email dan kode 6 digit tidak pernah muncul. Sekarang alamat server dan kunci publik sudah ter-inline ke dalam bundle, jadi kamu bisa masuk lewat kode 6 digit ke email dan menyinkronkan jadwal, jurnal, serta timer antara PC dan Android. Tanpa akun, aplikasi tetap berjalan penuh dan seluruh data tinggal di perangkat.
 
@@ -34,16 +36,17 @@ Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favor
 
 | | |
 |---|---|
-| Disarankan | `FlexStudy_0.6.1_x64-setup.exe` — 2.721.683 byte. Terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_0.6.1_x64_en-US.msi` — 3.248.128 byte (3,1 MB). Terpasang mesin-luas ke `Program Files`, **butuh admin** |
-| ARM64 | `FlexStudy_0.6.1_arm64-setup.exe` — 2.612.340 byte. Build native untuk Windows on ARM, tidak lewat emulasi |
-| Sistem | Windows 64-bit (x64 atau ARM64) |
+| Disarankan | `FlexStudy_<versi>_x64-setup.exe` — terpasang per pengguna, **tanpa hak admin** |
+| Alternatif | `FlexStudy_<versi>_x64_en-US.msi` — terpasang mesin-luas ke `Program Files`, **butuh admin** |
+| ARM64 | `FlexStudy_<versi>_arm64-setup.exe` — build native untuk Windows on ARM, tidak lewat emulasi |
+| Android | APK ada di halaman Releases yang sama; cara build sendiri ada di bagian **Build Android** |
+| Sistem | Windows 64-bit (x64 atau ARM64), Android 11 ke atas |
 | Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
 | WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
 
 Cara memasang:
 
-1. Unduh berkas di atas.
+1. Unduh installer dari halaman Releases.
 2. Dobel klik. Bila Windows SmartScreen memunculkan peringatan, itu karena berkas ini belum ditandatangani secara digital — pilih **More info → Run anyway**. Kalau memakai `.msi`, Windows juga akan meminta izin administrator (UAC).
 3. Selesai. Aplikasi terpasang dengan nama **FlexStudy** dan bisa dibuka dari menu Start.
 
@@ -77,6 +80,22 @@ Satu hal yang wajib: **naikkan `version` di [`src-tauri/tauri.conf.json`](src-ta
 Kalau nanti mau pembaruan otomatis sungguhan, Tauri menyediakan plugin `updater`. Perlu diketahui sejak awal: plugin itu **mewajibkan penandatanganan** dan tidak bisa dimatikan, jadi kamu butuh pasangan kunci — dan kalau kunci privatnya hilang, kamu tidak akan pernah bisa lagi mengirim pembaruan ke pemasangan yang sudah ada. Kunci itu tidak boleh masuk repo.
 
 Satu hal yang tetap perlu kamu lakukan sendiri: gunakan **Ekspor/Impor JSON** di layar *Atur* untuk mencadangkan data atau memindahkannya antara versi web dan desktop. Tidak ada akun dan tidak ada telemetri yang melakukannya untukmu.
+
+### Menerbitkan rilis
+
+Installer tidak lagi di-commit. Setelah `npm run tauri build`, berkasnya ada di
+`src-tauri/target/release/bundle/` — salin ke `installers/` (folder itu
+di-ignore git), lalu unggah sebagai aset rilis:
+
+```bash
+npm run release:publish            # pakai tag v<versi> dari package.json
+npm run release:publish -- --draft # simpan sebagai draf, terbitkan manual
+```
+
+Skripnya memeriksa dulu bahwa `package.json`, `src-tauri/tauri.conf.json`, dan
+nama berkas installer memakai versi yang sama, lalu memanggil `gh release
+create` dengan catatan rilis yang diambil dari `RELEASE-NOTES.md`. Butuh
+`gh auth login` sekali di mesin ini.
 
 > Ingin membangun sendiri dari kode? Lihat bagian **Menjalankan** di bawah.
 
@@ -215,7 +234,7 @@ installers/     installer siap pakai untuk Windows
 
 ## Aplikasi desktop
 
-Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer-nya **2,49 MB** — dan itu sudah termasuk karakter, asetnya, serta suaranya.
+Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer x64 0.6.1 hanya **2,72 MB** — sudah termasuk karakter, asetnya, serta suaranya.
 
 Yang perlu diketahui:
 
@@ -232,7 +251,7 @@ Yang perlu diketahui:
 
 Peluncuran **pertama** setelah pemasangan dibuka oleh animasi ± 5 detik: cincin lima busur menggambar dirinya sendiri, lalu pecah, meninggalkan satu titik yang menulis "FlexStudy." dan berhenti sebagai titik akhir kalimatnya. Cincin yang pecah itu kembali utuh dan menyingkap layar template.
 
-- **Bisa diatur, dan bawaan tetap sama.** Tiga pilihan di *Atur* → panel **Tampilan**: **Sekali saja** (bawaan — hanya peluncuran pertama setelah pemasangan, tidak berubah dari versi sebelumnya), **Setiap buka**, dan **Mati**. Pilihan disimpan bersama setelan lain di IndexedDB, tapi **dicerminkan ke `localStorage`** (`flexstudy.intro`) karena keputusan "putar atau tidak" harus diambil **sebelum** basis data menjawab — kalau tidak, animasinya akan berkedip di atas aplikasi yang sudah terbaca. Pilihan berlaku pada pembukaan berikutnya.
+- **Bisa diatur.** Tiga pilihan di *Atur* → panel **Tampilan**: **Sekali saja**, **Setiap buka** (bawaan pemasangan baru), dan **Mati**. Data lama atau berkas cadangan yang belum punya medan ini terbaca sebagai *Sekali saja* — jadi pemasangan yang di-upgrade tidak tiba-tiba memutar animasi setiap kali dibuka. Sumber nilai bawaannya ada di `DEFAULT_SETTINGS` (`src/domain/types.ts`) dan `DEFAULT_INTRO_MODE` (`src/features/intro/intro-mode.ts`). Pilihan disimpan bersama setelan lain di IndexedDB, tapi **dicerminkan ke `localStorage`** (`flexstudy.intro`) karena keputusan "putar atau tidak" harus diambil **sebelum** basis data menjawab — kalau tidak, animasinya akan berkedip di atas aplikasi yang sudah terbaca. Pilihan berlaku pada pembukaan berikutnya.
 - **Tombol *Putar sekarang*** memutarnya sekali tanpa mengubah pilihan — termasuk saat pilihannya *Mati*. Ia menulis satu penanda sekali-pakai (`fs.intro.force`) lalu memuat ulang aplikasi, dan penanda itu baru dihabiskan ketika animasinya selesai atau dilewati. Jadi memutarnya tidak perlu mengubah setelan apa pun.
 - **Kapan penanda "sudah dilihat" ditulis.** Kuncinya `fs.intro.v1`, ditulis saat animasi **selesai atau dilewati** — bukan saat mulai, jadi menutup aplikasi di tengah animasi berarti kamu melihatnya lagi. Penanda itu hanya menentukan hasil untuk pilihan *Sekali saja*.
 - **Bisa dilewati kapan saja:** klik atau ketuk di mana saja, tombol *Lewati*, atau `Esc`/`Spasi`/`Enter`. Lewati melompat ke transisi penutup, tidak pernah berhenti di keadaan setengah jadi.
@@ -370,7 +389,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-161 uji unit, 11 berkas, semuanya pada lapisan murni:
+**257 uji unit, 20 berkas** (diukur 21 November 2026 dengan `npm test`, ± 5 detik), semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -385,6 +404,15 @@ npm test
 | `tests/stabilo-dialogue.test.ts` | naskah id/en punya id simpul yang sama, semua penunjuk hidup, tiap kuis punya tepat satu jawaban benar, tangga gedeg ph1→ph3 lalu mengalah, dan mode *manis* tidak pernah naik |
 | `tests/cn.test.ts` | penggabungan kelas Tailwind — ukuran huruf tidak boleh menelan warna teks |
 | `tests/propagate.test.ts` | penyebaran suntingan template ke blok hari ini + hari berikutnya, dan pembersihan blok yatim |
+| `tests/notes.test.ts` | catatan blok: teks kosong bukan catatan, pengelompokan per tahun/bulan, pencocokan pencarian, dan cuplikan |
+| `tests/ink.test.ts` | bahasa gerak "Tinta": geometri riak, penggabungan langkah gerak, dan helper isi progres |
+| `tests/motion.test.ts` | toleransi `fillsScreen`, `resolveContentWidth`, `resolveReducedMotion`, dan `animation` bawaan `system` |
+| `tests/journal-insights.test.ts` | peta menulis, statistik kata dan rentetan, pelajaran terakhir, porsi catatan per kategori |
+| `tests/sync.test.ts` | baris sync, hash isi, `planSync`, id blok deterministik, pembersih duplikat |
+| `tests/sync-engine.test.ts` | simulasi dua perangkat: pull, push, realtime, pilihan sinkron pertama |
+| `tests/template-switch.test.ts` | apa yang boleh diganti saat template berganti, pratinjau = penerapan, undo mengembalikan template + kategori |
+| `tests/template.test.ts` | setiap hari dalam pekan punya blok, kategori tidak menggantung, terjemahan judul, dan `toStudyTemplate` |
+| `tests/stabilo-greeting.test.ts` | sapaan harian: waktu hari, rotasi dorongan, bahasa id/en, dan cara mematikannya |
 
 ---
 
@@ -399,15 +427,15 @@ Yang sudah dilakukan untuk mendukung target performa: tanpa `backdrop-filter` di
 - **PWA / offline (Should)** belum ada: belum ada service worker maupun manifest.
 - **Impor/ekspor kalender (.ics)** dan **mode fokus layar penuh (Could)** belum ada.
 - **Pengingat** hanya bekerja saat aplikasi terbuka. Di aplikasi desktop notifikasi lewat notifikasi sistem; di browser lewat Notification API. Keduanya melalui satu lapisan abstraksi (`src/lib/desktop.ts`), karena `Notification.permission` di dalam WebView tidak pernah bernilai `granted`. Penjadwalan latar butuh service worker, jadi menyusul bersama PWA.
-- **Sinkronisasi akun & multi-perangkat (Could)** belum ada; karena itu ekspor/impor JSON dan tombol ekspor cadangan dibuat menonjol.
+- **Sinkronisasi akun & multi-perangkat** sudah ada sejak 0.6.1, tetapi batasnya nyata: konflik diselesaikan *last write wins* per baris (tanpa riwayat atau penggabungan teks), yang ikut tersinkron hanya sebagian setelan (`weekStart`, `dayStart`, `dayEnd`, `activeTemplateId`, nama panggilan, temperamen), dan tidak ada tombol "buang perubahan lokal". Ekspor/impor JSON tetap jalur cadangan resmi.
 - **Lapisan tool untuk AI agent (fase 4)** belum dibangun. Fondasinya sudah disiapkan: skema Zod bertipe, fungsi domain murni dan teruji, log perubahan (`ShiftEvent`), serta ekspor/impor yang memakai skema yang sama.
 
 Khusus aplikasi desktop:
 
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
-- **CSP masih `null`** di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) untuk memudahkan tahap awal. Sebelum dipakai luas, ganti dengan CSP ketat tanpa `unsafe-eval` lalu uji ulang aplikasinya.
+- **CSP sudah ketat, tetapi belum diuji di jendela yang benar-benar berjalan.** [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) memakai `default-src 'self'`, tanpa `'unsafe-eval'`, dengan `connect-src` terbatas ke Supabase dan IPC Tauri; `'unsafe-inline'` masih diperlukan untuk skrip tema pre-paint dan atribut `style` komponen. `devCsp` sengaja `null` agar `npm run tauri dev` tidak berubah. Bila jendela desktop tampil kosong, kembalikan `"csp": null` dan periksa pesan `Refused to …` di Console.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 161 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang. Sejak 0.5.1 ada yang perlu ditambahkan ke daftar itu: **panggung Stabilo yang tetap** (slot karakter di kanan, jarak ke kartu dialog, sorotan yang menggeser target alih-alih menutupinya), **campuran musik latar dan bunyi ketikan**, serta **kategori baru di dalam form blok** — semuanya dihitung, belum ditonton dan belum didengar.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 257 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang. Sejak 0.5.1 ada yang perlu ditambahkan ke daftar itu: **panggung Stabilo yang tetap** (slot karakter di kanan, jarak ke kartu dialog, sorotan yang menggeser target alih-alih menutupinya), **campuran musik latar dan bunyi ketikan**, serta **kategori baru di dalam form blok** — semuanya dihitung, belum ditonton dan belum didengar.
 
 ---
 
@@ -436,3 +464,26 @@ Perubahan struktur: kode aplikasi dipindah ke `src/` sesuai §10.2, sehingga `ts
 | §10.1 skema & migrasi | [`src/data/schema.ts`](src/data/schema.ts), [`src/data/db.ts`](src/data/db.ts) |
 | Lampiran A template | [`src/templates/catalog.ts`](src/templates/catalog.ts) |
 | §11 kesiapan agent | [`src/domain/index.ts`](src/domain/index.ts) (permukaan fungsi murni) |
+
+---
+
+## Kontributor
+
+Proyek ini ditulis oleh manusia, dan daftar kontributornya dijaga tetap begitu:
+
+- **Dzakwan Hafizh** `<mdzakwanhf@gmail.com>`
+- **Satfaw** `<satriofawwas096@gmail.com>`
+
+Riwayat lama memuat dua commit ber-author `Accio <accio@local>` dan beberapa
+trailer `Co-Authored-By: Claude` / `Codebuff` dari masa ketika asisten AI dipakai
+untuk menulis kode. Alat itu tidak dihitung sebagai kontributor; yang
+bertanggung jawab atas setiap baris adalah manusia yang mengirimnya.
+
+Supaya tidak terulang, aktifkan hook di klon Anda sekali saja:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Hook `commit-msg` menolak trailer co-author agen AI. Aturan lengkapnya, bersama
+standar kode dan cara merilis, ada di [CONTRIBUTING.md](CONTRIBUTING.md).
