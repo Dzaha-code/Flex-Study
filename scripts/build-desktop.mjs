@@ -9,10 +9,10 @@
 import { spawnSync } from "node:child_process";
 
 const result = spawnSync("npx", ["next", "build"], {
-  stdio: "inherit",
+  stdio: ["ignore", "inherit", "inherit"],
   // `shell` is required so the npx shim resolves on Windows.
   shell: true,
-  env: { ...process.env, TAURI_BUILD: "1" },
+  env: { ...process.env, TAURI_BUILD: "1", NEXT_TELEMETRY_DISABLED: "1" },
 });
 
 process.exit(result.status ?? 1);
