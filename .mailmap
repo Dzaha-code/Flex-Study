@@ -1,0 +1,4 @@
+# Canonical names for git shortlog, `git log --use-mailmap`, and anything else
+# that reads this file. The 0.6.0 and 0.6.1 commits were authored with a tool
+# identity; they are the same person as the maintainer below.
+Dzakwan Hafizh <mdzakwanhf@gmail.com> <accio@local>

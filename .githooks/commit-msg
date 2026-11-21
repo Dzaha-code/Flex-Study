@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Keeps the contributor list human.
+#
+# The project's history already contains commits that credit an assistant as a
+# co-author, and GitHub counts those trailers towards the contributors list. It
+# looks like a project written by a bot to anyone browsing the repo, which is
+# not what it is. This hook rejects the trailer before the commit exists, so the
+# policy is enforced by the repository instead of by memory.
+#
+# Enable it once per clone:
+#   git config core.hooksPath .githooks
+#
+# Bypass (for a genuine human co-author you cannot represent otherwise):
+#   git commit --no-verify
+
+message_file="$1"
+
+agent_pattern='(claude|codebuff|freebuff|cursor|windsurf|copilot|gemini|chatgpt|openai|anthropic|devin|aider|tabnine)'
+
+if grep -qiE "^co-authored-by:.*${agent_pattern}" "$message_file"; then
+  echo "" >&2
+  echo "Commit ditolak: trailer Co-Authored-By menyebut agen AI." >&2
+  echo "Kontributor proyek ini hanya manusia. Hapus baris itu dari pesan commit." >&2
+  echo "" >&2
+  exit 1
+fi
+
+if grep -qiE "^(.*generated with|.*claude-session:)" "$message_file"; then
+  echo "" >&2
+  echo "Commit ditolak: pesan memuat jejak agen AI (Generated with / Claude-Session)." >&2
+  echo "Tulis pesan commit biasa: <tipe>(<area>): <ringkasan>." >&2
+  echo "" >&2
+  exit 1
+fi
+
+exit 0
