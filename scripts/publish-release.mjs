@@ -50,6 +50,10 @@ if (!existsSync(installerDir)) {
 
 const wanted = readdirSync(installerDir)
   .filter((name) => name.includes(`_${pkgVersion}_`))
+  // `.idsig` is the v4 signature sidecar apksigner writes next to an APK. It is
+  // only an input to `adb install --incremental` and has no meaning as a
+  // download, so it must not become a release asset.
+  .filter((name) => !name.endsWith(".idsig"))
   .map((name) => join(installerDir, name))
   .sort();
 
