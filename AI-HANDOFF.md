@@ -730,10 +730,13 @@ tak berkerabat.
 - `git push --force-with-lease origin sapo-update` → `d895982`. Diverifikasi
   lewat API GitHub: commit `a309aad` (dulu `Accio`) kini milik akun `Dzaha-code`.
 
-Tag lokal `backup/pre-rewrite-2026-11-22` menyimpan riwayat lama. **Jangan
-`git push --tags`** selama tag itu ada, atau riwayat lama ikut terunggah lagi.
-Hapus setelah yakin: `git tag -d backup/pre-rewrite-2026-11-22` lalu
-`git update-ref -d refs/original/refs/heads/sapo-update` dan `git gc --prune=now`.
+Cadangan riwayat lama sekarang berupa berkas, bukan ref: `git bundle` menulis
+`flexstudy-before-ai-cleanup.bundle` (94 MB, di-ignore git) dari commit
+`083a9f5`. Itu pilihan yang disengaja — tag ikut ditulis ulang oleh
+`filter-branch --tags`, jadi tag bernama "backup" justru berakhir menunjuk commit
+yang sudah bersih. Memulihkan: `git fetch flexstudy-before-ai-cleanup.bundle
+tmp-pre-cleanup`. Setelah yakin tidak perlu, hapus berkasnya bersama
+`refs/original` dan jalankan `git gc --prune=now`.
 
 **Koreksi 22 November 2026 — kesimpulan di atas salah.** Saya sempat menulis bahwa
 grafik kontributor hanya menghitung author dan trailer co-author tidak dihitung.

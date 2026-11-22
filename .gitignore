@@ -77,3 +77,5 @@ next-env.d.ts
 
 # The template holds no secrets; it documents which variables exist.
 !.env.example
+# Local git bundle backups of rewritten history.
+*.bundle
