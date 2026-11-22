@@ -73,8 +73,13 @@ sama di ketiganya.
 
 ### Berkas
 
-Lima berkas, semuanya dibangun dari commit yang sama pada 22 November 2026 dan diunggah ke
-halaman Releases. Ukuran dan SHA-256 di bawah diambil langsung dari berkas hasil build.
+Lima berkas, semuanya dibangun dari commit yang sama pada 22 November 2026. Ukuran dan
+SHA-256 di bawah diambil langsung dari berkas hasil build.
+
+Unggahan ke halaman Releases dijalankan dengan `npm run release:publish` dari mesin yang
+sudah `gh auth login`; skripnya memilih berkas berdasarkan versi di `package.json`, jadi
+tidak ada berkas lama yang ikut. **Per 22 November 2026 rilis ini belum diunggah** — yang
+ada baru berkasnya di `installers/` (folder yang di-ignore git).
 
 | Berkas | Untuk | Ukuran | SHA-256 |
 |---|---|---|---|

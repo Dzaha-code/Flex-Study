@@ -12,7 +12,9 @@ Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
 ### [Halaman Releases](https://github.com/Dzaha-code/Flex-Study/releases) — installer Windows x64 dan ARM64
 
-Berkas installer **tidak lagi disimpan di dalam repositori** (dulu 72 MB dan terus bertambah di riwayat git). Semua unduhan ada di halaman Releases, satu tempat: `.exe` per pengguna tanpa hak admin, `.msi` mesin-luas, dan build native ARM64.
+Berkas installer **tidak lagi disimpan di dalam repositori** (dulu 72 MB dan terus bertambah di riwayat git). Unduhan ada di halaman Releases, satu tempat: `.exe` per pengguna tanpa hak admin, `.msi` mesin-luas, build native ARM64, dan APK Android.
+
+Rilis 0.7.0 sudah dibangun tetapi **belum diunggah**: jalankan `npm run release:publish` sekali dari mesin build (butuh `gh auth login`) untuk membuat halaman rilisnya.
 
 Versi terbaru: **0.7.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian tiap rilis ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
