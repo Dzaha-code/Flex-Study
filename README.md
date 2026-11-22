@@ -474,10 +474,12 @@ Proyek ini ditulis oleh manusia, dan daftar kontributornya dijaga tetap begitu:
 - **Dzakwan Hafizh** `<mdzakwanhf@gmail.com>`
 - **Satfaw** `<satriofawwas096@gmail.com>`
 
-Riwayat lama memuat dua commit ber-author `Accio <accio@local>` dan beberapa
+Riwayat sempat memuat dua commit ber-author `Accio <accio@local>` dan beberapa
 trailer `Co-Authored-By: Claude` / `Codebuff` dari masa ketika asisten AI dipakai
-untuk menulis kode. Alat itu tidak dihitung sebagai kontributor; yang
-bertanggung jawab atas setiap baris adalah manusia yang mengirimnya.
+untuk menulis kode. Kedua commit itu kini tercatat atas nama pemelihara dan
+trailer-nya sudah dibuang dari riwayat `sapo-update`. Alat itu tidak dihitung
+sebagai kontributor; yang bertanggung jawab atas setiap baris adalah manusia yang
+mengirimnya.
 
 Supaya tidak terulang, aktifkan hook di klon Anda sekali saja:
 
