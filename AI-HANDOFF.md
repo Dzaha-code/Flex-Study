@@ -735,12 +735,24 @@ Tag lokal `backup/pre-rewrite-2026-11-22` menyimpan riwayat lama. **Jangan
 Hapus setelah yakin: `git tag -d backup/pre-rewrite-2026-11-22` lalu
 `git update-ref -d refs/original/refs/heads/sapo-update` dan `git gc --prune=now`.
 
-Satu trailer masih tersisa dan **tidak** bisa dibersihkan dari sini: `044d739`
-(rilis 0.5.6) sudah ada di `main`, jadi menghapusnya berarti menulis ulang branch
-default. Bukti bahwa ini tidak mendesak: API kontributor GitHub tetap hanya
-menampilkan `Dzaha-code` dan `Satfaw` walaupun commit itu sudah di `main` —
-grafik kontributor menghitung **author**, bukan trailer co-author. Yang benar-benar
-berisiko adalah author `Accio`, dan itu sudah hilang.
+**Koreksi 22 November 2026 — kesimpulan di atas salah.** Saya sempat menulis bahwa
+grafik kontributor hanya menghitung author dan trailer co-author tidak dihitung.
+Itu keliru: sidebar repo menampilkan **Contributors 4** — `Dzaha-code`, `Satfaw`,
+`claude`, dan `devin-ai-integration[bot]`. Yang tampil bukan author, melainkan
+identitas di trailer:
+
+| Trailer | Commit |
+|---|---|
+| `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` + `Claude-Session:` | `12778c6`, `3674bd3`, `e8a698f`, `28cc591` |
+| `Generated with [Devin]` + `Co-Authored-By: Devin <…devin-ai-integration[bot]…>` | `963f539`, `e243eee`, `ee1c68b` |
+| `🤖 Generated with Codebuff` + `Co-Authored-By: Codebuff` | `044d739` |
+
+Rewrite kedua karena itu mencakup **seluruh ref** (`--branches --tags`), bukan
+hanya `main..sapo-update`, supaya `044d739` yang sudah di `main` ikut bersih.
+Hasilnya `main` = `sapo-update` = `1a2ac56`, pohon berkas tetap identik, dan API
+kontributor kembali hanya berisi dua akun manusia. Sidebar GitHub memakai cache,
+jadi angka di halaman repo bisa tertinggal beberapa menit — API adalah acuan yang
+bisa dipercaya.
 
 Kolaborator lain perlu menyelaraskan klonnya sekali:
 `git fetch --all && git reset --hard origin/sapo-update`.

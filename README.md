@@ -478,12 +478,14 @@ Proyek ini ditulis oleh manusia, dan daftar kontributornya dijaga tetap begitu:
 - **Dzakwan Hafizh** `<mdzakwanhf@gmail.com>`
 - **Satfaw** `<satriofawwas096@gmail.com>`
 
-Riwayat sempat memuat dua commit ber-author `Accio <accio@local>` dan beberapa
-trailer `Co-Authored-By: Claude` / `Codebuff` dari masa ketika asisten AI dipakai
-untuk menulis kode. Kedua commit itu kini tercatat atas nama pemelihara dan
-trailer-nya sudah dibuang dari riwayat `sapo-update`. Alat itu tidak dihitung
-sebagai kontributor; yang bertanggung jawab atas setiap baris adalah manusia yang
-mengirimnya.
+Riwayat sempat memuat dua commit ber-author `Accio <accio@local>` dan delapan
+trailer `Co-Authored-By: Claude` / `Codebuff` / `Devin` dari masa ketika asisten AI
+dipakai untuk menulis kode — cukup untuk membuat `claude` dan
+`devin-ai-integration[bot]` muncul di daftar kontributor GitHub. Pada 22 November
+2026 seluruh riwayat ditulis ulang: author diganti, trailer dibuang, dan `main`
+serta `sapo-update` di-push ulang. Daftar kontributor sekarang hanya berisi dua
+akun manusia di atas. Alat itu tidak pernah dihitung sebagai penulis; yang
+bertanggung jawab atas setiap baris adalah manusia yang mengirimnya.
 
 Supaya tidak terulang, aktifkan hook di klon Anda sekali saja:
 
