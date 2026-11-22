@@ -39,6 +39,7 @@ export const id = {
 
   "status.planned": "Belum",
   "status.running": "Berjalan",
+  "status.paused": "Jeda",
   "status.done": "Selesai",
   "status.deferred": "Ditunda",
   "status.skipped": "Dilewati",
@@ -51,6 +52,9 @@ export const id = {
   "today.upNext": "Berikutnya",
   "today.remaining": "sisa {{time}}",
   "today.overtime": "melewati durasi",
+  "today.pause": "Jeda",
+  "today.resume": "Lanjut",
+  "today.pausedRemaining": "dijeda, sisa {{time}}",
   "today.editBlock": "Edit blok",
   "today.editHintTemplate":
     "Blok ini bagian dari jadwal, jadi perubahannya berlaku untuk semua harinya. Blok yang sudah kamu kerjakan tetap seperti adanya.",
@@ -69,6 +73,8 @@ export const id = {
     "Blok baru",
   "today.overlap": "Dua blok bertabrakan di jam yang sama.",
   "today.notWorked": "Tidak dikerjakan hari ini",
+  "today.undoSkip": "Kembalikan",
+  "today.skippedToast": "“{title}” dilewati",
   "today.movedTo": "Dipindahkan ke {{date}}",
   "today.movedFrom": "Dipindahkan dari {{date}}",
   "today.returned": "Kembalikan ke hari ini",
@@ -146,6 +152,22 @@ export const id = {
   "journal.deleteConfirm":
     "Entri ini dihapus permanen dan tidak bisa dikembalikan. Ekspor dulu kalau kamu ingin menyimpannya.",
   "journal.deleted": "Entri jurnal dihapus.",
+  "journal.sections": "Bagian jurnal",
+  "journal.sectionsHint":
+    "Pisahkan tulisan per proyek atau bagian hidupmu. Menghapus bagian tidak menghapus tulisan di dalamnya.",
+  "journal.sectionNone": "Tanpa bagian",
+  "journal.sectionFilter": "Saring bagian",
+  "journal.sectionName": "Nama bagian",
+  "journal.sectionNamePlaceholder": "Mis. Proyek tugas akhir",
+  "journal.sectionAdd": "Tambah bagian",
+  "journal.sectionAdded": "Bagian ditambahkan",
+  "journal.sectionEmpty": "Belum ada bagian. Bikin satu untuk tiap proyek atau topikmu.",
+  "journal.sectionRename": "Nama baru",
+  "journal.sectionRenameAction": "Ganti nama {{name}}",
+  "journal.sectionDelete": "Hapus bagian",
+  "journal.sectionDeleteAction": "Hapus bagian {{name}}",
+  "journal.sectionDeleteBody": "Tulisan di dalam \"{{name}}\" tetap tersimpan — pindah ke tanpa bagian.",
+  "journal.sectionDeleted": "Bagian dihapus. Tulisannya tetap ada.",
 
   "today.openRecap": "Lihat rekap bulanan",
 
@@ -345,6 +367,10 @@ export const id = {
   "settings.customTemplateNamePlaceholder": "Mis. Rutinitas hari kerja",
   "settings.customTemplateDescription": "Catatan (opsional)",
   "settings.customTemplateBlocks": "{{count}} blok",
+  "settings.customTemplatePreview": "Isi yang akan disimpan ({{count}} blok)",
+  "settings.customTemplateSavedBody":
+    "Ada di daftar \"Template buatanmu\" di bawah — buka untuk memastikan isinya.",
+  "settings.customTemplateOpenPlan": "Buka panel Blok",
   "settings.customTemplateSaved": "Template tersimpan",
   "settings.customTemplateDeleted": "Template dihapus",
   "settings.customTemplateApplied": "Template diterapkan",
@@ -355,6 +381,8 @@ export const id = {
     "Template dihapus. Blok yang sudah ada di kalender tidak ikut terhapus.",
   "stabilo.customTemplateTip":
     "Simpan susunan ini sebagai template? Nanti kamu bisa memakainya lagi tanpa menyusun ulang.",
+  "stabilo.journalSectionsTip":
+    "Punya proyek? Bikin bagian jurnalnya sendiri, ya. Tulisan tiap proyek jadi nggak ketuker.",
   "settings.applyTemplate": "Terapkan",
   "settings.applyTemplateWarning":
     "Blok mendatang yang belum disentuh akan diganti. Riwayat dan jurnal tetap aman.",
@@ -501,6 +529,9 @@ export const id = {
   "tour.journalEntry.body": "Jurnal ini bukan buku harian bebas. Ada kolom judul yang boleh dikosongkan, satu pertanyaan pemicu yang berganti setiap hari, tiga slot pelajaran yang kamu isi sendiri, dan Markdown dasar kalau perlu daftar atau penekanan. Tulisan tersimpan otomatis sekitar satu detik setelah kamu berhenti mengetik, jadi tidak ada tombol simpan yang harus dicari.",
   "tour.journalHistory.title": "Riwayat, pencarian, dan favorit",
   "tour.journalHistory.body": "Riwayat bukan lagi satu daftar datar: entri tersusun per tahun, dan di dalam tiap tahun per bulan, keduanya bisa dibuka-tutup, jadi tahun dan bulan yang jauh tidak memakan layar. Tiap tahun menyebutkan jumlah entri dan jumlah favoritnya, jadi tahun yang tertutup pun tetap bercerita. Kolom pencarian menyisir judul, isi, dan tanggal sekaligus; bintang di tiap baris menandai hari yang layak dikenang, dengan penyaring Favorit untuk mengumpulkannya. Menyentuh satu baris membuka detailnya — di sanalah tombol Ubah dan Hapus berada, bukan berjejer di setiap baris. Tombol kanan atas mengekspor seluruh jurnal jadi satu berkas Markdown.",
+  "tour.journalSections.title": "Bagian jurnal",
+  "tour.journalSections.body":
+    "Jurnal berisi satu arus tulisan secara bawaan. Kalau kamu punya beberapa proyek, panel Bagian jurnal di bawah riwayat memecahnya: tambah bagian baru, ganti nama, atau hapus — tulisan di dalamnya tidak ikut terhapus, hanya pindah ke tanpa bagian.",
   "tour.settingsAppearance.title": "Tampilan dan bahasa",
   "tour.settingsAppearance.body": "Di sini kamu mengatur tema (mengikuti sistem, terang, atau gelap), lebar konten, bahasa antarmuka, hari pertama dalam sepekan, serta jam mulai dan jam berakhirnya hari. Di panel yang sama ada animasi pembuka: sekali saja, setiap aplikasi dibuka, atau dimatikan — plus tombol untuk memutarnya sekarang. Mengubah hari pertama akan menggeser perhitungan target mingguan, jadi sebaiknya dilakukan sekali di awal saja.",
   "tour.settingsData.title": "Mencadangkan datamu",
@@ -552,6 +583,7 @@ export const id = {
   "guide.glossary.hint": "Status tidak pernah hanya dibedakan warna. Selalu ada lambang dan kata.",
   "guide.glossary.planned": "Sudah dijadwalkan, belum dimulai.",
   "guide.glossary.running": "Pengatur waktunya sedang berjalan. Hanya satu blok yang bisa berjalan sekaligus.",
+  "guide.glossary.paused": "Dijeda. Detik yang sudah terukur tetap tersimpan, tinggal lanjutkan.",
   "guide.glossary.done": "Selesai. Menitnya dihitung ke target pekan.",
   "guide.glossary.deferred": "Dipindahkan ke hari lain, dan tetap terlihat supaya tidak hilang diam-diam.",
   "guide.glossary.skipped": "Dilewati dengan sadar. Tidak dihitung ke target.",

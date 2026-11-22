@@ -23,7 +23,12 @@ export interface LayoutOptions {
 
 /** Blocks that still hold a place in the day's timeline. */
 export function occupiesTimeline(instance: BlockInstance): boolean {
-  return instance.status === "planned" || instance.status === "running" || instance.status === "done";
+  return (
+    instance.status === "planned" ||
+    instance.status === "running" ||
+    instance.status === "paused" ||
+    instance.status === "done"
+  );
 }
 
 function collides(a: Interval, b: Interval): boolean {
@@ -122,6 +127,11 @@ export function layoutDay(instances: BlockInstance[], options: LayoutOptions): L
 export function focusBlock(blocks: LaidOutBlock[], nowMinute: number): LaidOutBlock | null {
   const running = blocks.find((block) => block.instance.status === "running");
   if (running) return running;
+
+  // A paused block keeps the focus card: stepping away must not hand the
+  // screen's primary slot to another block — the Resume button lives there.
+  const paused = blocks.find((block) => block.instance.status === "paused");
+  if (paused) return paused;
 
   const planned = blocks.filter((block) => block.instance.status === "planned");
   const inside = planned

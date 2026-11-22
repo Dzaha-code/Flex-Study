@@ -53,6 +53,7 @@ const TOUR_TARGETS = new Set([
   "journal-header",
   "journal-entry",
   "journal-history",
+  "journal-sections",
   "settings-appearance",
   "settings-data",
   "settings-templates",

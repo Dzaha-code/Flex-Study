@@ -47,6 +47,9 @@ export const TOUR_STEPS: TourStep[] = [
   { route: "/recap", target: "recap-summary", screenKey: "recap.title", titleKey: "tour.recap.title", bodyKey: "tour.recap.body" },
   { route: "/journal", target: "journal-entry", screenKey: "nav.journal", titleKey: "tour.journalEntry.title", bodyKey: "tour.journalEntry.body" },
   { route: "/journal", target: "journal-history", screenKey: "nav.journal", titleKey: "tour.journalHistory.title", bodyKey: "tour.journalHistory.body" },
+  // Sections: the journal is one stream by default, and this names the door
+  // to splitting it per project before the tour moves on to Settings.
+  { route: "/journal", target: "journal-sections", screenKey: "nav.journal", titleKey: "tour.journalSections.title", bodyKey: "tour.journalSections.body" },
   { route: "/settings", target: "settings-appearance", screenKey: "nav.settings", titleKey: "tour.settingsAppearance.title", bodyKey: "tour.settingsAppearance.body" },
   // 3.6d: name where templates live, in both of the places they actually are.
   { route: "/settings", target: "settings-templates", screenKey: "nav.settings", titleKey: "tour.templates.title", bodyKey: "tour.templates.body" },

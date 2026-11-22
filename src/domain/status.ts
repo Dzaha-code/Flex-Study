@@ -4,6 +4,7 @@ import type { BlockInstance, BlockStatus } from "./types";
 export const BLOCK_STATUSES: readonly BlockStatus[] = [
   "planned",
   "running",
+  "paused",
   "done",
   "deferred",
   "skipped",
@@ -11,7 +12,7 @@ export const BLOCK_STATUSES: readonly BlockStatus[] = [
 
 /** Started or not — the block still wants attention today. */
 export function isOpen(status: BlockStatus): boolean {
-  return status === "planned" || status === "running";
+  return status === "planned" || status === "running" || status === "paused";
 }
 
 /** Permanently settled: counted or consciously dropped. */
@@ -32,12 +33,32 @@ export function canReset(status: BlockStatus): boolean {
   return status !== "planned";
 }
 
+/**
+ * Pausing belongs to flexible blocks only (updateBrief.md: "jadwal yang tidak
+ * di-fixed bisa di-pause"). A fixed-time block is bound to its slot on the
+ * clock: freezing its countdown would still leave the slot claimed, so the
+ * honest move there is to move or finish the block, not to pause it.
+ */
+export function canPause(instance: BlockInstance): boolean {
+  return instance.status === "running" && instance.plannedStart === null;
+}
+
+export function canResume(instance: BlockInstance): boolean {
+  return instance.status === "paused";
+}
+
 export function elapsedSeconds(instance: BlockInstance, nowEpoch: number): number {
   if (instance.status !== "running" || instance.startedAt === null) return 0;
   return Math.max(0, Math.floor((nowEpoch - instance.startedAt) / 1000));
 }
 
-/** Measured time so far: banked seconds plus the timer currently running. */
+/**
+ * Measured time so far: banked seconds plus the timer currently running.
+ *
+ * A paused block has already banked its seconds (the pause wrote them into
+ * `actualSeconds`), and `elapsedSeconds` reads zero for it — so the countdown
+ * freezes exactly where it stopped without any special case here.
+ */
 export function totalSeconds(instance: BlockInstance, nowEpoch: number): number {
   return Math.max(0, instance.actualSeconds) + elapsedSeconds(instance, nowEpoch);
 }

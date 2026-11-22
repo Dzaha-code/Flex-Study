@@ -14,6 +14,7 @@ function makeWorkspace(): Workspace {
     learnings: ["mulai lebih pagi", "", ""],
     wordCount: 3,
     favorite: true,
+    sectionId: "jsec_1",
     createdAt: STAMP,
     updatedAt: STAMP,
     schemaVersion: SCHEMA_VERSION,
@@ -69,6 +70,16 @@ function makeWorkspace(): Workspace {
     ],
     instances: [instance],
     reflections: [reflection],
+    journalSections: [
+      {
+        id: "jsec_1",
+        name: "Proyek tugas akhir",
+        order: 0,
+        createdAt: STAMP,
+        updatedAt: STAMP,
+        schemaVersion: SCHEMA_VERSION,
+      },
+    ],
     shiftEvents: [shiftEvent],
     settings: { ...baseSettings },
   };
@@ -98,6 +109,10 @@ describe("workspace backup", () => {
     expect(result.workspace.reflections[0].title).toBe("Bab tiga");
     expect(result.workspace.reflections[0].favorite).toBe(true);
     expect(result.workspace.shiftEvents[0].reason).toBe("hari berantakan");
+    // Journal sections are data like any other: the table and the entry's
+    // pointer both survive the trip out and back in.
+    expect(result.workspace.journalSections?.[0]?.name).toBe("Proyek tugas akhir");
+    expect(result.workspace.reflections[0].sectionId).toBe("jsec_1");
   });
 
   it("accepts an empty workspace", () => {
@@ -164,6 +179,29 @@ describe("workspace backup", () => {
     expect(result.workspace.settings.onboardingCompleted).toBe(true);
     expect(result.workspace.reflections[0].title).toBe("");
     expect(result.workspace.reflections[0].favorite).toBe(false);
+  });
+
+  it("imports a backup made before journal sections existed", () => {
+    const workspace = makeWorkspace();
+    // Exactly what an export from the previous release carries: no sections
+    // table, and no `sectionId` on its entries.
+    const legacyReflection = { ...workspace.reflections[0] } as Reflection & {
+      sectionId?: string | null;
+    };
+    delete legacyReflection.sectionId;
+    const rest = { ...workspace } as Partial<Workspace>;
+    delete rest.journalSections;
+
+    const result = parseWorkspaceImport(
+      wrap({ ...rest, reflections: [legacyReflection] } as unknown as Workspace),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Absent means "keep what this device has", and an entry without the
+    // field reads as the default stream rather than failing validation.
+    expect(result.workspace.journalSections).toBeUndefined();
+    expect(result.workspace.reflections[0].sectionId).toBeNull();
   });
 
   it("imports a block note written before noteUpdatedAt existed", () => {

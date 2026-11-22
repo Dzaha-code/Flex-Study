@@ -25,6 +25,7 @@ import type {
   CategorySymbol,
   CustomTemplate,
   ISODate,
+  JournalSection,
   Reflection,
   Settings,
   ShiftEvent,
@@ -43,7 +44,9 @@ import {
   persistCategories,
   persistCustomTemplates,
   persistInstances,
+  persistJournalSections,
   persistReflection,
+  persistReflections,
   persistSettings,
   persistStabilo,
   persistShiftEvent,
@@ -51,6 +54,7 @@ import {
   persistTemplates,
   removeCategory as removeCategoryRow,
   removeInstances,
+  removeJournalSection as removeJournalSectionRow,
   removeReflection as removeReflectionRow,
   removeTemplate as removeTemplateRow,
   replaceAll,
@@ -108,6 +112,8 @@ export interface ReflectionDraftInput {
   body: string;
   learnings: string[];
   promptId: string | null;
+  /** Which journal section the entry belongs to; null is the default stream. */
+  sectionId?: string | null;
   /** Omitted by the editor, which must not touch the star. */
   favorite?: boolean;
 }
@@ -122,6 +128,8 @@ export interface AppState {
   customTemplates: CustomTemplate[];
   instances: BlockInstance[];
   reflections: Reflection[];
+  /** Named homes for journal entries — one per project or part of life. */
+  journalSections: JournalSection[];
   shiftEvents: ShiftEvent[];
   lastShiftEventId: string | null;
   /** The log of template applications, newest first. The undo record of §3.5. */
@@ -149,6 +157,9 @@ export interface AppState {
    * removed, because a block with no category has nowhere to be filed.
    */
   deleteCategory: (id: string, options?: { moveTo?: string }) => Promise<string | null>;
+  /** Journal sections: rename or create in one action, delete with entries kept. */
+  saveJournalSection: (input: { id?: string; name: string }) => Promise<string | null>;
+  deleteJournalSection: (id: string) => Promise<void>;
   saveBlockTemplate: (draft: BlockTemplateDraft) => Promise<void>;
   deleteBlockTemplate: (id: string) => Promise<void>;
   /** Edits a block that has no template behind it. */
@@ -172,6 +183,13 @@ export interface AppState {
   addInstance: (draft: InstanceDraft) => Promise<void>;
   removeInstance: (id: string) => Promise<void>;
   startBlock: (id: string) => Promise<void>;
+  /**
+   * Freeze a running flexible block: bank the seconds, stop the clock. The
+   * block keeps its place on the timeline and can be resumed from the focus
+   * card. Fixed-time blocks are not pausable — see `canPause`.
+   */
+  pauseBlock: (id: string) => Promise<void>;
+  resumeBlock: (id: string) => Promise<void>;
   completeBlock: (id: string) => Promise<void>;
   /**
    * Gives a running block more time, from the "time is up" alarm. Only this
@@ -181,6 +199,8 @@ export interface AppState {
   extendBlock: (id: string, minutes: number) => Promise<void>;
   resetBlock: (id: string) => Promise<void>;
   skipBlock: (id: string) => Promise<void>;
+  /** Undo for a skip: back to `planned`, keeping whatever time was measured. */
+  restoreSkippedBlock: (id: string) => Promise<void>;
   setNote: (id: string, note: string) => void;
   /**
    * Waits until every pending note write has reached storage. The editor's
@@ -396,6 +416,7 @@ export const useAppStore = create<AppState>()((set, get) => {
     templates: state.templates,
     instances: state.instances,
     reflections: state.reflections,
+    journalSections: state.journalSections,
     shiftEvents: state.shiftEvents,
     switchEvents: state.switchEvents,
     settings: state.settings,
@@ -413,6 +434,7 @@ export const useAppStore = create<AppState>()((set, get) => {
     customTemplates: [],
     instances: [],
     reflections: [],
+    journalSections: [],
     shiftEvents: [],
     lastShiftEventId: null,
     switchEvents: [],
@@ -445,7 +467,12 @@ export const useAppStore = create<AppState>()((set, get) => {
           guardWrite(await persistSettings(workspace.settings));
           guardWrite(await persistStabilo(workspace.stabilo));
         }
-        set({ ...workspace, customTemplates: workspace.customTemplates ?? [], status: "ready" });
+        set({
+          ...workspace,
+          customTemplates: workspace.customTemplates ?? [],
+          journalSections: workspace.journalSections ?? [],
+          status: "ready",
+        });
         mirrorPreferences(workspace.settings);
         const today = todayISO(Date.now());
         await get().ensureRange(today, addDays(today, MATERIALISE_DAYS));
@@ -522,6 +549,56 @@ export const useAppStore = create<AppState>()((set, get) => {
       // minutes of blocks that were finished before the category disappeared.
       if (movedInstances.length > 0) guardWrite(await persistInstances(movedInstances));
       return target;
+    },
+
+    /**
+     * Sections are tiny: one name and an order. Creating and renaming are the
+     * same write, so an inline "edit this row" never needs a second path.
+     */
+    saveJournalSection: async ({ id, name }) => {
+      const state = get();
+      const clean = name.trim();
+      if (clean === "") return null;
+      const stamp = new Date().toISOString();
+      const existing = id
+        ? state.journalSections.find((section) => section.id === id)
+        : undefined;
+
+      const section: JournalSection = {
+        id: existing?.id ?? createId("jsec"),
+        name: clean.slice(0, 80),
+        order: existing?.order ?? state.journalSections.length,
+        createdAt: existing?.createdAt ?? stamp,
+        updatedAt: stamp,
+        schemaVersion: SCHEMA_VERSION,
+      };
+
+      set({ journalSections: upsertById(state.journalSections, [section]) });
+      guardWrite(await persistJournalSections([section]));
+      return section.id;
+    },
+
+    /**
+     * Deleting a section must not delete the writing inside it. Its entries
+     * fall back to the default stream (`sectionId: null`), which is exactly
+     * what the confirmation sheet promises.
+     */
+    deleteJournalSection: async (id) => {
+      const state = get();
+      const orphans = state.reflections.filter((reflection) => reflection.sectionId === id);
+      const stamp = new Date().toISOString();
+      const cleared = orphans.map((reflection) => ({
+        ...reflection,
+        sectionId: null,
+        updatedAt: stamp,
+      }));
+
+      set({
+        journalSections: state.journalSections.filter((section) => section.id !== id),
+        reflections: upsertById(state.reflections, cleared),
+      });
+      guardWrite(await removeJournalSectionRow(id));
+      guardWrite(await persistReflections(cleared));
     },
 
     saveBlockTemplate: async (draft) => {
@@ -813,6 +890,62 @@ export const useAppStore = create<AppState>()((set, get) => {
       guardWrite(await persistInstances(changed));
     },
 
+    /**
+     * Pause: bank what the timer measured, stop the clock, keep the slot.
+     *
+     * Only flexible blocks get here (the button checks `canPause`), because a
+     * fixed-time block whose countdown froze would still claim its slot on the
+     * clock — a lie the timeline cannot tell. The seconds travel into
+     * `actualSeconds` so nothing measured is lost, and `resumeBlock` restarts
+     * from that bank rather than from zero.
+     */
+    pauseBlock: async (id) => {
+      const state = get();
+      const target = state.instances.find((instance) => instance.id === id);
+      if (!target || target.status !== "running" || target.startedAt === null) return;
+
+      const now = Date.now();
+      const spent = Math.max(0, Math.floor((now - target.startedAt) / 1000));
+      const next: BlockInstance = {
+        ...target,
+        status: "paused",
+        startedAt: null,
+        actualSeconds: target.actualSeconds + spent,
+        updatedAt: new Date(now).toISOString(),
+      };
+      set({ instances: replaceInstance(state.instances, next) });
+      guardWrite(await persistInstances([next]));
+    },
+
+    /** Resume a paused block: one timer at a time, same rule as startBlock. */
+    resumeBlock: async (id) => {
+      const state = get();
+      const target = state.instances.find((instance) => instance.id === id);
+      if (!target || target.status !== "paused") return;
+
+      const now = Date.now();
+      const stamp = new Date(now).toISOString();
+      const changed: BlockInstance[] = [
+        { ...target, status: "running", startedAt: now, updatedAt: stamp },
+      ];
+      for (const instance of state.instances) {
+        if (instance.id === id || instance.status !== "running" || instance.startedAt === null) {
+          continue;
+        }
+        changed.push({
+          ...instance,
+          status: "planned",
+          startedAt: null,
+          actualSeconds:
+            instance.actualSeconds + Math.max(0, Math.floor((now - instance.startedAt) / 1000)),
+          updatedAt: stamp,
+        });
+      }
+
+      set({ instances: upsertById(state.instances, changed) });
+      guardWrite(await persistInstances(changed));
+    },
+
     completeBlock: async (id) => {
       const state = get();
       const target = state.instances.find((instance) => instance.id === id);
@@ -882,6 +1015,28 @@ export const useAppStore = create<AppState>()((set, get) => {
         startedAt: null,
         actualSeconds: target.actualSeconds + spent,
         updatedAt: new Date(now).toISOString(),
+      };
+      set({ instances: replaceInstance(state.instances, next) });
+      guardWrite(await persistInstances([next]));
+    },
+
+    /**
+     * A skip is one press away from the screen's single primary action, and a
+     * mis-tap used to strand the block in "Tidak dikerjakan hari ini" forever.
+     * This puts it back in the plan and keeps whatever was measured — undoing
+     * a skip must not undo the work behind it.
+     */
+    restoreSkippedBlock: async (id) => {
+      const state = get();
+      const target = state.instances.find((instance) => instance.id === id);
+      if (!target || target.status !== "skipped") return;
+
+      const next: BlockInstance = {
+        ...target,
+        status: "planned",
+        startedAt: null,
+        movedTo: null,
+        updatedAt: new Date().toISOString(),
       };
       set({ instances: replaceInstance(state.instances, next) });
       guardWrite(await persistInstances([next]));
@@ -1028,6 +1183,9 @@ export const useAppStore = create<AppState>()((set, get) => {
         body: draft.body,
         learnings: draft.learnings,
         promptId: draft.promptId,
+        // Explicit null means "default stream"; undefined means "leave the
+        // entry where it is" (the star toggle and other partial saves).
+        sectionId: draft.sectionId === undefined ? existing?.sectionId ?? null : draft.sectionId,
         favorite: draft.favorite,
         existing,
         now: Date.now(),
@@ -1064,6 +1222,9 @@ export const useAppStore = create<AppState>()((set, get) => {
         // An older backup has no saved templates; importing it must not erase
         // the ones already on this device.
         customTemplates: parsed.workspace.customTemplates ?? get().customTemplates,
+        // Same story for journal sections: an older export has none, and
+        // erasing this device's sections would strand its entries.
+        journalSections: parsed.workspace.journalSections ?? get().journalSections,
         // Nor does it have a switch log. The table is left empty to match the
         // replaced rows — events kept here would undo into instances that no
         // longer exist.
@@ -1090,6 +1251,7 @@ export const useAppStore = create<AppState>()((set, get) => {
         customTemplates: [],
         instances: [],
         reflections: [],
+        journalSections: [],
         shiftEvents: [],
         switchEvents: [],
         lastShiftEventId: null,

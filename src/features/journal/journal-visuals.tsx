@@ -246,6 +246,7 @@ export function EntryCard({
   reflection,
   heading,
   preview,
+  sectionName,
   selected,
   onOpen,
   favoriteButton,
@@ -253,6 +254,8 @@ export function EntryCard({
   reflection: Reflection;
   heading: string;
   preview: string;
+  /** The journal section this entry was written for, when it has one. */
+  sectionName?: string | null;
   selected: boolean;
   onOpen: () => void;
   /** The star stays its own control, outside the card's open button. */
@@ -294,6 +297,7 @@ export function EntryCard({
               {learnings > 0 ? (
                 <span>· {t("journal.card.learnings", { count: learnings })}</span>
               ) : null}
+              {sectionName ? <span>· {sectionName}</span> : null}
             </span>
           </span>
         </span>

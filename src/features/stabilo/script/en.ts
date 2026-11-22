@@ -200,6 +200,13 @@ export const TOUR_EN: DialogueScript = {
       route: "/journal",
       target: "journal-history",
       text: "Older entries sit below. You can search and star them.",
+      next: "t06c",
+    },
+    t06c: {
+      id: "t06c",
+      route: "/journal",
+      target: "journal-sections",
+      text: "Each project can get its own section in the journal. Make, rename, delete.",
       next: "t07",
     },
     t07: {

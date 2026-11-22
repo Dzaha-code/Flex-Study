@@ -13,7 +13,12 @@ export const SCHEMA_VERSION = 1;
 
 export type { ISODate, ClockTime };
 
-export type BlockStatus = "planned" | "running" | "done" | "deferred" | "skipped";
+/**
+ * `paused` is a running timer the user stepped away from: the seconds are
+ * already banked, the block keeps its place on the timeline, and resuming
+ * restarts the clock from where it stopped.
+ */
+export type BlockStatus = "planned" | "running" | "paused" | "done" | "deferred" | "skipped";
 
 export type LinePattern = "solid" | "dashed" | "dotted";
 
@@ -139,12 +144,28 @@ export interface BlockInstance extends Entity {
   movedTo: ISODate | null;
 }
 
+/**
+ * A journal section: a named home for entries about one project or one part of
+ * life (updateBrief.md — "section jurnal"). Entries without a section stay in
+ * the default stream, so the feature is additive rather than mandatory.
+ */
+export interface JournalSection extends Entity {
+  name: string;
+  order: number;
+}
+
 export interface Reflection extends Entity {
   date: ISODate;
   /** Optional headline. When empty, the date is the heading. */
   title: string;
   promptId: string | null;
   body: string;
+  /**
+   * Which journal section this entry belongs to. Optional rather than
+   * required: an export made before sections existed has no value here, and
+   * "no section" is a real state, not a missing field.
+   */
+  sectionId?: string | null;
   /** Exactly three take-aways. Empty strings are allowed. */
   learnings: string[];
   wordCount: number;
@@ -364,6 +385,12 @@ export interface Workspace {
   instances: BlockInstance[];
   reflections: Reflection[];
   shiftEvents: ShiftEvent[];
+  /**
+   * Optional for the same reason as `customTemplates`: a backup exported
+   * before journal sections existed must still import. An old export simply
+   * has no sections; the device keeps the ones it already has.
+   */
+  journalSections?: JournalSection[];
   /**
    * Optional for the same reason as `customTemplates`: a backup exported before
    * template switches were recorded must still import. An old export simply has

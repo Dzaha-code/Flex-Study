@@ -9,6 +9,7 @@ import {
   IconCalendar,
   IconPlus,
   IconShuffle,
+  IconUndo,
 } from "@/components/ui/icons";
 import { EmptyState, Panel, PanelHeader, ProgressBar, StatusBadge } from "@/components/ui/surface";
 import { MATERIALISE_DAYS, useAppStore } from "@/data/store";
@@ -256,6 +257,7 @@ function TodayContent({
   const instances = useAppStore((state) => state.instances);
   const categories = useAppStore((state) => state.categories);
   const planSize = useAppStore((state) => state.templates.length);
+  const restoreSkippedBlock = useAppStore((state) => state.restoreSkippedBlock);
   const dayStart = useAppStore((state) => state.settings.dayStart);
   const remindersEnabled = useAppStore((state) => state.settings.remindersEnabled);
   const { t, formatDateLong, formatDateShort, formatMinutes } = useI18n();
@@ -460,6 +462,44 @@ function TodayContent({
             onEditBlock={setEditTarget}
           />
         )}
+      {leftovers.length > 0 ? (
+        <Panel>
+          <PanelHeader title={t("today.notWorked")} headingLevel={3} />
+          <ul className="flex flex-col divide-y divide-line">
+            {leftovers.map((instance) => (
+              <li
+                key={instance.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="truncate text-body text-ink-muted">{instance.title}</span>
+                  <span className="text-label text-ink-muted">
+                    {instance.movedTo
+                      ? t("today.movedTo", { date: formatDateShort(instance.movedTo) })
+                      : t("status.skipped")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={instance.status} />
+                  {/* Only a skip is reversible here. A moved block already has
+                      a copy on another day, so offering "put back" would
+                      duplicate it rather than undo anything. */}
+                  {instance.status === "skipped" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void restoreSkippedBlock(instance.id)}
+                    >
+                      <IconUndo size={16} />
+                      {t("today.undoSkip")}
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
         <div data-tour="add">
           <Button variant="secondary" onClick={() => setAddOpen(true)}>

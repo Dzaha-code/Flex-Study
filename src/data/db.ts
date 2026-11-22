@@ -3,6 +3,7 @@ import type {
   BlockInstance,
   BlockTemplate,
   Category,
+  JournalSection,
   Reflection,
   ShiftEvent,
   TemplateSwitchEvent,
@@ -32,6 +33,8 @@ export class FlexStudyDatabase extends Dexie {
    * creates missing stores on upgrade without touching the rows already there.
    */
   switchEvents!: Table<TemplateSwitchEvent, string>;
+  /** Journal sections: same index shape as `categories`, added the same way. */
+  journalSections!: Table<JournalSection, string>;
   meta!: Table<MetaRow, string>;
 
   constructor() {
@@ -43,6 +46,7 @@ export class FlexStudyDatabase extends Dexie {
       reflections: "id, date",
       shiftEvents: "id, date",
       switchEvents: "id, date",
+      journalSections: "id, order",
       meta: "key",
     });
   }

@@ -37,6 +37,7 @@ export const en: Messages = {
 
   "status.planned": "Not started",
   "status.running": "Running",
+  "status.paused": "Paused",
   "status.done": "Done",
   "status.deferred": "Moved",
   "status.skipped": "Skipped",
@@ -49,6 +50,9 @@ export const en: Messages = {
   "today.upNext": "Up next",
   "today.remaining": "{{time}} left",
   "today.overtime": "past the planned duration",
+  "today.pause": "Pause",
+  "today.resume": "Resume",
+  "today.pausedRemaining": "paused, {{time}} left",
   "today.editBlock": "Edit block",
   "today.editHintTemplate":
     "This block is part of your plan, so the change applies to every day it appears on. Blocks you have already worked on stay as they are.",
@@ -67,6 +71,8 @@ export const en: Messages = {
     "New block",
   "today.overlap": "Two blocks are stacked on the same time.",
   "today.notWorked": "Not done today",
+  "today.undoSkip": "Put back",
+  "today.skippedToast": "“{title}” skipped",
   "today.movedTo": "Moved to {{date}}",
   "today.movedFrom": "Moved from {{date}}",
   "today.returned": "Bring back to today",
@@ -144,6 +150,22 @@ export const en: Messages = {
   "journal.deleteConfirm":
     "This entry is deleted for good and cannot be brought back. Export first if you want to keep it.",
   "journal.deleted": "Journal entry deleted.",
+  "journal.sections": "Journal sections",
+  "journal.sectionsHint":
+    "Split your writing per project or part of life. Deleting a section never deletes the writing inside it.",
+  "journal.sectionNone": "No section",
+  "journal.sectionFilter": "Filter by section",
+  "journal.sectionName": "Section name",
+  "journal.sectionNamePlaceholder": "e.g. Final project",
+  "journal.sectionAdd": "Add section",
+  "journal.sectionAdded": "Section added",
+  "journal.sectionEmpty": "No sections yet. Make one per project or topic.",
+  "journal.sectionRename": "New name",
+  "journal.sectionRenameAction": "Rename {{name}}",
+  "journal.sectionDelete": "Delete section",
+  "journal.sectionDeleteAction": "Delete section {{name}}",
+  "journal.sectionDeleteBody": "The writing inside \"{{name}}\" stays safe — it moves to no section.",
+  "journal.sectionDeleted": "Section deleted. Its entries are safe.",
 
   "today.openRecap": "See the monthly recap",
 
@@ -340,6 +362,10 @@ export const en: Messages = {
   "settings.customTemplateNamePlaceholder": "e.g. Weekday routine",
   "settings.customTemplateDescription": "Note (optional)",
   "settings.customTemplateBlocks": "{{count}} blocks",
+  "settings.customTemplatePreview": "What will be saved ({{count}} blocks)",
+  "settings.customTemplateSavedBody":
+    "It's in the \"Your templates\" list below — open it to check the contents.",
+  "settings.customTemplateOpenPlan": "Open the Blocks panel",
   "settings.customTemplateSaved": "Template saved",
   "settings.customTemplateDeleted": "Template deleted",
   "settings.customTemplateApplied": "Template applied",
@@ -349,6 +375,8 @@ export const en: Messages = {
     "The template is removed. Blocks already on your calendar stay.",
   "stabilo.customTemplateTip":
     "Save this layout as a template? You can use it again without rebuilding it.",
+  "stabilo.journalSectionsTip":
+    "Got a project? Give it its own journal section so its writing never mixes with the rest.",
   "settings.applyTemplate": "Apply",
   "settings.applyTemplateWarning":
     "Untouched upcoming blocks will be replaced. History and journal stay safe.",
@@ -494,6 +522,9 @@ export const en: Messages = {
   "tour.journalEntry.body": "This journal is not a free-form diary. There is an optional title, one prompt that changes daily, three learning slots you fill yourself, and basic Markdown if you want a list or emphasis. Writing saves itself about a second after you stop typing, so there is no save button to hunt for.",
   "tour.journalHistory.title": "History, search and favourites",
   "tour.journalHistory.body": "The history is no longer one flat list: entries are laid out by year, and by month inside each year, both of which open and close so distant years and months do not eat the screen. Each year says how many entries and how many favourites it holds, so a closed year still tells you something. The search box sweeps titles, text and dates at once; the star on each row marks a day worth remembering, with a Favourites filter to gather them. Touching a row opens its detail — that is where Edit and Delete live, rather than on every row — and the button in the top right exports the whole journal as a single Markdown file.",
+  "tour.journalSections.title": "Journal sections",
+  "tour.journalSections.body":
+    "The journal is one stream by default. If you keep several projects, the Journal sections panel below the history splits it: add a section, rename it, or delete it — the writing inside is never deleted, it just moves to no section.",
   "tour.settingsAppearance.title": "Appearance and language",
   "tour.settingsAppearance.body": "This is where you set the theme (follow the system, light or dark), the content width, the interface language, the first day of the week, and the start and end of your day. The same panel holds the opening animation: once only, every launch, or off — plus a button to play it right now. Changing the first day of the week shifts the weekly target calculation, so it is best done once at the beginning.",
   "tour.settingsData.title": "Backing up your data",
@@ -539,6 +570,7 @@ export const en: Messages = {
   "guide.glossary.hint": "Status is never colour alone. There is always a symbol and a word.",
   "guide.glossary.planned": "Scheduled, not started yet.",
   "guide.glossary.running": "The timer is running. Only one block can run at a time.",
+  "guide.glossary.paused": "Paused. The seconds already measured are kept — resume whenever.",
   "guide.glossary.done": "Finished. Its minutes count towards the weekly target.",
   "guide.glossary.deferred": "Moved to another day, and still visible so it never disappears quietly.",
   "guide.glossary.skipped": "Deliberately passed over. Not counted towards the target.",

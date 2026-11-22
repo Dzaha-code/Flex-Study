@@ -4,6 +4,7 @@ import type {
   BlockInstance,
   BlockTemplate,
   Category,
+  JournalSection,
   Reflection,
   Settings,
   ShiftEvent,
@@ -55,6 +56,7 @@ const categoryIconSchema = z.preprocess(coerceCategorySymbol, categorySymbolSche
 export const blockStatusSchema = z.enum([
   "planned",
   "running",
+  "paused",
   "done",
   "deferred",
   "skipped",
@@ -117,6 +119,15 @@ export const ReflectionSchema = z.object({
   learnings: z.array(z.string().max(500)).length(3),
   wordCount: z.number().int().min(0),
   favorite: z.boolean().default(false),
+  // Optional like `title`: an export made before journal sections existed has
+  // no value here, and "no section" is a real state rather than a hole.
+  sectionId: identifierSchema.nullable().default(null),
+});
+
+export const JournalSectionSchema = z.object({
+  ...entityShape,
+  name: z.string().min(1).max(80),
+  order: z.number().int().min(0).max(9_999),
 });
 
 export const ShiftMoveSchema = z.object({
@@ -242,6 +253,9 @@ export const WorkspaceSchema = z.object({
   instances: z.array(BlockInstanceSchema),
   reflections: z.array(ReflectionSchema),
   shiftEvents: z.array(ShiftEventSchema),
+  // Optional like `customTemplates`: an older export without journal sections
+  // imports without them, and the device keeps the sections it already has.
+  journalSections: z.array(JournalSectionSchema).optional(),
   // Optional like `customTemplates`: a backup made before template switches
   // were recorded imports without them instead of failing validation.
   switchEvents: z.array(TemplateSwitchEventSchema).optional(),
@@ -271,6 +285,9 @@ export const blockTemplateTypeCheck = (value: z.infer<typeof BlockTemplateSchema
 export const blockInstanceTypeCheck = (value: z.infer<typeof BlockInstanceSchema>): BlockInstance =>
   value;
 export const reflectionTypeCheck = (value: z.infer<typeof ReflectionSchema>): Reflection => value;
+export const journalSectionTypeCheck = (
+  value: z.infer<typeof JournalSectionSchema>,
+): JournalSection => value;
 export const shiftMoveTypeCheck = (value: z.infer<typeof ShiftMoveSchema>): ShiftMove => value;
 export const shiftEventTypeCheck = (value: z.infer<typeof ShiftEventSchema>): ShiftEvent => value;
 export const templateSwitchEventTypeCheck = (

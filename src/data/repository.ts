@@ -6,6 +6,7 @@ import type {
   BlockTemplate,
   Category,
   CustomTemplate,
+  JournalSection,
   Reflection,
   Settings,
   ShiftEvent,
@@ -44,6 +45,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     reflections,
     shiftEvents,
     switchEvents,
+    journalSections,
     settings,
     stabilo,
     customTemplates,
@@ -54,6 +56,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     db.reflections.toArray(),
     db.shiftEvents.toArray(),
     db.switchEvents.toArray(),
+    db.journalSections.toArray(),
     readSettings(),
     readStabilo(),
     readCustomTemplates(),
@@ -66,6 +69,7 @@ export async function loadWorkspace(): Promise<Workspace> {
     reflections,
     shiftEvents,
     switchEvents,
+    journalSections,
     settings,
     stabilo,
     customTemplates,
@@ -155,6 +159,20 @@ export async function persistReflection(reflection: Reflection): Promise<WriteOu
   return guard(() => getDatabase().reflections.put(reflection));
 }
 
+export async function persistReflections(reflections: Reflection[]): Promise<WriteOutcome> {
+  if (reflections.length === 0) return { ok: true };
+  return guard(() => getDatabase().reflections.bulkPut(reflections));
+}
+
+export async function persistJournalSections(sections: JournalSection[]): Promise<WriteOutcome> {
+  if (sections.length === 0) return { ok: true };
+  return guard(() => getDatabase().journalSections.bulkPut(sections));
+}
+
+export async function removeJournalSection(id: string): Promise<WriteOutcome> {
+  return guard(() => getDatabase().journalSections.delete(id));
+}
+
 export async function removeReflection(id: string): Promise<WriteOutcome> {
   return guard(() => getDatabase().reflections.delete(id));
 }
@@ -220,6 +238,14 @@ export async function replaceAll(workspace: Workspace): Promise<WriteOutcome> {
         if (workspace.switchEvents) {
           await db.switchEvents.bulkPut(workspace.switchEvents);
         }
+        // Journal sections are not cleared with the rest: an older export has
+        // none, and wiping the table would strand every entry the import just
+        // restored at a section id nothing holds. Only an export that carries
+        // its sections replaces them.
+        if (workspace.journalSections) {
+          await db.journalSections.clear();
+          await db.journalSections.bulkPut(workspace.journalSections);
+        }
         await db.meta.put({ key: "settings", value: workspace.settings });
         // An older export has no `stabilo` key; writing defaults there would
         // silently erase the nickname this device already had.
@@ -256,6 +282,7 @@ export async function clearWorkspace(): Promise<WriteOutcome> {
           db.reflections.clear(),
           db.shiftEvents.clear(),
           db.switchEvents.clear(),
+          db.journalSections.clear(),
           db.meta.clear(),
         ]);
       },

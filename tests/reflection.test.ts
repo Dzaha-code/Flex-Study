@@ -10,6 +10,7 @@ import {
   promptIdForDate,
   reflectionMatches,
   reflectionPreview,
+  reflectionsInSection,
 } from "@/domain/reflection";
 import { makeInstance } from "./helpers";
 
@@ -137,6 +138,75 @@ describe("favourites", () => {
     });
 
     expect(reflection.favorite).toBe(false);
+  });
+});
+
+describe("sections", () => {
+  const newId = createSequentialIdFactory();
+  const entry = (sectionId: string | null | undefined) =>
+    makeReflection({
+      date: DAY,
+      title: "",
+      body: "isi",
+      learnings: [],
+      promptId: null,
+      sectionId,
+      now: NOW,
+      newId,
+    });
+
+  it("starts in the stream that has no section", () => {
+    expect(entry(undefined).sectionId).toBeNull();
+  });
+
+  it("survives an edit that never mentions the section", () => {
+    const placed = entry("jsec_1");
+    const edited = makeReflection({
+      date: DAY,
+      title: "",
+      body: "isi yang sudah diedit",
+      learnings: [],
+      promptId: null,
+      existing: placed,
+      now: NOW + 60_000,
+      newId,
+    });
+
+    expect(edited.sectionId).toBe("jsec_1");
+  });
+
+  it("an explicit null moves the entry back to the default stream", () => {
+    // The editor sends `sectionId: null` for "Tanpa bagian". If `??` were used
+    // here, the old section would silently come back — the choice to remove an
+    // entry from its project could never stick.
+    const placed = entry("jsec_1");
+    const moved = makeReflection({
+      date: DAY,
+      title: "",
+      body: "isi",
+      learnings: [],
+      promptId: null,
+      sectionId: null,
+      existing: placed,
+      now: NOW + 60_000,
+      newId,
+    });
+
+    expect(moved.sectionId).toBeNull();
+  });
+
+  it("splits entries per section, with the unsectioned stream as a real bucket", () => {
+    const rows = [entry("jsec_1"), entry("jsec_2"), entry(null)];
+
+    expect(reflectionsInSection(rows, "jsec_1")).toHaveLength(1);
+    expect(reflectionsInSection(rows, "jsec_2")).toHaveLength(1);
+    expect(reflectionsInSection(rows, null)).toHaveLength(1);
+    expect(reflectionsInSection(rows, "jsec_missing")).toHaveLength(0);
+  });
+
+  it("finds an entry through the name of its section", () => {
+    expect(reflectionMatches(entry("jsec_1"), "tugas", "Proyek tugas akhir")).toBe(true);
+    expect(reflectionMatches(entry("jsec_1"), "tugas")).toBe(false);
   });
 });
 

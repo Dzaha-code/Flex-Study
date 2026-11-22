@@ -6,7 +6,7 @@ import type { BlockStatus, CategorySymbol } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { commitMerge, playMerge, type MergeRect } from "@/lib/ink";
 import { cn } from "@/lib/utils";
-import { CategoryGlyph, IconArrowRight, IconCheck, IconClock, IconPlay, IconSkip } from "./icons";
+import { CategoryGlyph, IconArrowRight, IconCheck, IconClock, IconPause, IconPlay, IconSkip } from "./icons";
 
 export function Panel({
   children,
@@ -122,6 +122,7 @@ export function StatusBadge({ status, className }: { status: BlockStatus; classN
   const config: Record<BlockStatus, { tone: "mute" | "ok" | "warn"; icon: ReactNode }> = {
     planned: { tone: "mute", icon: <IconClock size={14} /> },
     running: { tone: "mute", icon: <IconPlay size={14} /> },
+    paused: { tone: "warn", icon: <IconPause size={14} /> },
     done: { tone: "ok", icon: <IconCheck size={14} /> },
     deferred: { tone: "warn", icon: <IconArrowRight size={14} /> },
     skipped: { tone: "mute", icon: <IconSkip size={14} /> },

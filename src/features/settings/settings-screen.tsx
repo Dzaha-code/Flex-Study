@@ -509,7 +509,9 @@ export function SettingsScreen() {
         <CategoriesEditor />
       </Panel>
 
-      <Panel>
+      {/* Marked: the custom-template form links here, so "where do the blocks
+          being snapshotted actually live?" has a scroll target. */}
+      <Panel data-tour="settings-blocks">
         <PanelHeader title={t("settings.blocks")} description={t("settings.blocksHint")} />
         <BlockListEditor />
       </Panel>

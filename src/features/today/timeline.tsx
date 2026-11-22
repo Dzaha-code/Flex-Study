@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/dialog";
+import { NumberInput, TextInput, TimeInput } from "@/components/ui/field";
 import {
   IconCaretDown,
   IconCheck,
   IconNote,
+  IconPause,
   IconPencil,
   IconPlay,
   IconSkip,
@@ -16,8 +18,10 @@ import {
 import { CategoryTag, StatusBadge } from "@/components/ui/surface";
 import { toastManager } from "@/components/ui/toast";
 import { useAppStore } from "@/data/store";
+import { CategoryPicker } from "@/features/plan/category-picker";
 import type { LaidOutBlock } from "@/domain/schedule";
 import { notePreview } from "@/domain/notes";
+import { canPause, canResume } from "@/domain/status";
 import { minuteOfDayFromEpoch } from "@/domain/time";
 import type { BlockInstance, Category } from "@/domain/types";
 import { useI18n } from "@/i18n";
@@ -39,6 +43,9 @@ function Markers({ status, overlap }: { status: BlockInstance["status"]; overlap
   if (status === "running") {
     return <IconPlay width={12} height={12} className="text-accent" />;
   }
+  if (status === "paused") {
+    return <IconPause width={12} height={12} className="text-warn" />;
+  }
   return null;
 }
 
@@ -58,7 +65,11 @@ function TimelineDot({ status }: { status: BlockInstance["status"] }) {
         "absolute -left-[5px] top-[1.15rem] size-[9px] rounded-full border",
         status === "done" && "border-ok bg-ok",
         status === "running" && "border-accent bg-accent",
-        status === "planned" && "border-line-strong bg-surface",
+        // Paused keeps the accent border but hollow: still today's work, just
+        // not moving — the badge and the Resume button say the rest.
+        status === "paused" && "border-accent bg-surface",
+        (status === "planned" || status === "deferred" || status === "skipped") &&
+          "border-line-strong bg-surface",
         justDone && "ink-fill-dot",
       )}
     />
@@ -117,9 +128,12 @@ function BlockActions({
   dayKind: DayKind;
 }) {
   const startBlock = useAppStore((state) => state.startBlock);
+  const pauseBlock = useAppStore((state) => state.pauseBlock);
+  const resumeBlock = useAppStore((state) => state.resumeBlock);
   const completeBlock = useAppStore((state) => state.completeBlock);
   const resetBlock = useAppStore((state) => state.resetBlock);
   const skipBlock = useAppStore((state) => state.skipBlock);
+  const restoreSkippedBlock = useAppStore((state) => state.restoreSkippedBlock);
   const { t } = useI18n();
   // Counts the taps instead of a boolean, so a fresh ripple element is mounted
   // per press and the animation replays without any cleanup state.
@@ -166,14 +180,60 @@ function BlockActions({
           {t("common.finish")}
         </Button>
       ) : null}
+      {/* Flexible blocks only (see `canPause`): a frozen countdown on a
+          fixed-time block would still claim its slot on the clock. Pausing
+          banks the measured seconds, so nothing is lost by stepping away.
+          Settling work belongs to today and the past; a future day is for
+          reading and editing the plan. */}
+      {dayKind !== "future" && canPause(instance) ? (
+        <Button size="sm" variant="ghost" onClick={() => void pauseBlock(instance.id)}>
+          <IconPause />
+          {t("today.pause")}
+        </Button>
+      ) : null}
+      {canResume(instance) ? (
+        <Button
+          size="md"
+          variant={dayKind === "today" ? "primary" : "ghost"}
+          onClick={() => void resumeBlock(instance.id)}
+        >
+          <IconPlay />
+          {t("today.resume")}
+        </Button>
+      ) : null}
       {instance.status === "done" || instance.status === "skipped" ? (
         <Button size="sm" variant="ghost" onClick={() => void resetBlock(instance.id)}>
           <IconUndo />
           {t("common.reset")}
         </Button>
       ) : null}
-      {dayKind !== "future" && (instance.status === "planned" || instance.status === "running") ? (
-        <Button size="sm" variant="ghost" onClick={() => void skipBlock(instance.id)}>
+      {/* The skip button is offered while work remains — running, paused or
+          planned — because a paused block is still a block the user may decide
+          not to finish after all. Never on a future day: there is nothing to
+          give up on yet. */}
+      {dayKind !== "future" &&
+      (instance.status === "planned" ||
+        instance.status === "running" ||
+        instance.status === "paused") ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            void skipBlock(instance.id).then(() => {
+              // The row leaves the timeline the moment it is skipped, so the
+              // toast is the only place left to take it back — and for six
+              // seconds it is enough.
+              toastManager.add({
+                title: t("today.skippedToast", { title: instance.title }),
+                timeout: 6_000,
+                actionProps: {
+                  children: t("common.undo"),
+                  onClick: () => void restoreSkippedBlock(instance.id),
+                },
+              });
+            });
+          }}
+        >
           <IconSkip />
           {t("common.skip")}
         </Button>
@@ -573,6 +633,101 @@ export function NoteSheet({
           {renderMarkdown(value)}
         </div>
       ) : null}
+    </Sheet>
+  );
+}
+
+export function AddBlockSheet({ date, onClose }: { date: string; onClose: () => void }) {
+  const categories = useAppStore((state) => state.categories);
+  const addInstance = useAppStore((state) => state.addInstance);
+  const { t } = useI18n();
+
+  const [title, setTitle] = useState("");
+  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [duration, setDuration] = useState("45");
+  const [fixed, setFixed] = useState(false);
+  const [start, setStart] = useState("09:00");
+
+  const parsedDuration = Number.parseInt(duration, 10);
+  const disabled =
+    title.trim() === "" || categoryId === "" || !Number.isFinite(parsedDuration) || parsedDuration < 1;
+
+  return (
+    <Sheet
+      open
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      title={t("today.addBlockTitle")}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            disabled={disabled}
+            onClick={() => {
+              void addInstance({
+                date,
+                title,
+                categoryId,
+                durationMin: parsedDuration,
+                plannedStart: fixed ? start : null,
+              });
+              onClose();
+            }}
+          >
+            {t("common.save")}
+          </Button>
+        </>
+      }
+    >
+      <TextInput
+        label={t("settings.blockTitle")}
+        value={title}
+        maxLength={120}
+        error={title.trim() === "" ? t("a11y.required") : undefined}
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      {/* The same picker the plan form uses, so a new category is one press
+          away here too — the block form used to be the only place that offered
+          it, and adding a block mid-day is exactly when a missing category
+          shows up. `titleHint` offers the block's own title as the name. */}
+      <CategoryPicker
+        label={t("settings.blockCategory")}
+        value={categoryId}
+        titleHint={title}
+        onChange={setCategoryId}
+      />
+      <NumberInput
+        label={t("settings.blockDuration")}
+        value={duration}
+        min={1}
+        max={1440}
+        step={5}
+        onChange={(event) => setDuration(event.target.value)}
+      />
+
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-meta">
+          <input
+            type="checkbox"
+            checked={fixed}
+            onChange={(event) => setFixed(event.target.checked)}
+            className="size-4 accent-[var(--accent)]"
+          />
+          {t("settings.blockStartFixed")}
+        </label>
+        {fixed ? (
+          <TimeInput
+            label={t("settings.blockStart")}
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+          />
+        ) : (
+          <p className="text-label text-ink-muted">{t("settings.blockStartFlexible")}</p>
+        )}
+      </div>
     </Sheet>
   );
 }
