@@ -31,16 +31,17 @@ Semua data lokal. Tidak ada akun, tidak ada server, tidak ada telemetri.
 | | |
 |---|---|
 | Working dir | `C:\laragon\www\flexstudy-dashboard` |
-| Branch | `sapo-update` |
-| HEAD | `d895982` — `chore(release): list the files before checking gh auth` (2026-11-22) |
+| Branch | `main` (dan `sapo-update`, keduanya di commit rilis 0.7.0) |
 | Remote | `https://github.com/Dzaha-code/Flex-Study.git` |
-| Versi | **0.6.1** di tiga tempat: `package.json:3`, `src-tauri/tauri.conf.json:5`, `src-tauri/Cargo.toml:3` (+ `package-lock.json` root) |
-| Uji | **273 test / 22 berkas**, semua lulus (`npm test`, ± 2–5 detik) |
+| Versi | **0.7.0** di empat tempat: `package.json:3`, `src-tauri/tauri.conf.json:5`, `src-tauri/Cargo.toml:3`, `src-tauri/Cargo.lock` (paket `app`) |
+| Uji | **279 test / 22 berkas**, semua lulus (`npm test`, ± 2–12 detik) |
 | Build web | lulus: 6 rute statis + `/_not-found`, Turbopack |
-| Installer | tidak lagi di repo — diunggah ke GitHub Releases, lihat §16.5 |
+| Installer | tidak lagi di repo — diunggah ke GitHub Releases, lihat §16.5 dan §17.4 |
 
 Riwayat rilis: 0.4.0 → 0.4.1 → 0.5.0 (Stabilo + aset + audio) → 0.5.1–0.5.7 →
-0.6.0 (Android, ARM64, alarm, jurnal) → 0.6.1 (akun & sync benar-benar aktif).
+0.5.8 (jeda timer, bagian jurnal, UX template — sempat hanya hidup di `main`) →
+0.6.0 (Android, ARM64, alarm, jurnal) → 0.6.1 (akun & sync benar-benar aktif) →
+0.7.0 (0.5.8 digabungkan ke garis 0.6, satu build untuk Windows x64, ARM64, dan Android).
 Rincian per versi ada di `RELEASE-NOTES.md`.
 
 **Dua kontributor manusia:** `Dzakwan Hafizh <mdzakwanhf@gmail.com>` dan
@@ -759,3 +760,85 @@ tidak ikut ke bundel mana pun. Jangan `--force`; itu menurunkan shadcn ke 1.0.0.
 
 Hasil setelah pemangkasan: `npm test` 273 lulus, `tsc` bersih, ESLint bersih,
 `npm run build` lulus.
+
+---
+
+## 17. 0.7.0 — menyatukan dua garis (22 November 2026)
+
+### 17.1 Kenapa harus digabung
+
+Sampai 0.6.1 ada dua garis yang tidak pernah bertemu:
+
+- `main` memuat 0.5.8: **jeda timer**, **bagian jurnal**, dan perbaikan UX template.
+  Empat commit ini tidak pernah di-push ke `sapo-update`.
+- `sapo-update` memuat 0.6.x: sinkronisasi Supabase, Android, ARM64, alarm fokus.
+  Branch ini bercabang dari `b97d010`, sebelum 0.5.8 ada.
+
+Release notes 0.6.0 sendiri mencatat batas itu ("jeda timer dan bagian jurnal dari 0.5.8
+belum ikut"). Mengoreksi `main` supaya identik dengan `sapo-update` akan menghapus fitur
+0.5.8, jadi yang dikerjakan adalah **merge**, bukan reset.
+
+### 17.2 Konflik dan cara menyelesaikannya
+
+Merge `main` ke branch integrasi menghasilkan 11 konflik:
+
+| Berkas | Penyelesaian |
+|---|---|
+| `src/data/store.ts` | Ambil keduanya: `deleteCategory(id, {moveTo})` yang baru **dan** `saveJournalSection` / `deleteJournalSection` |
+| `src/features/today/running-timer.tsx` | Buang `TimerWatcher` milik 0.5.8 (penggantinya `FocusAlarmHost` di shell), pertahankan tampilan `paused` |
+| `src/features/today/timeline.tsx` | Tombol jeda/lanjut ditambahkan ke struktur 0.6 (`dayKind`, bukan `prominent`); tombol lewati memakai aturan hari 0.6 + toast undo 0.5.8 |
+| `src/features/today/today-screen.tsx` | Pembungkus geser 0.6 dipertahankan, panel "belum dikerjakan" 0.5.8 ditaruh di dalamnya |
+| `src/features/journal/journal-screen.tsx` | `SectionsPanel` **dan** dinding pelajaran hidup berdampingan; kartu memakai `EntryCard` 0.6 |
+| `src/features/journal/journal-visuals.tsx` | `EntryCard` mendapat prop opsional `sectionName` supaya chip bagian tidak hilang |
+| `package.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json` | Ambil sisi 0.6, lalu versi dinaikkan ke 0.7.0 |
+| `AI-HANDOFF.md`, `RELEASE-NOTES.md` | Ambil sisi 0.6, lalu ditulis ulang untuk 0.7.0 |
+
+Yang **tidak** ikut dari 0.5.8: `TimerWatcher` (digantikan `FocusAlarmHost`) dan markup
+baris arsip jurnal yang lama (digantikan `EntryCard`).
+
+### 17.3 Verifikasi
+
+| | |
+|---|---|
+| `npm test` | **279 lulus**, 22 berkas (naik dari 273: `reflection.test.ts` +5, `schema.test.ts` +1 dari sisi 0.5.8) |
+| `npx tsc --noEmit` | bersih |
+| `npm run lint` | bersih |
+| `npm run build` | lulus, 9 halaman statis |
+| `npm run build:desktop` | lulus (dipakai ketiga build installer) |
+
+### 17.4 Artefak rilis
+
+Dibangun di mesin ini, satu perintah per target:
+
+| Perintah | Hasil |
+|---|---|
+| `npx tauri build` | `FlexStudy_0.7.0_x64-setup.exe`, `FlexStudy_0.7.0_x64_en-US.msi` |
+| `npm run build:windows-arm64` | `FlexStudy_0.7.0_arm64-setup.exe`, `FlexStudy_0.7.0_arm64_en-US.msi` |
+| `npm run build:android` | `app-universal-release-unsigned.apk` + `.aab` (unsigned) |
+| `zipalign` + `apksigner` | `FlexStudy_0.7.0_android.apk` (V3, sertifikat `CN=Android Debug`) |
+
+Ukuran dan SHA-256 kelima berkas ada di `RELEASE-NOTES.md` §0.7.0.
+
+### 17.5 Utang tanda tangan Android
+
+Belum ada keystore rilis di repo. APK yang diunggah ditandatangani **debug keystore**
+(`~/.android/debug.keystore`, alias `androiddebugkey`) supaya bisa di-sideload, dan itu
+dinyatakan terbuka di release notes. Konsekuensinya:
+
+- Play Store menolak APK ini; `.aab` yang ada juga masih unsigned.
+- Kalau nanti dibuat keystore rilis, pengguna harus mencopot aplikasi dulu sebelum
+  memasang build bertanda tangan baru.
+- **Jangan** menganggap `installers/` sebagai sumber kebenaran: folder itu di-ignore git,
+  isinya hanya salinan untuk diunggah.
+
+Langkah yang benar saat siap ke Play Store: buat keystore (`keytool -genkeypair`), isi
+`keystore.properties` (sudah di-ignore), tambahkan `signingConfigs` di
+`src-tauri/gen/android/app/build.gradle.kts`, lalu `npm run build:android`. Simpan
+keystore dan kata sandinya di tempat aman — kehilangannya berarti tidak bisa memperbarui
+aplikasi yang sudah terpasang.
+
+### 17.6 Menyelaraskan `main`
+
+Setelah verifikasi, `main` di-fast-forward ke commit rilis 0.7.0 (bukan reset), lalu
+`sapo-update` diikutkan ke commit yang sama, sehingga kedua branch menunjuk satu kode.
+Tag `preserve/main-0.5.8-2026-11-22` menyimpan ujung 0.5.8 sebelum digabung.

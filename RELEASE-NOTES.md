@@ -1,8 +1,109 @@
 # Catatan Rilis
 
-Semua tanggal memakai waktu lokal pengembang (WIB). Berkas installer ada di folder
-`installers/` dan ikut tersimpan di repositori ini, jadi tautan di bawah bisa
-diunduh langsung dari GitHub.
+Semua tanggal memakai waktu lokal pengembang (WIB). Sejak 0.7.0 berkas installer
+**tidak lagi disimpan di repositori** — semuanya diunggah sebagai aset
+[GitHub Releases](https://github.com/Dzaha-code/Flex-Study/releases), satu tempat untuk
+Windows x64, Windows ARM64, dan Android.
+
+---
+
+## 0.7.0 — 22 November 2026
+
+Rilis ini menyatukan dua garis pengembangan yang sempat berjalan terpisah: **jeda timer
+dan bagian jurnal** yang dikerjakan di 0.5.8, dan garis **0.6.x** dengan sinkronisasi,
+Android, serta alarm fokus. Keduanya tidak pernah bertemu — 0.6.0 dan 0.6.1 dibangun
+tanpa jeda timer sama sekali, dan 0.5.8 tidak pernah punya sinkronisasi.
+
+Hasilnya satu aplikasi untuk Windows (x64 dan ARM64) dan Android, dengan perilaku yang
+sama di ketiganya.
+
+### Yang baru dibanding 0.6.1
+
+- **Jeda dan lanjutkan blok.** Blok fleksibel bisa dihentikan sementara dari linimasa;
+  detik yang sudah berjalan dibank dulu, jadi tidak ada waktu yang hilang. Hitung mundur
+  berhenti di tempatnya, dan tombol *Lanjutkan* mengambil alih. Blok berjam tetap sengaja
+  tidak bisa dijeda: jamnya akan tetap mengklaim slot itu di linimasa.
+- **Bagian jurnal.** Tulisan bisa dikelompokkan ke bagian bernama (misalnya per mata
+  pelajaran atau per proyek) langsung dari layar Jurnal. Nama bagian bisa diubah,
+  dihapus, dan difilter. **Menghapus bagian tidak menghapus tulisannya** — entri
+  kembali ke aliran utama, persis seperti yang dijanjikan lembar konfirmasi.
+- **Perbaikan UX template.** Daftar template buatan sendiri kini menampilkan isinya
+  sebelum diterapkan, dan penyuntingan blok dalam template tidak lagi menimpa blok
+  yang sudah dijalankan.
+- **Nama bagian tampil di kartu jurnal**, di samping jumlah kata dan jumlah pelajaran.
+
+### Yang diperbaiki
+
+- **Catatan blok tidak lagi hilang saat penyimpanan gagal.** Antrean tulis dulu
+  mengosongkan daftar kotor sebelum menulis, jadi kegagalan `bulkPut` (kuota penuh,
+  basis data terkunci) membuang teks sampai pengguna mengetik lagi di blok itu. Sekarang
+  batch yang gagal kembali ke antrean dan dicoba lagi 5 detik kemudian; kuota penuh
+  diantrekan tanpa diulang dengan timer, dan tetap tersimpan pada suntingan berikutnya.
+- **Menghapus kategori tidak lagi meninggalkan blok yatim.** Dulu hanya baris kategori
+  yang hilang, sementara blok dan template tetap menunjuk id mati — dan Rekap menghitung
+  menit per kategori yang masih ada, sehingga blok selesai bisa terhitung "done" dengan
+  kontribusi nol menit. Sekarang blok dan template **dipindahkan** ke kategori pilihan,
+  riwayat ikut, dan dialog menampilkan jumlah yang terdampak.
+- **`npm run build` tidak lagi gagal di mesin yang punya artefak Android.** Tailwind
+  memindai seluruh pohon proyek, termasuk `src-tauri/target/` dan keluaran Gradle, lalu
+  Turbopack membaca berkas `.so` di dalamnya sampai Windows kehabisan handle
+  (`os error 1450`). Pemindaian kini dibatasi ke `src/`, dan direktori build Android
+  di-ignore.
+- **13 dependensi tak terpakai dihapus** (`@radix-ui/*` lima paket, `vaul`, `sonner`,
+  `@dnd-kit/*` tiga paket, `@hugeicons/*` dua paket, `lucide-react`). `shadcn` pindah ke
+  `devDependencies` karena itu CLI. `npm audit`: 10 moderate → 4, sisanya rantai
+  build-time yang tidak ikut ke bundel.
+
+### Keamanan
+
+- **CSP untuk shell desktop.** `app.security.csp` tidak lagi `null`: `default-src 'self'`,
+  tanpa `'unsafe-eval'`, `connect-src` terbatas ke Supabase (https + wss) dan kanal IPC
+  Tauri, `object-src 'none'`, `frame-ancestors 'none'`. `devCsp` sengaja `null` supaya
+  `npm run tauri dev` tetap bisa memakai HMR Next.
+
+### Perubahan perilaku yang perlu diketahui
+
+- **Kategori terakhir tidak bisa dihapus.** Setiap blok butuh tempat untuk diarsipkan;
+  tombol hapus nonaktif dan store menolak permintaan itu.
+- **Installer tidak lagi di repositori.** Unduhan ada di halaman Releases. Skrip
+  `npm run release:publish` yang mengunggahnya sudah tersedia.
+- **Riwayat git `sapo-update` ditulis ulang** pada 22 November 2026 untuk membuang
+  identitas alat AI dari metadata author. Klon lama perlu
+  `git fetch --all && git reset --hard origin/sapo-update`.
+
+### Berkas
+
+Lima berkas, semuanya dibangun dari commit yang sama pada 22 November 2026 dan diunggah ke
+halaman Releases. Ukuran dan SHA-256 di bawah diambil langsung dari berkas hasil build.
+
+| Berkas | Untuk | Ukuran | SHA-256 |
+|---|---|---|---|
+| `FlexStudy_0.7.0_x64-setup.exe` | Windows x64, per pengguna, tanpa hak admin | 2.725.195 B (2,60 MiB) | `0ce096230c05c5be1b024ef78b6fd74766b19d576fa1b4c72bcb1e0233bcb6f6` |
+| `FlexStudy_0.7.0_x64_en-US.msi` | Windows x64, mesin-luas, butuh admin | 3.252.224 B (3,10 MiB) | `8e931617824d01b14af6bbf8fb6064b275cdfc7c524ddc2b380a7bc8f4681161` |
+| `FlexStudy_0.7.0_arm64-setup.exe` | Windows on ARM, native, tanpa emulasi | 2.617.344 B (2,50 MiB) | `7d3c6bdc6c6399fe4e53fb4c94757b5fd66aca2fe118cf140366131c1b02f75c` |
+| `FlexStudy_0.7.0_arm64_en-US.msi` | Windows on ARM, mesin-luas | 3.198.976 B (3,05 MiB) | `12a3f6ac5dde9b0089ee538e32981563d4b8d5482b4e9745e76be2e8012bccb7` |
+| `FlexStudy_0.7.0_android.apk` | Android 11+, universal (arm64-v8a, armeabi-v7a, x86, x86_64) | 24.598.826 B (23,5 MiB) | `829e94c04f8b774fc961036c43fa2151161cb904b957e9605428338f2e2bfab5` |
+
+**Soal tanda tangan APK.** Berkas APK ini ditandatangani dengan **debug keystore** Android
+(sertifikat `CN=Android Debug`, skema V3), karena repositori ini belum punya keystore rilis.
+Artinya: bisa dipasang langsung lewat sideload, tapi **tidak bisa diunggah ke Play Store**
+dan tidak bisa menimpa pemasangan yang ditandatangani kunci lain — kalau nanti dibuat
+keystore rilis, aplikasi harus dicopot dulu sebelum dipasang ulang. Bundle `.aab` untuk
+Play Store juga masih unsigned (`app-universal-release.aab`), menunggu keystore rilis.
+
+### Verifikasi
+
+| | |
+|---|---|
+| Uji unit | **279 lulus**, 22 berkas (`npm test`, ± 2–12 detik) |
+| Tipe | `npx tsc --noEmit` bersih |
+| Lint | `npm run lint` bersih |
+| Build web | `npm run build` lulus, 9 halaman statis |
+| Build desktop | `npm run build:desktop` lulus |
+
+Yang **belum** terverifikasi: aplikasi desktop yang benar-benar berjalan dengan CSP baru
+(lihat README), pengiriman email kode 6 digit lewat inbox sungguhan, dan seluruh daftar
+uji visual di README.
 
 ---
 

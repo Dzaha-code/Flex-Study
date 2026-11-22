@@ -14,7 +14,9 @@ Tidak ingin menyentuh kode? Unduh installer-nya langsung:
 
 Berkas installer **tidak lagi disimpan di dalam repositori** (dulu 72 MB dan terus bertambah di riwayat git). Semua unduhan ada di halaman Releases, satu tempat: `.exe` per pengguna tanpa hak admin, `.msi` mesin-luas, dan build native ARM64.
 
-Versi terbaru: **0.6.1**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian tiap rilis ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+Versi terbaru: **0.7.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian tiap rilis ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+
+Yang baru di 0.7.0: **jeda timer dan bagian jurnal akhirnya ikut ke garis 0.6.** Sebelumnya dua garis pengembangan berjalan terpisah — 0.5.8 punya jeda timer, 0.6.x punya sinkronisasi dan Android, dan keduanya tidak pernah bertemu. Sekarang satu aplikasi untuk Windows x64, Windows ARM64, dan Android: blok fleksibel bisa **dijeda dan dilanjutkan** dengan detik yang sudah berjalan tetap dibank, tulisan jurnal bisa dikelompokkan ke **bagian bernama** yang menghapus bagiannya tidak menghapus tulisannya, ditambah perbaikan yang menyangkut data: catatan blok yang gagal tersimpan kini dicoba ulang, dan kategori yang dihapus memindahkan bloknya alih-alih meninggalkannya tanpa nama.
 
 Yang baru di 0.6.1: **akun dan sinkronisasi akhirnya benar-benar bisa dipakai.** Build 0.6.0 membaca dua variabel `NEXT_PUBLIC_SUPABASE_*` saat build, dan karena keduanya belum terisi, panel *Atur → Akun & sinkronisasi* hanya menampilkan "belum diaktifkan di versi ini" — form email dan kode 6 digit tidak pernah muncul. Sekarang alamat server dan kunci publik sudah ter-inline ke dalam bundle, jadi kamu bisa masuk lewat kode 6 digit ke email dan menyinkronkan jadwal, jurnal, serta timer antara PC dan Android. Tanpa akun, aplikasi tetap berjalan penuh dan seluruh data tinggal di perangkat.
 
@@ -54,7 +56,7 @@ Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi j
 
 ### Perangkat ARM (Windows on ARM)
 
-Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_0.6.1_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
+Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_<versi>_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
 
 Untuk membangunnya sendiri di mesin Windows yang sudah punya Rust:
 
@@ -234,7 +236,7 @@ installers/     installer siap pakai untuk Windows
 
 ## Aplikasi desktop
 
-Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer x64 0.6.1 hanya **2,72 MB** — sudah termasuk karakter, asetnya, serta suaranya.
+Versi Windows dibungkus dengan **Tauri 2** — bukan Electron. Karena itu tidak ada runtime Node yang ikut dibundel dan aplikasinya memakai WebView2 yang sudah tersedia di Windows, sehingga installer x64 0.7.0 hanya **2,72 MB** (2.725.195 byte) — sudah termasuk karakter, asetnya, serta suaranya.
 
 Yang perlu diketahui:
 
@@ -389,7 +391,7 @@ Markdown **dirender menjadi elemen React**, bukan string HTML. Karena itu tidak 
 npm test
 ```
 
-**257 uji unit, 20 berkas** (diukur 21 November 2026 dengan `npm test`, ± 5 detik), semuanya pada lapisan murni:
+**279 uji unit, 22 berkas** (diukur 22 November 2026 dengan `npm test`, ± 2–12 detik), semuanya pada lapisan murni:
 
 | Berkas | Cakupan |
 |---|---|
@@ -435,7 +437,7 @@ Khusus aplikasi desktop:
 - **Installer belum ditandatangani secara digital.** Karena itu Windows SmartScreen akan menampilkan peringatan saat pertama dipasang. Penandatanganan (code signing) di luar lingkup rilis ini, dan tidak ada sertifikat atau kunci yang disimpan di repo.
 - **CSP sudah ketat, tetapi belum diuji di jendela yang benar-benar berjalan.** [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) memakai `default-src 'self'`, tanpa `'unsafe-eval'`, dengan `connect-src` terbatas ke Supabase dan IPC Tauri; `'unsafe-inline'` masih diperlukan untuk skrip tema pre-paint dan atribut `style` komponen. `devCsp` sengaja `null` agar `npm run tauri dev` tidak berubah. Bila jendela desktop tampil kosong, kembalikan `"csp": null` dan periksa pesan `Refused to …` di Console.
 - **Angka RAM, waktu buka dingin, dan pemakaian CPU saat diam belum diukur.** Ukuran installer sudah terukur (lihat tabel di atas), tetapi tiga metrik itu butuh aplikasi yang benar-benar berjalan dan diukur dari Task Manager — jadi sengaja dibiarkan kosong daripada diisi angka perkiraan.
-- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 257 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang. Sejak 0.5.1 ada yang perlu ditambahkan ke daftar itu: **panggung Stabilo yang tetap** (slot karakter di kanan, jarak ke kartu dialog, sorotan yang menggeser target alih-alih menutupinya), **campuran musik latar dan bunyi ketikan**, serta **kategori baru di dalam form blok** — semuanya dihitung, belum ditonton dan belum didengar.
+- **Uji visual aplikasi desktop belum dijalankan.** Yang sudah terverifikasi otomatis: `tsc`, ESLint, 279 uji unit, build web, build desktop, dan build installer. Stabilo belum pernah dilihat berjalan: posisi sprite terhadap kotak dialog, sorotan yang jatuh tepat di tombol *Hari ini berantakan*, gelembung kuis, getar teks, dan bunyinya; juga animasi pembuka pada peluncuran pertama, **animasi yang sama saat pilihannya *Setiap buka* dan tombol *Putar sekarang* ditekan selagi pilihannya *Mati***, susunan kontrol animasi di panel Tampilan, jendela terbuka menampilkan Hari ini, penanda "sekarang" di linimasa tidak lagi tertutup sidebar, riak pada Mulai fokus, layar penuh saat waktu habis di kedua tema, arsip jurnal dua tingkat — tahun, lalu bulan di dalamnya — beserta pencarian dan detailnya, angka di layar Rekap, **langkah Rekap di dalam tur beserta titik-titik penunjuk langkah yang kini lebih kecil karena tur bertambah jadi empat belas langkah**, timer berjalan, data bertahan setelah restart, notifikasi muncul, sorotan tur jatuh tepat di elemen yang dimaksud, dan ketiga lebar konten terlihat benar — belum dicentang. Sejak 0.5.1 ada yang perlu ditambahkan ke daftar itu: **panggung Stabilo yang tetap** (slot karakter di kanan, jarak ke kartu dialog, sorotan yang menggeser target alih-alih menutupinya), **campuran musik latar dan bunyi ketikan**, serta **kategori baru di dalam form blok** — semuanya dihitung, belum ditonton dan belum didengar.
 
 ---
 
