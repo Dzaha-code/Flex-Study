@@ -32,7 +32,7 @@ Semua data lokal. Tidak ada akun, tidak ada server, tidak ada telemetri.
 |---|---|
 | Working dir | `C:\laragon\www\flexstudy-dashboard` |
 | Branch | `sapo-update` |
-| HEAD | `9752548` — `fix(sync): 0.6.1 activates account and sync` (2026-11-20) |
+| HEAD | `d895982` — `chore(release): list the files before checking gh auth` (2026-11-22) |
 | Remote | `https://github.com/Dzaha-code/Flex-Study.git` |
 | Versi | **0.6.1** di tiga tempat: `package.json:3`, `src-tauri/tauri.conf.json:5`, `src-tauri/Cargo.toml:3` (+ `package-lock.json` root) |
 | Uji | **273 test / 22 berkas**, semua lulus (`npm test`, ± 2–5 detik) |
@@ -715,11 +715,34 @@ Yang sudah dilakukan (aman, tanpa mengubah riwayat):
   commit baru. Aktifkan per klon: `git config core.hooksPath .githooks`.
 - `CONTRIBUTING.md` menyatakan kebijakannya secara terbuka.
 
-Yang **belum** dilakukan dan butuh keputusan pemilik: menulis ulang 28 commit
-(`git filter-repo` untuk mengganti author dan membuang trailer), lalu
-`git push --force-with-lease`. Itu mengubah hash semua commit, memaksa kolaborator
-lain meng-clone ulang, dan tidak bisa dibatalkan dari sisi GitHub. Jangan
-menjalankannya tanpa izin eksplisit.
+**Riwayat sudah ditulis ulang pada 22 November 2026**, dengan izin pemilik.
+`git filter-branch` dijalankan pada rentang `main..sapo-update` — 15 commit,
+bukan seluruh ancestri. Rentang itu penting: menulis ulang seluruh riwayat akan
+memutus hubungan dengan `main` dan membuat merge berikutnya menjadi dua riwayat
+tak berkerabat.
+
+- Dua commit `Accio` → `Dzakwan Hafizh <mdzakwanhf@gmail.com>` (author dan committer).
+- Trailer `Co-Authored-By: Claude` / `Codebuff`, baris `Claude-Session:`, dan
+  `Generated with Codebuff` dibuang dari empat commit Satfaw.
+- Author Satfaw tidak diubah; pohon berkas identik (`git diff` terhadap tag
+  backup kosong); titik pisah `main` tetap `b97d010`.
+- `git push --force-with-lease origin sapo-update` → `d895982`. Diverifikasi
+  lewat API GitHub: commit `a309aad` (dulu `Accio`) kini milik akun `Dzaha-code`.
+
+Tag lokal `backup/pre-rewrite-2026-11-22` menyimpan riwayat lama. **Jangan
+`git push --tags`** selama tag itu ada, atau riwayat lama ikut terunggah lagi.
+Hapus setelah yakin: `git tag -d backup/pre-rewrite-2026-11-22` lalu
+`git update-ref -d refs/original/refs/heads/sapo-update` dan `git gc --prune=now`.
+
+Satu trailer masih tersisa dan **tidak** bisa dibersihkan dari sini: `044d739`
+(rilis 0.5.6) sudah ada di `main`, jadi menghapusnya berarti menulis ulang branch
+default. Bukti bahwa ini tidak mendesak: API kontributor GitHub tetap hanya
+menampilkan `Dzaha-code` dan `Satfaw` walaupun commit itu sudah di `main` —
+grafik kontributor menghitung **author**, bukan trailer co-author. Yang benar-benar
+berisiko adalah author `Accio`, dan itu sudah hilang.
+
+Kolaborator lain perlu menyelaraskan klonnya sekali:
+`git fetch --all && git reset --hard origin/sapo-update`.
 
 ### 16.7 Dependensi dipangkas
 
