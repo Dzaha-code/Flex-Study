@@ -4,6 +4,7 @@ import { create } from "zustand";
 import {
   addDays,
   applyShift as buildShiftApplication,
+  planReschedule,
   createId,
   makeReflection,
   makeTemplateSwitchEvent,
@@ -210,6 +211,11 @@ export interface AppState {
   flushNotes: () => Promise<boolean>;
 
   runShift: (plan: ShiftPlan) => Promise<ShiftEvent | null>;
+  /**
+   * Moves one block to a new date and start. Recorded as a shift event, so it
+   * shows in the log and undoes exactly like "Hari berantakan".
+   */
+  rescheduleBlock: (id: string, toDate: ISODate, toStart: string) => Promise<ShiftEvent | null>;
   undoShiftEvent: (eventId: string) => Promise<void>;
   dismissShift: () => void;
 
@@ -1092,6 +1098,15 @@ export const useAppStore = create<AppState>()((set, get) => {
       guardWrite(await removeInstances(application.deletes));
       guardWrite(await persistShiftEvent(application.event));
       return application.event;
+    },
+
+    rescheduleBlock: async (id, toDate, toStart) => {
+      const block = get().instances.find((instance) => instance.id === id);
+      // Only a block that has not started can move: a running one is already
+      // happening, and a settled one has nothing left to schedule.
+      if (!block || block.status !== "planned") return null;
+      if (block.date === toDate && block.plannedStart === toStart) return null;
+      return get().runShift(planReschedule({ block, toDate, toStart }));
     },
 
     undoShiftEvent: async (eventId) => {

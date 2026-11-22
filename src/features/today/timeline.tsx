@@ -11,6 +11,7 @@ import {
   IconPause,
   IconPencil,
   IconPlay,
+  IconShuffle,
   IconSkip,
   IconUndo,
   IconWarning,
@@ -21,14 +22,16 @@ import { useAppStore } from "@/data/store";
 import { CategoryPicker } from "@/features/plan/category-picker";
 import type { LaidOutBlock } from "@/domain/schedule";
 import { notePreview } from "@/domain/notes";
+import { canReschedule, fixedTiming, minutesLate } from "@/domain/reschedule";
 import { canPause, canResume } from "@/domain/status";
-import { minuteOfDayFromEpoch } from "@/domain/time";
+import { minuteOfDayFromEpoch, todayISO } from "@/domain/time";
 import type { BlockInstance, Category } from "@/domain/types";
 import { useI18n } from "@/i18n";
 import { primeAlarm, vibrate } from "@/lib/alarm";
 import { useJustChanged } from "@/lib/ink";
 import { hasMarkup, renderMarkdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { openReschedule } from "@/features/reminder/reschedule-store";
 import { Countdown, FocusTimer } from "./running-timer";
 
 export type CategoryLookup = Map<string, Category>;
@@ -120,12 +123,51 @@ function NowMarker({ nowMinute }: { nowMinute: number }) {
  */
 export type DayKind = "past" | "today" | "future";
 
-function BlockActions({
+/**
+ * The real date and minute a block is judged against. The timeline passes a
+ * synthetic minute for other days (0 for the future, the end of day for the
+ * past), so only today uses the minute it was given.
+ */
+function clockFor(dayKind: DayKind, nowMinute: number): { today: string; minute: number } {
+  const now = Date.now();
+  return { today: todayISO(now), minute: dayKind === "today" ? nowMinute : minuteOfDayFromEpoch(now) };
+}
+
+/**
+ * A fixed-time block whose start passed without a start reads as late, then as
+ * missed once its slot is over. Status, so it takes the status colour.
+ */
+function LateTag({
   instance,
   dayKind,
+  nowMinute,
 }: {
   instance: BlockInstance;
   dayKind: DayKind;
+  nowMinute: number;
+}) {
+  const { t } = useI18n();
+  if (dayKind === "future") return null;
+  const { today, minute } = clockFor(dayKind, nowMinute);
+  const timing = fixedTiming(instance, today, minute);
+  if (timing !== "late" && timing !== "missed") return null;
+  return (
+    <span className="shrink-0 rounded-[4px] bg-warn-surface px-1.5 py-px text-label font-semibold text-warn">
+      {timing === "late"
+        ? t("today.lateTag", { minutes: minutesLate(instance, today, minute) })
+        : t("today.missedTag")}
+    </span>
+  );
+}
+
+function BlockActions({
+  instance,
+  dayKind,
+  nowMinute,
+}: {
+  instance: BlockInstance;
+  dayKind: DayKind;
+  nowMinute: number;
 }) {
   const startBlock = useAppStore((state) => state.startBlock);
   const pauseBlock = useAppStore((state) => state.pauseBlock);
@@ -135,6 +177,7 @@ function BlockActions({
   const skipBlock = useAppStore((state) => state.skipBlock);
   const restoreSkippedBlock = useAppStore((state) => state.restoreSkippedBlock);
   const { t } = useI18n();
+  const clock = clockFor(dayKind, nowMinute);
   // Counts the taps instead of a boolean, so a fresh ripple element is mounted
   // per press and the animation replays without any cleanup state.
   const [ripple, setRipple] = useState(0);
@@ -207,6 +250,12 @@ function BlockActions({
           {t("common.reset")}
         </Button>
       ) : null}
+      {dayKind !== "future" && canReschedule(instance, clock.today, clock.minute) ? (
+        <Button size="md" variant="secondary" onClick={() => openReschedule(instance.id)}>
+          <IconShuffle />
+          {t("reminder.reschedule")}
+        </Button>
+      ) : null}
       {/* The skip button is offered while work remains — running, paused or
           planned — because a paused block is still a block the user may decide
           not to finish after all. Never on a future day: there is nothing to
@@ -254,6 +303,7 @@ function BlockCard({
   category,
   isFocus,
   dayKind,
+  nowMinute,
   startLabel,
   onCollapse,
   onOpenNote,
@@ -264,6 +314,7 @@ function BlockCard({
   /** The block nearest to now: it keeps the "in focus" label. */
   isFocus: boolean;
   dayKind: DayKind;
+  nowMinute: number;
   startLabel: string;
   onCollapse: () => void;
   onOpenNote: (instance: BlockInstance) => void;
@@ -287,6 +338,7 @@ function BlockCard({
           <p className="flex flex-wrap items-center gap-2">
             {isFocus ? <span className="stabilo">{t("today.focusTitle")}</span> : null}
             <span className="text-label text-ink-muted">{startLabel}</span>
+            <LateTag instance={instance} dayKind={dayKind} nowMinute={nowMinute} />
           </p>
           <h3 className="text-title-2">{instance.title}</h3>
         </button>
@@ -324,7 +376,7 @@ function BlockCard({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
-        <BlockActions instance={instance} dayKind={dayKind} />
+        <BlockActions instance={instance} dayKind={dayKind} nowMinute={nowMinute} />
         <Button size="md" variant="secondary" onClick={() => onOpenNote(instance)}>
           <IconNote />
           {t("today.note")}
@@ -341,12 +393,16 @@ function BlockCard({
 function CompactRow({
   instance,
   category,
+  dayKind,
+  nowMinute,
   onOpen,
   onQuickNote,
   onEditBlock,
 }: {
   instance: BlockInstance;
   category: Category | undefined;
+  dayKind: DayKind;
+  nowMinute: number;
   /** Tapping the row opens the block's card: details and Start in one place. */
   onOpen: () => void;
   /**
@@ -380,7 +436,9 @@ function CompactRow({
           </span>
           {instance.status !== "planned" ? (
             <StatusBadge status={instance.status} className="shrink-0" />
-          ) : null}
+          ) : (
+            <LateTag instance={instance} dayKind={dayKind} nowMinute={nowMinute} />
+          )}
         </span>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {category ? <CategoryTag name={category.name} icon={category.icon} /> : null}
@@ -484,6 +542,7 @@ export function Timeline({
                       category={category}
                       isFocus={block.instance.id === focusId}
                       dayKind={dayKind}
+                      nowMinute={nowMinute}
                       startLabel={t("today.blockTime", {
                         start: formatClockValue(block.startMinute),
                         end: formatClockValue(block.endMinute),
@@ -496,6 +555,8 @@ export function Timeline({
                     <CompactRow
                       instance={block.instance}
                       category={category}
+                      dayKind={dayKind}
+                      nowMinute={nowMinute}
                       onOpen={() => setChoice(block.instance.id)}
                       onQuickNote={onQuickNote}
                       onEditBlock={onEditBlock}

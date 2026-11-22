@@ -279,6 +279,13 @@ export interface Settings {
    * sight on a phone propped on the desk. Per device: never synced.
    */
   keepScreenOn: boolean;
+  /**
+   * A small floating card when a fixed-time block is due: Start focus, Skip,
+   * and Reschedule once its start has passed. On the desktop app it is its own
+   * always-on-top window in the corner of the screen, so it shows over whatever
+   * else is open. Per device: never synced.
+   */
+  taskPopup: boolean;
   /** Clock time at which a day's timeline begins for blocks without a start. */
   dayStart: ClockTime;
   /** Latest clock time a block may be scheduled to start. */
@@ -424,6 +431,7 @@ export const DEFAULT_SETTINGS: Settings = {
   remindersEnabled: false,
   focusAlarm: true,
   keepScreenOn: true,
+  taskPopup: true,
   dayStart: "08:00",
   dayEnd: "21:30",
   contentWidth: "wide",

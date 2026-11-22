@@ -40,6 +40,19 @@ import { Sprite } from "./ui/Sprite";
 const SCROLL_SETTLE_MS = 320;
 const POLL_INTERVAL_MS = 80;
 const POLL_ATTEMPTS = 25;
+/**
+ * Her stage on a phone, visual-novel style: large and centred, standing behind
+ * the dialogue box with its top edge across her waist. The CSS and the scroll
+ * maths use the same three limits — a share of the width, a share of the
+ * height (so the page above keeps room for the spotlight), and a ceiling for
+ * tablets in portrait.
+ */
+const PHONE_STAGE_CSS = "min(72vw, 40dvh, 320px)";
+/** How far the card overlaps her, so she reads as standing behind it. */
+const PHONE_STAGE_OVERLAP = 22;
+function phoneStagePx(): number {
+  return Math.round(Math.min(window.innerWidth * 0.72, window.innerHeight * 0.4, 320));
+}
 
 /**
  * The typewriter is the one piece of motion the stylesheets cannot turn off, so
@@ -421,7 +434,10 @@ function StabiloSession({ flow }: { flow: Flow }) {
         else read();
         return;
       }
-      scrollIntoBand(element, dockRef.current?.offsetHeight ?? 240);
+      // On a phone she stands above the card, outside the dock box, so her
+      // height has to be counted or the target would scroll in under her.
+      const peek = window.innerWidth < 640 ? phoneStagePx() - PHONE_STAGE_OVERLAP : 0;
+      scrollIntoBand(element, (dockRef.current?.offsetHeight ?? 240) + peek);
       settle = window.setTimeout(read, SCROLL_SETTLE_MS);
     };
 
@@ -680,7 +696,41 @@ function StabiloSession({ flow }: { flow: Flow }) {
           ref={dockRef}
           className="flex w-full max-w-[860px] items-end justify-center gap-2 sm:gap-4"
         >
-          <div className="pointer-events-auto w-full min-w-0 max-w-[620px]">
+          {/* `isolate` gives the card its own stacking context, so her stage
+              (z -1 inside it) sits behind the card but above the scrim. */}
+          <div className="pointer-events-auto relative isolate w-full min-w-0 max-w-[620px]">
+            {/* Phones: a visual-novel stage. She stands large and centred above
+                the dialogue box, which crosses her at the waist, with a soft
+                light behind her so she separates from the dimmed page. Nothing
+                of the card is covered — the text, the close button and the
+                answers stay in front — and she never takes a tap. From sm up
+                the slot beside the card takes over. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-full left-1/2 -z-10 -translate-x-1/2 sm:hidden"
+              style={{
+                width: PHONE_STAGE_CSS,
+                height: PHONE_STAGE_CSS,
+                marginBottom: -PHONE_STAGE_OVERLAP,
+              }}
+            >
+              <div className="stabilo-stage-light" />
+              <div className="stabilo-sprite-rise relative h-full w-full">
+                <div
+                  key={`phone-${sprite}-${state.nodeId}-${state.wrongRun}`}
+                  className={cn("h-full w-full", recoil && "stabilo-recoil")}
+                >
+                  <div className={cn("h-full w-full", trembleClass ?? "stabilo-idle")}>
+                    <Sprite
+                      sprite={sprite}
+                      mouth={mouth}
+                      placeholder={STABILO_PLACEHOLDER}
+                      onMissing={() => finish()}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
             <DialogueBox
             speaker={t("stabilo.speaker")}
             text={text}

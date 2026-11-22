@@ -7,6 +7,49 @@ Windows x64, Windows ARM64, dan Android.
 
 ---
 
+## 0.7.1 — 22 November 2026
+
+Pengingat untuk tugas berjam tetap, jadwalkan ulang untuk tugas yang terlambat,
+pembaruan langsung dari dalam aplikasi, dan APK Android yang jauh lebih kecil.
+
+### Yang baru
+
+- **Pengingat melayang untuk tugas berjam tetap.** Saat jam mulai tiba, kartu kecil
+  muncul di pojok kanan bawah dengan tombol **Mulai fokus** dan **Lewati**, lalu
+  **Jadwalkan ulang** setelah jamnya lewat. Di Windows kartu ini tampil di atas aplikasi
+  lain tanpa merebut keyboard, jadi tetap terlihat saat kamu sedang di browser. Bisa
+  dimatikan di *Atur → Pengingat melayang*.
+- **Jadwalkan ulang.** Tugas yang jamnya lewat dan belum dimulai diberi label
+  *Terlambat* atau *Terlewat*, lengkap dengan tombol **Jadwalkan ulang**: slot kosong
+  berikutnya, besok di jam yang sama, atau tanggal dan jam pilihanmu. Bisa diurungkan
+  selama 10 detik.
+- **Pembaruan di dalam aplikasi.** FlexStudy memberi tahu saat ada versi baru dan
+  memasangnya sendiri, tanpa perlu membuka GitHub. Lihat *Atur → Pembaruan aplikasi*.
+  Berlaku untuk pembaruan setelah 0.7.1, jadi 0.7.1 sendiri masih dipasang manual.
+- **Stabilo di Android** kini tampil besar di tengah layar, bergaya visual novel, tanpa
+  menutupi teks atau tombol.
+- **Sinkronisasi menyimpan progres.** Status onboarding, tur, dan progres Stabilo ikut
+  tersinkron antarperangkat, dan progres tidak pernah mundur.
+
+### Yang diperbaiki
+
+- APK Android dibangun sebagai release untuk arm64: sekitar 8 MB, bukan ratusan MB.
+- Minimum Android naik ke 13 (API 33). Target Android 17 (API 37).
+- Ikon Android kini sama dengan ikon desktop.
+
+### Untuk pengembang
+
+- `npm run release:manifest -- windows|android` menaruh berkas build beserta
+  `latest.json` / `android.json` di `installers/`. `npm run release:publish` kini ikut
+  mengunggah manifest dan berkas `.sig`, dan menambahkan panduan pemasangan
+  (`docs/release-install.md`) di bawah setiap rilis.
+- `npm run version:set <versi>` mengubah versi di `package.json`, `tauri.conf.json`, dan
+  `Cargo.toml` sekaligus.
+- Pembaruan Windows butuh kunci updater Tauri. Langkahnya ada di README, bagian
+  *Rilis dan pembaruan di dalam aplikasi*.
+
+---
+
 ## 0.7.0 — 22 November 2026
 
 Rilis ini menyatukan dua garis pengembangan yang sempat berjalan terpisah: **jeda timer

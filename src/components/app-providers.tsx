@@ -13,8 +13,14 @@ import { ToastProvider } from "./ui/toast";
  */
 function ThemeSync() {
   const theme = useAppStore((state) => state.settings.theme);
+  const ready = useAppStore((state) => state.status === "ready");
 
   useEffect(() => {
+    // Until the stored settings load, the pre-paint script has already applied
+    // the mirrored theme, and the store default would only overwrite it. This
+    // also keeps the floating reminder window, which never loads the store, in
+    // the theme the user chose.
+    if (!ready) return;
     const apply = () => applyThemeAttribute(resolveTheme(theme, systemPrefersDark()));
     apply();
 
@@ -22,7 +28,7 @@ function ThemeSync() {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
-  }, [theme]);
+  }, [theme, ready]);
 
   return null;
 }
@@ -30,10 +36,11 @@ function ThemeSync() {
 /** `<html lang>` follows the chosen language (brief section 9). */
 function DocumentLangSync() {
   const locale = useAppStore((state) => state.settings.locale);
+  const ready = useAppStore((state) => state.status === "ready");
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    if (ready) document.documentElement.lang = locale;
+  }, [locale, ready]);
 
   return null;
 }
@@ -47,10 +54,11 @@ function DocumentLangSync() {
  */
 function MotionSync() {
   const animation = useAppStore((state) => state.settings.animation);
+  const ready = useAppStore((state) => state.status === "ready");
 
   useEffect(() => {
-    applyMotionAttribute(animation);
-  }, [animation]);
+    if (ready) applyMotionAttribute(animation);
+  }, [animation, ready]);
 
   return null;
 }

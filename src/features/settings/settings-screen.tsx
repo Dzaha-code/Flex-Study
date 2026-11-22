@@ -47,6 +47,8 @@ import { useWindowMaximised } from "@/lib/viewport";
 import { ensureNotificationPermission, notify } from "@/lib/desktop";
 import { playAlarm, primeAlarm } from "@/lib/alarm";
 import { SyncPanel } from "./sync-panel";
+import { UpdateSettingsPanel } from "@/features/update/update-host";
+import { useUpdateStore } from "@/features/update/update-store";
 import { pickLocalized, TEMPLATES } from "@/templates";
 import { BlockListEditor, CategoriesEditor } from "./plan-editor";
 
@@ -326,6 +328,13 @@ export function SettingsScreen() {
           />
 
           <SwitchRow
+            label={t("settings.taskPopup")}
+            hint={t("settings.taskPopupHint")}
+            checked={settings.taskPopup}
+            onChange={(next) => void updateSettings({ taskPopup: next })}
+          />
+
+          <SwitchRow
             label={t("settings.focusAlarm")}
             hint={t("settings.focusAlarmHint")}
             checked={settings.focusAlarm}
@@ -478,6 +487,8 @@ export function SettingsScreen() {
           </div>
         </div>
       </Panel>
+
+      <UpdatePanel />
 
       <Panel>
         <PanelHeader title={t("settings.help")} description={t("settings.helpHint")} />
@@ -671,5 +682,22 @@ export function SettingsScreen() {
         }}
       />
     </div>
+  );
+}
+
+/** Only on the desktop app and the APK; the browser is always up to date. */
+function UpdatePanel() {
+  const supported = useUpdateStore((state) => state.supported);
+  const init = useUpdateStore((state) => state.init);
+  const { t } = useI18n();
+  useEffect(() => {
+    if (!supported) void init();
+  }, [supported, init]);
+  if (!supported) return null;
+  return (
+    <Panel>
+      <PanelHeader title={t("settings.update")} description={t("settings.updateHint")} />
+      <UpdateSettingsPanel />
+    </Panel>
   );
 }

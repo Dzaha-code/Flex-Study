@@ -461,7 +461,9 @@ export function applyShift(
       ...original,
       id: newId,
       date: move.toDate,
-      plannedStart: null,
+      // The bulk strategies always send `null` here (a block that leaves its
+      // day floats again); a single reschedule carries the time the user chose.
+      plannedStart: move.toStart,
       order: nextOrder(move.toDate),
       status: "planned",
       actualSeconds: 0,

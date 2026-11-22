@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# The page calls AppUpdater by method name through addJavascriptInterface, so R8
+# must neither strip nor rename these methods in a release build.
+-keepclassmembers class com.creepix.flexstudy.AppUpdater {
+    @android.webkit.JavascriptInterface <methods>;
+}

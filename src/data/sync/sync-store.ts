@@ -3,7 +3,13 @@
 import { create } from "zustand";
 import type { z } from "zod";
 import { addDays, todayISO } from "@/domain/time";
-import { duplicateGeneratedIds, type SyncRow, type SyncableState } from "@/domain/sync";
+import {
+  duplicateGeneratedIds,
+  mergeSyncedSettings,
+  mergeSyncedStabilo,
+  type SyncRow,
+  type SyncableState,
+} from "@/domain/sync";
 import { mirrorPreferences } from "@/lib/preferences";
 import { applySyncBatch, type SyncBatch } from "../repository";
 import {
@@ -69,13 +75,29 @@ const stateStore = {
   },
 };
 
+/**
+ * Every field is optional: a row written by an older build carries only the
+ * fields that build synced, and a missing field must mean "unchanged", never a
+ * default that silently overwrites this device (`mergeSyncedSettings`).
+ */
 const SYNCED_SETTINGS_SCHEMA = SettingsSchema.pick({
   weekStart: true,
   dayStart: true,
   dayEnd: true,
   activeTemplateId: true,
-});
-const SYNCED_STABILO_SCHEMA = StabiloPrefsSchema.pick({ nickname: true, intensity: true });
+  onboardingCompleted: true,
+  tourCompleted: true,
+}).partial();
+const SYNCED_STABILO_SCHEMA = StabiloPrefsSchema.pick({
+  nickname: true,
+  intensity: true,
+  introSeen: true,
+  tourDone: true,
+  ph3Seen: true,
+  progress: true,
+  dailyGreeting: true,
+  lastGreetingDate: true,
+}).partial();
 
 function snapshot(): SyncableState {
   const state = useAppStore.getState();
@@ -174,12 +196,12 @@ async function applyRows(rows: SyncRow[]): Promise<void> {
       }
       case "settings": {
         const value = row.deleted ? null : parse(SYNCED_SETTINGS_SCHEMA, row.data);
-        if (value) batch.settings = { ...app.settings, ...value };
+        if (value) batch.settings = mergeSyncedSettings(app.settings, value);
         break;
       }
       case "stabilo": {
         const value = row.deleted ? null : parse(SYNCED_STABILO_SCHEMA, row.data);
-        if (value) batch.stabilo = { ...app.stabilo, ...value };
+        if (value) batch.stabilo = mergeSyncedStabilo(app.stabilo, value);
         break;
       }
       case "customTemplates": {

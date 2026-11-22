@@ -7,6 +7,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/data/store";
 import { IntroGate } from "@/features/intro/IntroGate";
 import { LanguageGate } from "@/features/language/language-gate";
@@ -78,6 +79,15 @@ function ErrorScreen() {
   );
 }
 
+/**
+ * Routes that render on their own, without the database, the shell, the intro
+ * or Stabilo. Only the desktop reminder window, which is a separate OS window
+ * showing one card; the main window owns the data and does the work.
+ */
+function isBareRoute(pathname: string | null): boolean {
+  return pathname === "/reminder" || pathname === "/reminder/";
+}
+
 export function AppBoundary({ children }: { children: ReactNode }) {
   const mounted = useMounted();
   const status = useAppStore((state) => state.status);
@@ -113,11 +123,16 @@ export function AppBoundary({ children }: { children: ReactNode }) {
   const needsLanguage = storedLocaleChoice === false || (!languageChosen && !introSeen);
   const localeChosen = forcedLocale || !needsLanguage;
 
+  const bare = isBareRoute(usePathname());
+
   useEffect(() => {
-    if (mounted) void hydrate();
-  }, [mounted, hydrate]);
+    if (mounted && !bare) void hydrate();
+  }, [mounted, hydrate, bare]);
 
   const handleLocaleDone = useCallback(() => setForcedLocale(true), []);
+
+  // The desktop reminder window: one card, nothing around it.
+  if (bare) return <>{children}</>;
 
   let content: ReactNode;
   if (!mounted || status === "loading") content = <BootScreen />;

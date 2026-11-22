@@ -6,102 +6,47 @@ Implementasi mengikuti `flexstudy-brief-v2` (§5 Must + §14 kriteria lulus). Se
 
 ---
 
-## Unduh dan pasang (Windows)
+## Unduh dan pasang
 
-Tidak ingin menyentuh kode? Unduh installer-nya langsung:
+**[⬇ Unduh versi terbaru di halaman Releases](https://github.com/Dzaha-code/Flex-Study/releases/latest)**
 
-### [Halaman Releases](https://github.com/Dzaha-code/Flex-Study/releases) — installer Windows x64 dan ARM64
+Pilih satu berkas sesuai perangkatmu. Semuanya gratis dan tidak butuh akun. Setiap rilis menyertakan catatan perubahan dan panduan pemasangan yang sama dengan di bawah ini.
 
-Berkas installer **tidak lagi disimpan di dalam repositori** (dulu 72 MB dan terus bertambah di riwayat git). Unduhan ada di halaman Releases, satu tempat: `.exe` per pengguna tanpa hak admin, `.msi` mesin-luas, build native ARM64, dan APK Android.
+| Perangkat | Berkas di halaman Releases | Ukuran |
+|---|---|---|
+| **Windows 10/11** (laptop Intel/AMD, yang paling umum) | `FlexStudy_<versi>_x64-setup.exe` | ± 3 MB |
+| **Windows 11 di ARM** (Snapdragon X, Copilot+ PC) | `FlexStudy_<versi>_arm64-setup.exe` | ± 3 MB |
+| **Android 13–17** | `FlexStudy_<versi>_arm64.apk` | ± 8 MB |
 
-Rilis 0.7.0 sudah dibangun tetapi **belum diunggah**: jalankan `npm run release:publish` sekali dari mesin build (butuh `gh auth login`) untuk membuat halaman rilisnya.
+Tidak yakin laptopmu ARM atau bukan? Buka *Settings → System → About*. Kalau *System type* bertuliskan "ARM-based processor", pilih ARM. Selain itu pilih x64. Installer x64 juga bisa berjalan di ARM lewat emulasi, tetapi versi ARM lebih hemat CPU dan baterai.
 
-Versi terbaru: **0.7.0**. Tersedia dua format; pilih satu dan pakai konsisten, karena keduanya menghasilkan pemasangan yang terpisah. Rincian tiap rilis ada di [RELEASE-NOTES.md](RELEASE-NOTES.md).
+### Windows
 
-Yang baru di 0.7.0: **jeda timer dan bagian jurnal akhirnya ikut ke garis 0.6.** Sebelumnya dua garis pengembangan berjalan terpisah — 0.5.8 punya jeda timer, 0.6.x punya sinkronisasi dan Android, dan keduanya tidak pernah bertemu. Sekarang satu aplikasi untuk Windows x64, Windows ARM64, dan Android: blok fleksibel bisa **dijeda dan dilanjutkan** dengan detik yang sudah berjalan tetap dibank, tulisan jurnal bisa dikelompokkan ke **bagian bernama** yang menghapus bagiannya tidak menghapus tulisannya, ditambah perbaikan yang menyangkut data: catatan blok yang gagal tersimpan kini dicoba ulang, dan kategori yang dihapus memindahkan bloknya alih-alih meninggalkannya tanpa nama.
+1. Unduh installer `.exe` yang sesuai.
+2. Buka berkasnya. Kalau muncul *Windows protected your PC*, pilih **More info → Run anyway**. Peringatan ini muncul karena installer belum memakai sertifikat penerbit berbayar, bukan karena berkasnya berbahaya.
+3. Selesai. FlexStudy terpasang untuk akunmu (tanpa hak admin) dan ada di menu Start. Butuh pemasangan untuk semua pengguna? Pakai berkas `.msi` (butuh admin), dan tetap pakai format yang sama di setiap pembaruan.
 
-Yang baru di 0.6.1: **akun dan sinkronisasi akhirnya benar-benar bisa dipakai.** Build 0.6.0 membaca dua variabel `NEXT_PUBLIC_SUPABASE_*` saat build, dan karena keduanya belum terisi, panel *Atur → Akun & sinkronisasi* hanya menampilkan "belum diaktifkan di versi ini" — form email dan kode 6 digit tidak pernah muncul. Sekarang alamat server dan kunci publik sudah ter-inline ke dalam bundle, jadi kamu bisa masuk lewat kode 6 digit ke email dan menyinkronkan jadwal, jurnal, serta timer antara PC dan Android. Tanpa akun, aplikasi tetap berjalan penuh dan seluruh data tinggal di perangkat.
+Internet hanya dibutuhkan saat memasang, untuk WebView2 kalau belum ada (Windows 11 sudah punya). Setelah itu aplikasi jalan sepenuhnya offline.
 
-Yang baru di 0.6.0: **blok dibuka dengan sekali ketuk, hari bisa digeser, dan blok sekali-pakai tidak lagi hilang saat template berubah.** Strip tujuh hari kini membuka hari mana pun — lampau atau depan — lewat geseran, panah berpindah pekan, dan di layar sempit linimasa bisa diusap. Setiap blok punya alarm: nada, notifikasi sistem, taskbar berkedip, dan kartu layar penuh **Selesai / +5 menit / Lanjut**; di Android tenggatnya dijadwalkan sistem operasi sehingga tetap berbunyi saat aplikasi di latar. Catatan blok mendapat **Simpan & tutup** dengan toast, jadi menyimpan tidak lagi ambigu. Jurnal bertambah peta menulis, statistik kata dan rentetan, serta dinding pelajaran. **Sinkronisasi opsional ke Supabase** hadir sebagai fitur yang harus dinyalakan sendiri — masuk lewat kode 6 digit ke email, dan data ditarik otomatis saat aplikasi kembali aktif.
+### Android
 
-Yang baru di 0.5.7 tetap ada: **mengganti template kini benar-benar mengganti Hari ini.** Selama ini blok hari ini sudah termaterialisasi dari template lama, dan aturan "pertahankan" justru mengecualikan setiap blok bertanggal hari ini — jadi berapa kali pun template diganti, isinya tidak bisa berubah. Sekarang setiap penerapan lewat satu lembar **"Terapkan mulai"** (Hari ini · Besok · Senin depan) dengan pratinjau yang dihitung oleh fungsi yang sama dengan yang dipakai saat menerapkan, **Urungkan 10 detik**, dan aturan aman: hanya blok `planned` tanpa catatan dan tanpa waktu terukur yang boleh diganti; blok yang sudah dikerjakan atau bercatatan tidak pernah disentuh. Kategori milik blok lama kini diadopsi, jadi riwayat tidak lagi kehilangan nama kategori. Tombol **Template** juga hadir di header Hari ini.
-
-Yang baru di 0.5.6 tetap ada: **catatan bisa ditulis dan dibaca di tengah sesi, setiap baris tur punya jalan keluar yang terlihat, dan animasi pembuka bisa menjelaskan dirinya sendiri saat berhenti.** Editor catatan punya tombol **Simpan** (atau Ctrl+Enter) dengan konfirmasi "Tersimpan 20:27"; ikon catatan di Hari ini **membaca dulu** — catatan yang ada membuka lembar rincian (judul, tanggal, durasi, teks, Ubah/Salin/Buka blok), yang belum langsung membuka editor; Jurnal mendapat segmen **Catatan blok** dengan pencarian dan saringan. Setiap simpul tur Stabilo kini punya **"Lanjut ▼"** dan **"✕ Tutup tur"** dua langkah, ditambah pengingat setelah 10 detik diam. Animasi pembuka tak lagi dilewati oleh klik acak di latar, kegagalannya menyingkapkan aplikasi utuh alih-alih setengah layar, dan **log diagnosis di layar** (saklar debug di Atur, atau `?introDebug=1`) mencetak penyebabnya langsung di mesin yang terdampak. Fondasi bahasa gerak "Tinta" (DESIGN v3 Fase 1) masuk — token durasi, riak tekan di semua tombol, indikator segmen yang mencair — dan **`framer-motion`/`motion` dihapus dari dependensi**.
-
-Yang baru di 0.5.5 tetap ada: **Stabilo bisa dinyalakan sendiri di perangkat yang mematikan animasi.** Di sebagian laptop Windows melaporkan "kurangi gerak" tanpa pernah kamu pilih — animasi Windows dimatikan, profil daya "best performance", atau sesi Remote Desktop — sehingga semua gerakan berhenti dan frame-nya tidak pernah berganti. Sekarang **Atur → Stabilo** memberi tahu saat itu terjadi, dan menyediakan saklar **"Animasi tetap jalan"** yang bawaannya mati. Selain itu **lebar konten otomatis penuh saat jendela dimaksimalkan** (pilihanmu di Atur dipakai lagi begitu jendela diperkecil), dan aplikasi desktop dibuka maksimal.
-
-Yang baru di 0.5.4 tetap ada: **template benar-benar terpasang** — rencana bawaan dulu hanya mengisi hari kerja, jadi menerapkannya pada Sabtu atau Minggu meninggalkan Hari ini kosong dan terlihat seperti gagal; sekarang setiap template punya satu blok akhir pekan. **Kamu juga bisa menyimpan rencanamu sendiri sebagai template** di *Atur → Template → Template buatanmu*, ditambah **jam di header Hari ini** yang berhenti menghitung saat jendela disembunyikan.
-
-Yang diperbaiki di 0.5.3 tetap ada: tur menyambut sendiri setelah "Buka Hari ini" dan menjelaskan belasan perhentian, percakapan yang bergerak, kedipan mata, dan bahasa bawaan Inggris. Yang diperbaiki di 0.5.2 dan 0.5.1 juga tetap: tur membaca keadaan hari, wajah dan getaran saat salah menjawab, satu tur pada satu waktu, panggung karakter yang tetap, musik latar, serta kategori baru langsung dari form blok.
-
-Yang baru di 0.5.0 tetap ada: **Stabilo**, pemandu tur yang berbicara, dengan pilihan jujur *Paham / Belum paham*, tiga kuis pendek, temperamen yang mengalah sendiri, dan panel **Atur → Stabilo**. Tur klasik tetap tersedia sebagai cadangan saat karakternya dimatikan.
-
-Semua yang ada di 0.4.1 tetap ada: arsip jurnal dua tingkat, pencarian dan favorit di jurnal, halaman Rekap, gerak pada timer, dan animasi pembuka yang bisa diatur.
-
-| | |
-|---|---|
-| Disarankan | `FlexStudy_<versi>_x64-setup.exe` — terpasang per pengguna, **tanpa hak admin** |
-| Alternatif | `FlexStudy_<versi>_x64_en-US.msi` — terpasang mesin-luas ke `Program Files`, **butuh admin** |
-| ARM64 | `FlexStudy_<versi>_arm64-setup.exe` — build native untuk Windows on ARM, tidak lewat emulasi |
-| Android | APK ada di halaman Releases yang sama; cara build sendiri ada di bagian **Build Android** |
-| Sistem | Windows 64-bit (x64 atau ARM64), Android 11 ke atas |
-| Internet | Tidak perlu setelah terpasang. Semua data, font, dan aset ikut di dalam aplikasi |
-| WebView2 | Sudah tersedia di Windows 11. Bila belum ada, installer mengunduh dan memasangnya sendiri — langkah ini butuh internet |
-
-Cara memasang:
-
-1. Unduh installer dari halaman Releases.
-2. Dobel klik. Bila Windows SmartScreen memunculkan peringatan, itu karena berkas ini belum ditandatangani secara digital — pilih **More info → Run anyway**. Kalau memakai `.msi`, Windows juga akan meminta izin administrator (UAC).
-3. Selesai. Aplikasi terpasang dengan nama **FlexStudy** dan bisa dibuka dari menu Start.
-
-Tidak ada proses latar: menutup jendela benar-benar menutup aplikasi. Aplikasi juga hanya boleh terbuka satu jendela pada satu waktu.
-
-### Perangkat ARM (Windows on ARM)
-
-Sejak 0.6.0 ada installer **native ARM64** (`FlexStudy_<versi>_arm64-setup.exe`), jadi perangkat Windows on ARM — Snapdragon X, Copilot+ PC — tidak perlu menjalankan versi x64 lewat emulasi. Installer x64 tetap bisa dipakai di sana bila kamu mau membandingkan; emulasi berjalan, hanya memakan lebih banyak CPU dan baterai.
-
-Untuk membangunnya sendiri di mesin Windows yang sudah punya Rust:
-
-    npm run build:windows-arm64
-
-Prasyaratnya, sekali saja:
-
-1. `rustup target add aarch64-pc-windows-msvc`
-2. Visual Studio dengan komponen **MSVC C++ ARM64 build tools** dan **Windows SDK** (di VS 2026, linker-nya ada di `VC\Tools\MSVC\<versi>\bin\Hostx64\arm64\link.exe`)
-
-Skrip di atas memeriksa keduanya lebih dulu dan berhenti dengan pesan yang jelas kalau belum siap, bukan error linker yang tidak menjelaskan apa pun. Hasilnya ada di `src-tauri\target\aarch64-pc-windows-msvc\release\bundle\` sebagai `FlexStudy_<versi>_arm64-setup.exe` dan `..._arm64_en-US.msi`.
-
-macOS Apple Silicon dan Linux ARM64 juga didukung Tauri, tetapi keduanya tidak bisa di-build dari Windows ini: masing-masing butuh mesinnya sendiri, dan Tauri memang tidak menyediakan cross-compile ke macOS.
+1. Unduh berkas `.apk` langsung di HP.
+2. Buka berkasnya. Kalau diminta, izinkan browser atau pengelola berkas untuk *memasang aplikasi tak dikenal*.
+3. Kalau Play Protect memberi peringatan, pilih **Detail lainnya → Tetap instal**. Peringatan ini muncul untuk aplikasi yang dipasang di luar Play Store.
 
 ### Memperbarui
 
-Belum ada pembaruan otomatis di dalam aplikasi, jadi memperbarui berarti memasang installer yang lebih baru di atas yang lama. **Tidak perlu menghapus pemasangan lama lebih dulu.**
+Mulai 0.7.1, FlexStudy memeriksa versi baru sendiri dan memberi tahu di bagian atas aplikasi. Ketuk **Lihat pembaruan → Perbarui sekarang**, dan aplikasi memasangnya tanpa perlu membuka GitHub. Bisa juga dicek manual di *Atur → Pembaruan aplikasi*.
 
-Satu hal yang wajib: **naikkan `version` di [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json) sebelum build.** Windows Installer mengenali sebuah produk dari versinya, jadi memasang versi yang sama akan menawarkan Repair/Remove alih-alih menggantikan aplikasi.
+Versi sebelum 0.7.1 belum punya fitur ini, jadi pasang 0.7.1 sekali secara manual di atas versi lama. Tidak perlu menghapus versi lama lebih dulu.
 
-**Datamu tidak ikut hilang.** Aplikasi menyimpan datanya di `%LOCALAPPDATA%\com.creepix.flexstudy` — profil WebView2, tempat IndexedDB hidup. Lokasi itu ditentukan oleh `identifier`, jadi selama `identifier` tidak diubah, memperbarui aplikasi tidak menyentuh datamu sama sekali.
+### Data dan cadangan
 
-Kalau nanti mau pembaruan otomatis sungguhan, Tauri menyediakan plugin `updater`. Perlu diketahui sejak awal: plugin itu **mewajibkan penandatanganan** dan tidak bisa dimatikan, jadi kamu butuh pasangan kunci — dan kalau kunci privatnya hilang, kamu tidak akan pernah bisa lagi mengirim pembaruan ke pemasangan yang sudah ada. Kunci itu tidak boleh masuk repo.
+**Datamu tidak ikut hilang saat memperbarui.** Di Windows datanya ada di `%LOCALAPPDATA%\com.creepix.flexstudy`, terpisah dari aplikasinya. Untuk memindahkan atau mencadangkan data, pakai *Atur → Data → Ekspor JSON* lalu *Impor* di perangkat lain. Sinkronisasi antarperangkat tersedia lewat akun opsional di *Atur → Akun & sinkronisasi*.
 
-Satu hal yang tetap perlu kamu lakukan sendiri: gunakan **Ekspor/Impor JSON** di layar *Atur* untuk mencadangkan data atau memindahkannya antara versi web dan desktop. Tidak ada akun dan tidak ada telemetri yang melakukannya untukmu.
+Rincian tiap versi ada di [halaman Releases](https://github.com/Dzaha-code/Flex-Study/releases) dan [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
-### Menerbitkan rilis
-
-Installer tidak lagi di-commit. Setelah `npm run tauri build`, berkasnya ada di
-`src-tauri/target/release/bundle/` — salin ke `installers/` (folder itu
-di-ignore git), lalu unggah sebagai aset rilis:
-
-```bash
-npm run release:publish            # pakai tag v<versi> dari package.json
-npm run release:publish -- --draft # simpan sebagai draf, terbitkan manual
-```
-
-Skripnya memeriksa dulu bahwa `package.json`, `src-tauri/tauri.conf.json`, dan
-nama berkas installer memakai versi yang sama, lalu memanggil `gh release
-create` dengan catatan rilis yang diambil dari `RELEASE-NOTES.md`. Butuh
-`gh auth login` sekali di mesin ini.
-
-> Ingin membangun sendiri dari kode? Lihat bagian **Menjalankan** di bawah.
+> Ingin membangun sendiri dari kode? Lihat **Menjalankan** dan **Rilis dan pembaruan di dalam aplikasi** di bawah.
 
 ---
 
@@ -132,11 +77,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 
 Tanpa itu installer tetap jalan normal, hanya panel "Akun & sinkronisasi" yang menampilkan "Sinkronisasi belum diaktifkan di versi ini". Detail server ada di [`docs/SYNC.md`](docs/SYNC.md).
 
-Di laptop **Windows ARM64**, `npm run build:windows-arm64` menghasilkan installer ARM64 native. Untuk x64 dari mesin ARM64: `rustup target add x86_64-pc-windows-msvc`, pasang komponen **MSVC C++ x64/x86 build tools**, lalu `npx tauri build --target x86_64-pc-windows-msvc`.
+**Installer ARM64** dibangun dengan `npm run build:windows-arm64`, dari laptop ARM maupun x64. Prasyaratnya sekali saja: `rustup target add aarch64-pc-windows-msvc`, dan di Visual Studio komponen **MSVC C++ ARM64 build tools** beserta **Windows SDK**. Skrip itu memeriksa keduanya lebih dulu dan berhenti dengan pesan yang jelas kalau belum siap. Hasilnya di `src-tauri/target/aarch64-pc-windows-msvc/release/bundle/`. Untuk x64 dari mesin ARM64: `rustup target add x86_64-pc-windows-msvc`, pasang komponen **MSVC C++ x64/x86 build tools**, lalu `npx tauri build --target x86_64-pc-windows-msvc`.
 
-### Build Android (Android 11–17)
+### Build Android (Android 13–17)
 
-Proyek Android sudah ada di `src-tauri/gen/android` (minimum Android 11 / API 30, target Android 17 / API 37). Di laptop baru, siapkan sekali:
+Proyek Android sudah ada di `src-tauri/gen/android` (minimum Android 13 / API 33, target Android 17 / API 37). Di laptop baru, siapkan sekali:
 
 1. **Windows Developer Mode** aktif (Settings → System → For developers). Wajib: Tauri membuat symlink ke library Rust, dan tanpa ini build gagal di langkah terakhir dengan *"Failed to create a symbolic link"*.
 2. Rust (https://rustup.rs) + target Android:
@@ -146,31 +91,71 @@ Proyek Android sudah ada di `src-tauri/gen/android` (minimum Android 11 / API 30
    `sdkmanager "platform-tools" "platforms/android-37.0" "build-tools/37.0.0" "ndk/29.0.14206865"`.
 5. Environment variable pengguna: `JAVA_HOME` (JDK 17), `ANDROID_HOME` (folder SDK), `NDK_HOME` (`%ANDROID_HOME%\ndk\29.0.14206865`).
 6. `.env.local` berisi `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` kalau ingin sinkronisasi ikut ter-build.
+7. Keystore rilis, sekali saja. Simpan file dan password-nya baik-baik: tanpa keystore yang sama, pembaruan tidak bisa dipasang di atas versi lama.
+
+   ```bash
+   keytool -genkey -v -keystore %USERPROFILE%\flexstudy-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias flexstudy
+   ```
+
+   lalu buat `src-tauri/gen/android/keystore.properties` (tidak ikut git):
+
+   ```
+   storeFile=C:\Users\<nama>\flexstudy-upload.jks
+   keyAlias=flexstudy
+   password=<password keystore>
+   ```
 
 Lalu:
 
 ```bash
 npm install
-npm run build:desktop                                   # ekspor web ke out/ (ulangi bila berhenti karena pengingat upgrade Next)
-npx tauri android build --debug --apk --target aarch64 armv7 -c "{\"build\":{\"beforeBuildCommand\":\"\"}}"
-# hasil: src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+npm run build:desktop        # ekspor web ke out/ (ulangi bila berhenti karena pengingat upgrade Next)
+npx tauri android build --apk --split-per-abi --target aarch64 -c "{\"build\":{\"beforeBuildCommand\":\"\"}}"
+# hasil: src-tauri/gen/android/app/build/outputs/apk/arm64/release/app-arm64-release.apk (± 8 MB)
 ```
 
-APK debug hanya untuk tes. Untuk APK yang dibagikan, buat keystore sekali (simpan file dan password-nya baik-baik; tanpa keystore yang sama, update tidak bisa dipasang di atas versi lama):
+**Selalu build release untuk dibagikan.** APK `--debug` membawa library Rust tanpa optimasi beserta simbol debug untuk empat arsitektur sekaligus, sehingga ukurannya bisa ratusan MB. Build release memakai `[profile.release]` di `Cargo.toml` (ukuran dulu, LTO, strip), dan `--target aarch64` sudah mencakup hampir semua HP Android 13 ke atas. Tanpa `keystore.properties`, hasilnya bernama `...-unsigned.apk` dan tidak bisa dipasang.
+
+Ikon Android diambil dari berkas yang sama dengan desktop: `npx tauri icon flexstudy-logo-1024.png -o <folder sementara>`, lalu salin isi `<folder>/android/` ke `src-tauri/gen/android/app/src/main/res/`. Latar ikon adaptif ada di `values/ic_launcher_background.xml`.
+
+---
+
+## Rilis dan pembaruan di dalam aplikasi
+
+Aplikasi Windows dan APK memeriksa versi baru sendiri (beberapa detik setelah dibuka, lalu tiap 6 jam), memberi tahu di bagian atas aplikasi, dan memasangnya dari dalam aplikasi. Sumbernya rilis terbaru di GitHub (`releases/latest/download/…`), jadi **sebuah versi sampai ke pengguna begitu rilisnya dipublikasikan**:
+
+- **Windows**: plugin updater Tauri membaca `latest.json`, mengunduh installer, **memeriksa tanda tangannya** dengan kunci publik di `tauri.conf.json`, lalu memasangnya. Aplikasi tertutup dan terbuka lagi di versi baru.
+- **Android**: `AppUpdater.kt` membaca `android.json`, mengunduh APK, **mencocokkan SHA-256**-nya, lalu membuka layar pemasang Android. Android sendiri menolak APK yang ditandatangani keystore lain.
+
+Rilis tanpa `android.json` tidak memunculkan pembaruan di Android, dan rilis tanpa `latest.json` tidak memunculkan pembaruan di Windows. Jadi satu platform boleh menyusul tanpa merusak yang lain.
+
+### Sekali saja: kunci updater (Windows)
 
 ```bash
-keytool -genkey -v -keystore %USERPROFILE%\flexstudy-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias flexstudy
+npx tauri signer generate -w ~/.tauri/flexstudy-updater.key
 ```
 
-lalu buat `src-tauri/gen/android/keystore.properties` (tidak ikut git):
+Tempel isi `~/.tauri/flexstudy-updater.key.pub` ke `plugins.updater.pubkey` di `src-tauri/tauri.conf.json`, lalu commit. Kunci privat dan password-nya **tidak pernah masuk git**. Simpan baik-baik, dan berikan ke laptop yang membangun Windows lewat jalur pribadi. Kalau kunci ini hilang, aplikasi yang sudah terpasang tidak bisa menerima pembaruan otomatis lagi.
 
-```
-storeFile=C:\Users\<nama>\flexstudy-upload.jks
-keyAlias=flexstudy
-password=<password keystore>
-```
+### Setiap rilis
 
-dan build tanpa `--debug`. Hasilnya di `.../apk/universal/release/app-universal-release.apk`.
+1. Naikkan versi: `npm run version:set 0.7.2`, jalankan `npm install` sekali, tulis bagian `## 0.7.2 — <tanggal>` di `RELEASE-NOTES.md` (dengan subbagian `### Yang baru`), lalu commit dan push.
+2. **Laptop Windows** (setelah pull):
+   ```powershell
+   $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content ~/.tauri/flexstudy-updater.key -Raw
+   $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "<password>"
+   npm run tauri build              # x64
+   npm run build:windows-arm64      # ARM64
+   npm run release:manifest -- windows
+   npm run release:publish
+   ```
+3. **Laptop Android** (setelah pull, dengan `keystore.properties`): build APK seperti di atas, lalu
+   ```bash
+   npm run release:manifest -- android
+   npm run release:publish
+   ```
+
+`release:manifest` menyalin hasil build ke `installers/` (di-ignore git) beserta `latest.json` atau `android.json`. Isi *Yang baru* dari `RELEASE-NOTES.md` menjadi catatan di layar pembaruan aplikasi. `release:publish` memastikan versi di `package.json` dan `tauri.conf.json` sama, lalu membuat rilis `v<versi>` (atau mengunggah ke rilis yang sudah ada) dengan catatan dari `RELEASE-NOTES.md` dan panduan pemasangan dari [`docs/release-install.md`](docs/release-install.md). Butuh `gh auth login` sekali di setiap mesin. Pakai `npm run release:publish -- --draft` untuk menyimpan sebagai draf dulu.
 
 ---
 

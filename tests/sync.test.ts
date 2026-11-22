@@ -3,6 +3,8 @@ import {
   duplicateGeneratedIds,
   generatedInstanceId,
   hashOf,
+  mergeSyncedSettings,
+  mergeSyncedStabilo,
   planSync,
   rowHash,
   rowKey,
@@ -55,6 +57,8 @@ describe("toSyncRows", () => {
       dayStart: "07:00",
       dayEnd: baseSettings.dayEnd,
       activeTemplateId: baseSettings.activeTemplateId,
+      onboardingCompleted: baseSettings.onboardingCompleted,
+      tourCompleted: baseSettings.tourCompleted,
     });
   });
 });
@@ -144,5 +148,84 @@ describe("generated block ids", () => {
     const own = makeInstance({ id: generatedInstanceId("tpl_a", "2026-11-21"), date: "2026-11-21", templateId: "tpl_a" });
     const moved = makeInstance({ id: "moved", date: "2026-11-21", templateId: "tpl_a", movedFrom: "2026-11-20" });
     expect(duplicateGeneratedIds([own, moved])).toEqual([]);
+  });
+});
+
+describe("progress sync", () => {
+  const fresh = { ...baseSettings, onboardingCompleted: false, tourCompleted: false };
+
+  it("carries progress in the synced rows", () => {
+    const rows = toSyncRows(
+      {
+        categories: [],
+        templates: [],
+        instances: [],
+        reflections: [],
+        shiftEvents: [],
+        switchEvents: [],
+        settings: { ...baseSettings, tourCompleted: true },
+        stabilo: { ...DEFAULT_STABILO_PREFS, tourDone: true, introSeen: true },
+        customTemplates: [],
+      },
+      "2026-10-14T00:00:00.000Z",
+    );
+    expect(rows.find((row) => row.kind === "settings")?.data).toMatchObject({
+      onboardingCompleted: true,
+      tourCompleted: true,
+    });
+    expect(rows.find((row) => row.kind === "stabilo")?.data).toMatchObject({
+      introSeen: true,
+      tourDone: true,
+    });
+  });
+
+  it("never sends a finished device back to onboarding", () => {
+    const merged = mergeSyncedSettings(baseSettings, {
+      weekStart: 0,
+      onboardingCompleted: false,
+      tourCompleted: false,
+    });
+    expect(merged.onboardingCompleted).toBe(true);
+    expect(merged.weekStart).toBe(0);
+  });
+
+  it("lets a fresh device pick up progress made elsewhere", () => {
+    const merged = mergeSyncedSettings(fresh, { onboardingCompleted: true, tourCompleted: true });
+    expect(merged).toMatchObject({ onboardingCompleted: true, tourCompleted: true });
+  });
+
+  it("leaves fields an older build did not send untouched", () => {
+    const merged = mergeSyncedSettings({ ...baseSettings, dayStart: "06:00" }, { weekStart: 0 });
+    expect(merged.dayStart).toBe("06:00");
+    const stabilo = mergeSyncedStabilo(
+      { ...DEFAULT_STABILO_PREFS, dailyGreeting: false },
+      { nickname: "Ayu", intensity: "sweet" },
+    );
+    expect(stabilo).toMatchObject({ nickname: "Ayu", intensity: "sweet", dailyGreeting: false });
+  });
+
+  it("moves Stabilo progress forward only", () => {
+    const local = {
+      ...DEFAULT_STABILO_PREFS,
+      introSeen: true,
+      ph3Seen: 2,
+      progress: { nodeId: "t4", phase: 1 as const },
+      lastGreetingDate: "2026-10-14",
+    };
+    const merged = mergeSyncedStabilo(local, {
+      introSeen: false,
+      ph3Seen: 1,
+      progress: null,
+      lastGreetingDate: "2026-10-12",
+    });
+    expect(merged).toMatchObject({
+      introSeen: true,
+      ph3Seen: 2,
+      progress: { nodeId: "t4", phase: 1 },
+      lastGreetingDate: "2026-10-14",
+    });
+
+    // A tour finished on the other device clears the checkpoint here.
+    expect(mergeSyncedStabilo(local, { tourDone: true })).toMatchObject({ tourDone: true, progress: null });
   });
 });

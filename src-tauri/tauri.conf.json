@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "FlexStudy",
   "mainBinaryName": "FlexStudy",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "identifier": "com.creepix.flexstudy",
   "build": {
     "frontendDist": "../out",
@@ -39,8 +39,20 @@
       "icons/icon.ico"
     ],
     "android": {
-      "minSdkVersion": 30,
+      "minSdkVersion": 33,
       "debugApplicationIdSuffix": ".debug"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/Dzaha-code/Flex-Study/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

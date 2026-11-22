@@ -7,6 +7,9 @@
          back to an inexact alarm when the user has not granted it. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- In-app updates: hands a downloaded, checksum-verified APK to the system
+         installer, which still asks the user and checks the signing key. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />

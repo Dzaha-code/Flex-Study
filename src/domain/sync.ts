@@ -78,16 +78,80 @@ export type KnownMap = Record<string, KnownRow>;
 export const rowKey = (kind: SyncKind, id: string) => `${kind}:${id}`;
 
 /**
- * Settings that belong to the person and travel between devices. Everything
- * else (theme, language, motion, width, onboarding, notification switches) is
- * about one screen and one OS, and syncing it would let a phone restyle a PC.
+ * Settings that belong to the person and travel between devices: the plan's
+ * shape, and how far through the first run they are. Everything else (theme,
+ * language, motion, width, notification switches) is about one screen and one
+ * OS, and syncing it would let a phone restyle a PC.
  */
-export const SYNCED_SETTINGS = ["weekStart", "dayStart", "dayEnd", "activeTemplateId"] as const;
+export const SYNCED_SETTINGS = [
+  "weekStart",
+  "dayStart",
+  "dayEnd",
+  "activeTemplateId",
+  "onboardingCompleted",
+  "tourCompleted",
+] as const;
 export type SyncedSettings = Pick<Settings, (typeof SYNCED_SETTINGS)[number]>;
 
-/** Same idea for Stabilo: the name she calls you by and her temperament. */
-export const SYNCED_STABILO = ["nickname", "intensity"] as const;
+/**
+ * Same idea for Stabilo: the name she calls you by, her temperament, and where
+ * you are with her — the introduction, the tour and its checkpoint, the last
+ * greeting — so a second device does not start the story over.
+ */
+export const SYNCED_STABILO = [
+  "nickname",
+  "intensity",
+  "introSeen",
+  "tourDone",
+  "ph3Seen",
+  "progress",
+  "dailyGreeting",
+  "lastGreetingDate",
+] as const;
 export type SyncedStabilo = Pick<StabiloPrefs, (typeof SYNCED_STABILO)[number]>;
+
+/**
+ * Applies another device's settings row on top of this device's settings.
+ *
+ * Progress only moves forward. The row is last-write-wins, so a fresh install
+ * that has not finished onboarding yet can win a round with "not done" — and a
+ * plain overwrite would then send a finished device back to the first-run
+ * screens. Fields an older build did not send are left as they are.
+ */
+export function mergeSyncedSettings(local: Settings, remote: Partial<SyncedSettings>): Settings {
+  return {
+    ...local,
+    ...(remote.weekStart !== undefined && { weekStart: remote.weekStart }),
+    ...(remote.dayStart !== undefined && { dayStart: remote.dayStart }),
+    ...(remote.dayEnd !== undefined && { dayEnd: remote.dayEnd }),
+    ...(remote.activeTemplateId !== undefined && { activeTemplateId: remote.activeTemplateId }),
+    onboardingCompleted: local.onboardingCompleted || remote.onboardingCompleted === true,
+    tourCompleted: local.tourCompleted || remote.tourCompleted === true,
+  };
+}
+
+/** The Stabilo counterpart: preferences follow the row, progress never goes back. */
+export function mergeSyncedStabilo(local: StabiloPrefs, remote: Partial<SyncedStabilo>): StabiloPrefs {
+  const tourDone = local.tourDone || remote.tourDone === true;
+  const lastGreetingDate =
+    [local.lastGreetingDate, remote.lastGreetingDate ?? null]
+      .filter((value): value is string => typeof value === "string")
+      .sort()
+      .at(-1) ?? null;
+  return {
+    ...local,
+    ...(remote.nickname !== undefined && { nickname: remote.nickname }),
+    ...(remote.intensity !== undefined && { intensity: remote.intensity }),
+    ...(remote.dailyGreeting !== undefined && { dailyGreeting: remote.dailyGreeting }),
+    introSeen: local.introSeen || remote.introSeen === true,
+    tourDone,
+    ph3Seen: Math.max(local.ph3Seen, remote.ph3Seen ?? 0),
+    // A finished tour has no checkpoint. Otherwise the newer row's checkpoint
+    // wins, and a row without one never erases the one kept here.
+    progress: tourDone ? null : (remote.progress ?? local.progress),
+    lastGreetingDate,
+  };
+}
 
 /** Stable JSON: object keys sorted, so equal data always hashes the same. */
 export function stableStringify(value: unknown): string {

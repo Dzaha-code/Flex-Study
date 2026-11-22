@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useAppStore } from "@/data/store";
+import { RescheduleHost } from "@/features/reminder/reschedule-sheet";
+import { TaskReminderHost } from "@/features/reminder/task-reminder-host";
+import { UpdateBanner, UpdateSheet } from "@/features/update/update-host";
 import { FocusAlarmHost } from "@/features/today/focus-alarm";
 import { RunningBar } from "@/features/today/running-bar";
 import { SyncHost } from "@/features/settings/sync-panel";
@@ -230,6 +233,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           id="main"
           className="min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.25rem+env(safe-area-inset-top))] lg:px-0 lg:pb-12 lg:pt-8"
         >
+          <UpdateBanner />
           <StorageNotice />
           {children}
           <RunningBar />
@@ -239,6 +243,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <GuidedTour />
       {/* Watches the running block on every screen, not only on Today. */}
       <FocusAlarmHost />
+      {/* Fixed-time blocks that are due: a corner card, or its own window on
+          the desktop app. Lives here so it fires from any screen. */}
+      <TaskReminderHost />
+      <RescheduleHost />
+      <UpdateSheet />
       {/* Starts sync after the local data is loaded, only when signed in. */}
       <SyncHost />
     </div>

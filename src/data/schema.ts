@@ -179,6 +179,9 @@ export const SettingsSchema = z.object({
   // the alarm on, which is what a fresh install gets too.
   focusAlarm: z.boolean().default(true),
   keepScreenOn: z.boolean().default(true),
+  // Defaulted on, like the alarm: an older backup imports with the reminder
+  // a fresh install gets.
+  taskPopup: z.boolean().default(true),
   dayStart: clockTimeSchema,
   dayEnd: clockTimeSchema,
   // Defaulted rather than required, so a workspace exported before these

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions",
+  "description": "Permissions every platform needs: the main window, notifications and the focus alarm.",
   "windows": [
     "main"
   ],

@@ -184,6 +184,39 @@
   }
 }
 
+/*
+ * Phone stage (visual-novel layout): she rises into place instead of sliding
+ * in from the side, and a soft pool of light behind her lifts her off the
+ * dimmed page. The light is the highlighter colour at low strength, so it
+ * reads as the app's own accent rather than a new colour.
+ */
+.stabilo-sprite-rise {
+  animation: stabilo-sprite-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes stabilo-sprite-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stabilo-stage-light {
+  position: absolute;
+  inset: 8% 4% 0;
+  border-radius: 50% 50% 40% 40%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--hl) 34%, transparent),
+    transparent
+  );
+  filter: blur(6px);
+}
+
 .stabilo-sprite-in {
   animation: stabilo-sprite-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -277,6 +310,7 @@
   :root:not([data-motion="full"]) .stabilo-tremble-hard,
   :root:not([data-motion="full"]) .stabilo-card-in,
   :root:not([data-motion="full"]) .stabilo-sprite-in,
+  :root:not([data-motion="full"]) .stabilo-sprite-rise,
   :root:not([data-motion="full"]) .stabilo-option-in,
   :root:not([data-motion="full"]) .stabilo-pop-in,
   :root:not([data-motion="full"]) .stabilo-caret,

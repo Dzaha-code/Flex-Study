@@ -11,8 +11,10 @@
  *   npm run release:publish -- --draft # upload as a draft, publish by hand later
  *
  * Requires the GitHub CLI, signed in (`gh auth login`). Nothing here touches
- * git history, tags or the remote: it only uploads the four files it finds in
- * `installers/` for the version in `package.json`.
+ * git history, tags or the remote: it only uploads the files it finds in
+ * `installers/` for the version in `package.json`: installers, the APK, updater
+ * signatures, and the `latest.json` / `android.json` manifests that
+ * `npm run release:manifest` writes there.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -48,8 +50,23 @@ if (!existsSync(installerDir)) {
   fail(`Folder installers/ tidak ada. Build dulu: npm run tauri build`);
 }
 
+/**
+ * The update manifests carry no version in their name, so they are matched by
+ * content instead: only a manifest written for this version is uploaded, never
+ * a stale one left over from the previous release.
+ */
+const MANIFESTS = ["latest.json", "android.json"];
+function isCurrentManifest(name) {
+  if (!MANIFESTS.includes(name)) return false;
+  try {
+    return JSON.parse(readFileSync(join(installerDir, name), "utf8")).version === pkgVersion;
+  } catch {
+    return false;
+  }
+}
+
 const wanted = readdirSync(installerDir)
-  .filter((name) => name.includes(`_${pkgVersion}_`))
+  .filter((name) => name.includes(`_${pkgVersion}_`) || isCurrentManifest(name))
   // `.idsig` is the v4 signature sidecar apksigner writes next to an APK. It is
   // only an input to `adb install --incremental` and has no meaning as a
   // download, so it must not become a release asset.
@@ -61,7 +78,10 @@ if (wanted.length === 0) {
   fail(`Tidak ada installer untuk versi ${pkgVersion} di installers/`);
 }
 
-const tooSmall = wanted.filter((file) => statSync(file).size < 1024 * 1024);
+// Signatures and manifests are small by nature; only binaries are checked.
+const tooSmall = wanted
+  .filter((file) => !file.endsWith(".sig") && !file.endsWith(".json"))
+  .filter((file) => statSync(file).size < 1024 * 1024);
 if (tooSmall.length > 0) {
   fail(`Berkas ini terlalu kecil untuk sebuah installer:\n  ${tooSmall.join("\n  ")}`);
 }
@@ -88,7 +108,19 @@ function releaseNotes() {
   const rest = lines.slice(start + 1);
   const end = rest.findIndex((line) => line.startsWith("## "));
   const body = (end === -1 ? rest : rest.slice(0, end)).join("\n").trim();
-  return body || `FlexStudy ${pkgVersion}`;
+  return (body || `FlexStudy ${pkgVersion}`) + installFooter();
+}
+
+/**
+ * The same "which file, how to install" block under every release, so someone
+ * who lands on the Releases page from a link can install without reading the
+ * README. Kept in docs/release-install.md; {{version}} is filled in here.
+ */
+function installFooter() {
+  const path = join(root, "docs", "release-install.md");
+  if (!existsSync(path)) return "";
+  const text = readFileSync(path, "utf8").replace(/\r\n/g, "\n").replaceAll("{{version}}", pkgVersion);
+  return `\n\n---\n\n${text.trim()}\n`;
 }
 
 const title = `FlexStudy ${pkgVersion}`;

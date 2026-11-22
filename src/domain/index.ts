@@ -15,3 +15,4 @@ export * from "./propagate";
 export * from "./template-switch";
 export * from "./journal-insights";
 export * from "./sync";
+export * from "./reschedule";

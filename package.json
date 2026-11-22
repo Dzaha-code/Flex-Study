@@ -1,6 +1,6 @@
 {
   "name": "flexstudy-dashboard",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,6 +11,8 @@
     "build:android-debug": "node scripts/build-android.mjs --debug",
     "fonts:fetch": "node scripts/fetch-fonts.mjs",
     "release:publish": "node scripts/publish-release.mjs",
+    "release:manifest": "node scripts/release-manifest.mjs",
+    "version:set": "node scripts/set-version.mjs",
     "tauri": "tauri",
     "start": "next start",
     "lint": "eslint",
@@ -23,6 +25,7 @@
     "@supabase/supabase-js": "^2.119.2",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-notification": "^2.7.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.4.6",
